@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
-import './globals.css'
+import '../globals.css'
 import { locales } from '@/i18n/config'
-import { getMessages } from 'next-intl/server'
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }))
