@@ -28,6 +28,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Copy index.html
+        run: cp out/ja.html out/index.html
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
