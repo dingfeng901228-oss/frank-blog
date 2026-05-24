@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      deployments: write
 
     steps:
       - name: Checkout
@@ -34,4 +35,3 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: frank-blog
           directory: out
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
