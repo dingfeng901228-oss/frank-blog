@@ -21,9 +21,9 @@ export default function Giscus({
     const script = document.createElement('script')
     script.src = 'https://giscus.app/client.js'
     script.setAttribute('data-repo', 'dingfeng901228-oss/frank-blog-new')
-    script.setAttribute('data-repo-id', 'R_kgDOOAuthentication')
-    script.setAttribute('data-category', 'Announcements')
-    script.setAttribute('data-category-id', 'DIC_kwDOOAuthentication4C')
+    script.setAttribute('data-repo-id', 'R_kgDOSmxyRQ')
+    script.setAttribute('data-category', 'General')
+    script.setAttribute('data-category-id', 'DIC_kwDOSmxyRc4C9w30')
     script.setAttribute('data-mapping', mapping)
     script.setAttribute('data-term', term)
     script.setAttribute('data-strict', '0')
