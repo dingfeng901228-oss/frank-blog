@@ -1,0 +1,39 @@
+---
+title: "Next.js 15 + React 19 で始める新しい時代"
+description: "最新バージョンの技術スタックを活用した、パフォーマンスと開発体験の両立させたブログサイトの構築"
+publishedAt: "2026-05-20"
+tags: ["Tech", "Next.js"]
+featured: true
+locale: "ja"
+---
+
+ Next.js 15 と React 19 の組み合わせは、Web 開発の体験を大きく変える。新しいCompilerの登場により、ビルド時間が劇的に短縮され、開発者はより素早くフィードバックを受けながら作業できる。
+
+## なぜ Next.js か
+
+静的サイト生成（SSG）とサーバーサイドレンダリング（SSR）を一枚のアプリケーションで実現できる柔軟性。ページごとに最適なレンダリング方式を選択できる点は、従来のアーキテクチャでは得られなかったものだ。
+
+特に注目すべきは Server Components の成熟だろう。クライアントサイドに送信される JavaScript の量を最小限に抑えながら、必要十分なインタラクティビティを提供できる。
+
+## React 19 の新しい世界観
+
+React 19 では、サーバーコンポーネントとクライアントコンポーネントの境界が明確になった。データの fetching は Server Components で行い、ユーザーの操作に反応する部分だけを Client Components として切り出す。
+
+```typescript
+async function PostList() {
+  const posts = await db.posts.findMany()
+  return <ul>{posts.map(p => <li key={p.id}>{p.title}</li>)}</ul>
+}
+```
+
+Above component runs on the server. No client-side JavaScript for the list itself.
+
+## 日本語のTypography
+
+日本語の文章を表現するには、Font Family の選択が鍵を握る。Noto Serif JP を本文に、Noto Sans JP を見出しに使い分けることで、視認性と品格を両立できる。
+
+行高は 1.9 から 2.0 程度確保すると、画面読書時の疲労軽減につながる。文字間隔も僅かに広げると読みやすい。
+
+## まとめ
+
+技術は手段であり、目的ではない。ブログという最もシンプルな Web アプリケーションの形態を選んだのは、書くことに集中するため。UI はそっと背景に退き、言葉が際立つ場所にしたい。
