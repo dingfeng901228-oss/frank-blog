@@ -1,4 +1,4 @@
-export default function Robots() {
+export async function GET() {
   return new Response(
     `User-agent: *
 Allow: /
