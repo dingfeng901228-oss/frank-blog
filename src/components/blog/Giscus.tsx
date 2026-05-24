@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useLocale } from 'next-intl'
 
 interface GiscusProps {
   mapping?: string
@@ -12,15 +11,18 @@ export default function Giscus({
   mapping = 'specific',
   term = 'blog',
 }: GiscusProps) {
-  const locale = useLocale()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!ref.current) return
 
+    const lang = window.location.pathname.startsWith('/zh') ? 'zh-CN'
+      : window.location.pathname.startsWith('/en') ? 'en'
+      : 'ja'
+
     const script = document.createElement('script')
     script.src = 'https://giscus.app/client.js'
-    script.setAttribute('data-repo', 'dingfeng901228-oss/frank-blog-new')
+    script.setAttribute('data-repo', 'dingfeng901228-oss/frank-blog')
     script.setAttribute('data-repo-id', 'R_kgDOSmxyRQ')
     script.setAttribute('data-category', 'General')
     script.setAttribute('data-category-id', 'DIC_kwDOSmxyRc4C9w30')
@@ -31,7 +33,7 @@ export default function Giscus({
     script.setAttribute('data-emit-metadata', '0')
     script.setAttribute('data-input-position', 'top')
     script.setAttribute('data-theme', 'dark')
-    script.setAttribute('data-lang', locale === 'ja' ? 'ja' : locale === 'zh' ? 'zh-CN' : 'en')
+    script.setAttribute('data-lang', lang)
     script.setAttribute('data-loading', 'lazy')
     script.crossOrigin = 'anonymous'
     script.async = true
@@ -43,7 +45,7 @@ export default function Giscus({
         ref.current.innerHTML = ''
       }
     }
-  }, [locale, mapping, term])
+  }, [mapping, term])
 
   return <div ref={ref} className="giscus" />
 }
