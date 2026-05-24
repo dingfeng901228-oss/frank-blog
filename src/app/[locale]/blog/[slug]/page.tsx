@@ -67,12 +67,19 @@ export default async function PostPage({ params }: PageProps) {
 
   const nav = navLabels[locale as keyof typeof navLabels]
 
+  const paragraphs = post.content.split('\n\n').filter(p => p.trim())
+  const renderedContent = paragraphs.map((para, i) => {
+    if (para.startsWith('## ')) return <h2 key={i} className="font-serif text-2xl font-medium mt-10 mb-4">{para.slice(3)}</h2>
+    if (para.startsWith('# ')) return <h1 key={i} className="font-serif text-3xl font-medium mt-12 mb-6">{para.slice(2)}</h1>
+    if (para.startsWith('```')) return <pre key={i} className="bg-[var(--muted)] rounded-lg p-4 my-6 overflow-x-auto text-sm font-mono"><code>{para.replace(/```\w*\n?/g, '')}</code></pre>
+    return <p key={i} className="my-5">{para}</p>
+  })
+
   return (
     <div className="min-h-screen">
       <Navbar locale={locale as Locale} />
 
       <main className="mx-auto max-w-reading px-6 pt-20 pb-16">
-        {/* Back Link */}
         <div className="mb-12">
           <Link
             href={`/${locale}/blog`}
@@ -82,79 +89,44 @@ export default async function PostPage({ params }: PageProps) {
           </Link>
         </div>
 
-        {/* Header */}
         <header className="mb-12">
           <div className="flex items-center gap-3 mb-6">
             {post.tags?.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs font-mono text-[var(--accent)]"
-              >
-                {tag}
-              </span>
+              <span key={tag} className="text-xs font-mono text-[var(--accent)]">{tag}</span>
             ))}
           </div>
-          <h1 className="font-serif text-4xl md:text-5xl font-medium leading-tight mb-6">
-            {post.title}
-          </h1>
-          <p className="text-[var(--muted)] text-lg mb-8 leading-relaxed">
-            {post.description}
-          </p>
+          <h1 className="font-serif text-4xl md:text-5xl font-medium leading-tight mb-6">{post.title}</h1>
+          <p className="text-[var(--muted)] text-lg mb-8 leading-relaxed">{post.description}</p>
           <div className="flex items-center gap-6 text-sm text-[var(--muted)] font-mono">
-            <time dateTime={post.publishedAt}>
-              {formatDate(post.publishedAt, locale)}
-            </time>
+            <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
             <span>·</span>
             <span>{post.readingTime}</span>
           </div>
         </header>
 
-        {/* Content */}
-        <article className="reading-content">
-          {post.content.split('\n').map((line, i) => (
-            <p key={i}>{line}</p>
-          ))}
-        </article>
+        <article className="reading-content">{renderedContent}</article>
 
-        {/* Post Navigation */}
         <nav className="mt-20 pt-8 border-t border-[var(--border)] grid grid-cols-2 gap-8">
           <div>
             {prevPost && (
-              <Link
-                href={`/${locale}/blog/${prevPost.slug}`}
-                className="block group"
-              >
-                <span className="text-xs font-mono text-[var(--muted)] mb-2 block">
-                  ← Previous
-                </span>
-                <span className="font-serif text-lg group-hover:text-[var(--accent)] transition-colors">
-                  {prevPost.title}
-                </span>
+              <Link href={`/${locale}/blog/${prevPost.slug}`} className="block group">
+                <span className="text-xs font-mono text-[var(--muted)] mb-2 block">← Previous</span>
+                <span className="font-serif text-lg group-hover:text-[var(--accent)] transition-colors">{prevPost.title}</span>
               </Link>
             )}
           </div>
           <div className="text-right">
             {nextPost && (
-              <Link
-                href={`/${locale}/blog/${nextPost.slug}`}
-                className="block group"
-              >
-                <span className="text-xs font-mono text-[var(--muted)] mb-2 block">
-                  Next →
-                </span>
-                <span className="font-serif text-lg group-hover:text-[var(--accent)] transition-colors">
-                  {nextPost.title}
-                </span>
+              <Link href={`/${locale}/blog/${nextPost.slug}`} className="block group">
+                <span className="text-xs font-mono text-[var(--muted)] mb-2 block">Next →</span>
+                <span className="font-serif text-lg group-hover:text-[var(--accent)] transition-colors">{nextPost.title}</span>
               </Link>
             )}
           </div>
         </nav>
 
-        {/* Comments */}
         <section className="mt-20 pt-12 border-t border-[var(--border)]">
-          <h2 className="text-xs font-mono text-[var(--muted)] tracking-widest mb-8">
-            Comments
-          </h2>
+          <h2 className="text-xs font-mono text-[var(--muted)] tracking-widest mb-8">Comments</h2>
           <Giscus term={slug} />
         </section>
       </main>
