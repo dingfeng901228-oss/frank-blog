@@ -1,14 +1,12 @@
-import { getAllPosts } from '@/lib/blog'
-import { getAllLocales } from '@/lib/blog'
+import { getAllPosts, getAllLocales } from '@/lib/blog'
 import type { Locale } from '@/i18n/config'
 
 const BASE_URL = 'https://blog.frank2025.com'
 
-export default async function RSSFeed({
-  params,
-}: {
-  params: Promise<{ locale: string }>
-}) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ locale: string }> }
+) {
   const { locale } = await params
   const posts = getAllPosts(locale as Locale)
 
