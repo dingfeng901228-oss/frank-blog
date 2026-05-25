@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import '../globals.css'
 import { locales } from '@/i18n/config'
+import { getMessages } from 'next-intl/server'
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }))
@@ -20,6 +21,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+  },
+  icons: {
+    icon: '/feng_favicon.svg',
   },
   robots: {
     index: true,
