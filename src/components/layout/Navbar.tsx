@@ -46,7 +46,7 @@ export default function Navbar({ locale }: NavbarProps) {
                 'text-sm tracking-wide transition-opacity hover:opacity-100',
                 pathname.includes(item.href)
                   ? 'opacity-100'
-                  : 'opacity-50'
+                  : 'opacity-70'
               )}
             >
               {item.label}
