@@ -25,8 +25,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="font-mono text-sm text-[var(--muted)]">Loading...</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0A0A0F' }}>
+        <p style={{ fontFamily: 'monospace', fontSize: '13px', color: '#707080' }}>Loading...</p>
       </div>
     )
   }
@@ -34,17 +34,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (!authenticated) return null
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div style={{ minHeight: '100vh', backgroundColor: '#0A0A0F' }}>
       {/* Admin Header */}
-      <header className="border-b border-[var(--border)] bg-[var(--surface)]">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <span className="font-serif text-xl font-medium">Admin</span>
-            <nav className="flex items-center gap-6 text-sm font-mono">
-              <Link href="/admin" className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
+      <header style={{ borderBottom: '1px solid #1E1E2E', backgroundColor: '#1E1E2E' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+            <span style={{ fontFamily: 'serif', fontSize: '20px', fontWeight: 500, color: '#E8E8EC' }}>Admin</span>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+              <Link href="/admin" style={{ fontSize: '13px', fontFamily: 'monospace', color: '#707080', textDecoration: 'none' }}>
                 Posts
               </Link>
-              <Link href="/admin/new" className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
+              <Link href="/admin/new" style={{ fontSize: '13px', fontFamily: 'monospace', color: '#707080', textDecoration: 'none' }}>
                 New Post
               </Link>
             </nav>
@@ -54,7 +54,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               sessionStorage.removeItem('admin_auth')
               router.push('/admin/login')
             }}
-            className="text-xs font-mono text-[var(--muted)] hover:text-red-400 transition-colors"
+            style={{
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              color: '#707080',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
           >
             Sign Out
           </button>
@@ -62,7 +69,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </header>
 
       {/* Content */}
-      <main className="max-w-5xl mx-auto px-6 py-10">
+      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '40px 24px' }}>
         {children}
       </main>
     </div>
