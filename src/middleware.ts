@@ -1,12 +1,11 @@
 import createMiddleware from 'next-intl/middleware'
-import { locales, defaultLocale } from '@/i18n/config'
 
 export default createMiddleware({
-  locales,
-  defaultLocale,
+  locales: ['ja', 'zh', 'en'],
+  defaultLocale: 'ja',
   localePrefix: 'always',
 })
 
 export const config = {
-  matcher: ['/', '/(ja|zh|en)/:path*'],
+  matcher: ['/', '/(ja|zh|en)/:path*', '/admin/:path*'],
 }

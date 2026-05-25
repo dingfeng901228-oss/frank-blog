@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next'
-import withNextIntl from 'next-intl/plugin'
+import {routing} from './src/i18n/routing'
+import {defineRouting} from 'next-intl/routing'
+import createMiddleware from 'next-intl/middleware'
 
 const nextConfig: NextConfig = {
   output: 'export',
@@ -8,5 +10,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-const withIntl = withNextIntl('./src/i18n/request.ts')
-export default withIntl(nextConfig)
+export default nextConfig

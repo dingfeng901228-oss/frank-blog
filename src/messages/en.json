@@ -1,0 +1,12 @@
+{
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "notes": "Notes",
+    "tags": "Tags",
+    "about": "About"
+  },
+  "home": {
+    "tagline": "Thoughts, code, and quiet observations"
+  }
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Frank Ding - EN</title>
+    <link>https://blog.frank2025.com/en</link>
+    <description>Thoughts, code, and quiet observations.</description>
+    <language>en-EN</language>
+    <atom:link href="https://blog.frank2025.com/en/rss.xml" rel="self" type="application/rss+xml"/>
+    
+    <item>
+      <title><![CDATA[一个 AI 是怎么把博客从 404 修到上线的]]></title>
+      <link>https://blog.frank2025.com/en/blog/ai-fixed-blog</link>
+      <description><![CDATA[从早上 8 点到晚上 8 点，一个 AI 帮 Frank 修了一个 Next.js 博客。中间踩了差不多 20 个坑。]]></description>
+      <pubDate>Mon, 25 May 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/en/blog/ai-fixed-blog</guid>
+      <category>AI</category>
+      <category>Next.js</category>
+      <category>Debug</category>
+      <category>Tech</category>
+    </item>
+    <item>
+      <title><![CDATA[On Building Tools That Respect Your Attention]]></title>
+      <link>https://blog.frank2025.com/en/blog/tools-that-respect-attention</link>
+      <description><![CDATA[Why most productivity tools fail, and what makes a tool worth returning to]]></description>
+      <pubDate>Fri, 15 May 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/en/blog/tools-that-respect-attention</guid>
+      <category>AI</category>
+      <category>Notes</category>
+    </item>
+  </channel>
+</rss>

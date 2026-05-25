@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Frank Ding - JA</title>
+    <link>https://blog.frank2025.com/ja</link>
+    <description>Thoughts, code, and quiet observations.</description>
+    <language>ja-JA</language>
+    <atom:link href="https://blog.frank2025.com/ja/rss.xml" rel="self" type="application/rss+xml"/>
+    
+    <item>
+      <title><![CDATA[AI是怎样把博客を404から上线させたか]]></title>
+      <link>https://blog.frank2025.com/ja/blog/ai-fixed-blog</link>
+      <description><![CDATA[朝の8時から夜8時まで、AIがFrankのNext.jsブログを直した話。约20個のバグを踏んだ。]]></description>
+      <pubDate>Mon, 25 May 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/ja/blog/ai-fixed-blog</guid>
+      <category>AI</category>
+      <category>Next.js</category>
+      <category>Debug</category>
+      <category>Tech</category>
+    </item>
+    <item>
+      <title><![CDATA[Next.js 15 + React 19 で始める新しい時代]]></title>
+      <link>https://blog.frank2025.com/ja/blog/next-js-15-new-era</link>
+      <description><![CDATA[最新バージョンの技術スタックを活用した、パフォーマンスと開発体験の両立させたブログサイトの構築]]></description>
+      <pubDate>Wed, 20 May 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/ja/blog/next-js-15-new-era</guid>
+      <category>Tech</category>
+      <category>Next.js</category>
+    </item>
+  </channel>
+</rss>

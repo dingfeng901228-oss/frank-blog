@@ -1,0 +1,12 @@
+{
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "notes": "Notes",
+    "tags": "Tags",
+    "about": "About"
+  },
+  "home": {
+    "tagline": "静かに観察し思索する"
+  }
+}
