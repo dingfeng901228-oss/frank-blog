@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
   },
   icons: {
-    icon: '/feng_favicon.svg',
+    icon: '/favicon.ico',
   },
   robots: {
     index: true,
