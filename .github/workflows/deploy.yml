@@ -31,11 +31,11 @@ jobs:
       - name: Copy index.html
         run: cp out/ja.html out/index.html
 
-      - name: Copy admin pages
-        run: cp -r public/admin out/admin
-
-      - name: Copy Cloudflare Functions
-        run: cp -r functions out/functions
+      - name: Copy admin & functions
+        run: |
+          mkdir -p out/functions out/admin
+          cp -r functions out/
+          cp -r public/admin out/
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
