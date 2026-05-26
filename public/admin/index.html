@@ -83,7 +83,7 @@
             html += '<div class="post-meta">' + f.name + ' · ' + new Date(f.updated_at).toLocaleDateString() + '</div></div>';
             html += '<div class="post-actions">';
             html += '<a href="/admin/edit.html?lang=' + lang + '&slug=' + slug + '" class="btn btn-secondary">Edit</a>';
-            html += '<button class="btn btn-danger" onclick="deletePost('' + lang + '', '' + slug + '')">Delete</button>';
+            html += '<button class="btn btn-danger" onclick="deletePost(\'' + lang + '\', \'' + slug + '\')">Delete</button>';
             html += '</div></div>';
           });
           html += '</div>';
