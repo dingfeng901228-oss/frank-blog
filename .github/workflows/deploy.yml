@@ -34,6 +34,9 @@ jobs:
       - name: Copy admin pages
         run: cp -r public/admin out/admin
 
+      - name: Copy Cloudflare Functions
+        run: cp -r functions out/functions
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
