@@ -1,0 +1,127 @@
+let fs = require('fs');
+
+let indexHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - frank-blog</title>
+  <meta name="robots" content="noindex">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; background-color: #0A0A0F; color: #E8E8EC; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 48px; border-bottom: 1px solid #1E1E2E; padding-bottom: 24px; }
+    .header h1 { font-size: 24px; font-weight: 500; font-family: Georgia, serif; }
+    .logout { background: none; border: none; color: #707080; cursor: pointer; font-size: 12px; font-family: inherit; }
+    .logout:hover { color: #E8E8EC; }
+    .lang-tabs { display: flex; gap: 4px; margin-bottom: 32px; }
+    .lang-tab { padding: 6px 16px; background: #1E1E2E; border: none; border-radius: 6px; color: #707080; cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.15s; }
+    .lang-tab.active { background: #00D4C8; color: #0A0A0F; font-weight: 500; }
+    .lang-tab:hover:not(.active) { color: #E8E8EC; }
+    .section-title { font-size: 11px; color: #707080; letter-spacing: 0.1em; margin-bottom: 16px; text-transform: uppercase; }
+    .post-list { display: flex; flex-direction: column; gap: 2px; }
+    .post-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #111119; border-radius: 8px; transition: background 0.1s; }
+    .post-item:hover { background: #1A1A24; }
+    .post-info { flex: 1; min-width: 0; }
+    .post-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .post-meta { font-size: 11px; color: #707080; }
+    .post-actions { display: flex; gap: 8px; margin-left: 16px; }
+    .btn { padding: 6px 14px; border-radius: 6px; font-size: 11px; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; text-decoration: none; display: inline-block; }
+    .btn:hover { opacity: 0.8; }
+    .btn-primary { background: #00D4C8; color: #0A0A0F; font-weight: 500; }
+    .btn-danger { background: #3a1a1a; color: #ef4444; }
+    .btn-secondary { background: #1E1E2E; color: #E8E8EC; }
+    .new-btn { display: inline-block; margin-bottom: 24px; }
+    .empty { text-align: center; padding: 64px; color: #707080; font-size: 13px; }
+    .loading { text-align: center; padding: 64px; color: #707080; font-size: 13px; }
+    .error-msg { background: #2a1a1a; color: #ef4444; padding: 12px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 24px; }
+    .success-msg { background: #1a2a1a; color: #22c55e; padding: 12px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Admin</h1>
+      <button class="logout" id="logoutBtn">Sign Out</button>
+    </div>
+    <div id="errorBox"></div>
+    <div id="mainContent"><div class="loading">Loading...</div></div>
+  </div>
+  <script>
+    var REPO = 'dingfeng901228-oss/frank-blog';
+    var BRANCH = 'master';
+    var CURRENT_LANG = 'zh';
+
+    function checkAuth() {
+      if (sessionStorage.getItem('ad') !== '1') location.href = '/admin/login.html';
+    }
+    function apiUrl(path) { return '/api/github?path=' + REPO + '/' + path; }
+    function renderError(msg) { document.getElementById('errorBox').innerHTML = '<div class="error-msg">' + msg + '</div>'; }
+    function renderSuccess(msg) { document.getElementById('errorBox').innerHTML = '<div class="success-msg">' + msg + '</div>'; }
+    function clearMsg() { document.getElementById('errorBox').innerHTML = ''; }
+
+    function loadPosts(lang) {
+      clearMsg();
+      CURRENT_LANG = lang;
+      document.getElementById('mainContent').innerHTML = '<div class="loading">Loading posts...</div>';
+      fetch(apiUrl('contents/src/content/' + lang + '/posts?ref=' + BRANCH))
+        .then(function(r) { if (!r.ok) throw new Error('Failed to load posts'); return r.json(); })
+        .then(function(files) {
+          if (!Array.isArray(files)) throw new Error('Unexpected response');
+          var posts = files.filter(function(f) { return f.name.endsWith('.mdx') || f.name.endsWith('.md'); });
+          if (posts.length === 0) {
+            document.getElementById('mainContent').innerHTML =
+              '<a href="/admin/new.html?lang=' + lang + '" class="btn btn-primary new-btn">+ New Post</a>' +
+              '<p class="section-title">Posts (0)</p><div class="empty">No posts yet.</div>';
+            return;
+          }
+          var html = '<a href="/admin/new.html?lang=' + lang + '" class="btn btn-primary new-btn">+ New Post</a>';
+          html += '<p class="section-title">Posts (' + posts.length + ')</p><div class="post-list">';
+          posts.forEach(function(f) {
+            var slug = f.name.replace(/\\.(mdx|md)$/, '');
+            html += '<div class="post-item">';
+            html += '<div class="post-info"><div class="post-title">' + slug + '</div>';
+            html += '<div class="post-meta">' + f.name + ' · ' + new Date(f.updated_at).toLocaleDateString() + '</div></div>';
+            html += '<div class="post-actions">';
+            html += '<a href="/admin/edit.html?lang=' + lang + '&slug=' + slug + '" class="btn btn-secondary">Edit</a>';
+            html += '<button class="btn btn-danger" onclick="deletePost(\'' + lang + '\', \'' + slug + '\')">Delete</button>';
+            html += '</div></div>';
+          });
+          html += '</div>';
+          document.getElementById('mainContent').innerHTML = html;
+        })
+        .catch(function(err) { document.getElementById('mainContent').innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>'; });
+    }
+
+    function deletePost(lang, slug) {
+      if (!confirm('Delete post "' + slug + '"? This cannot be undone.')) return;
+      fetch(apiUrl('contents/src/content/' + lang + '/posts/' + slug + '.mdx?ref=' + BRANCH))
+        .then(function(r) { return r.json(); })
+        .then(function(file) {
+          return fetch(apiUrl('contents/src/content/' + lang + '/posts/' + slug + '.mdx'), {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: 'Delete post: ' + slug, sha: file.sha, branch: BRANCH })
+          });
+        })
+        .then(function(r) {
+          if (!r.ok) throw new Error('Delete failed');
+          loadPosts(lang);
+        })
+        .catch(function(err) { renderError('Delete failed: ' + err.message); });
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      sessionStorage.removeItem('ad');
+      location.href = '/admin/login.html';
+    });
+
+    checkAuth();
+    loadPosts(CURRENT_LANG);
+  </script>
+</body>
+</html>`;
+
+fs.writeFileSync('public/admin/index.html', indexHtml);
+console.log('wrote index.html');

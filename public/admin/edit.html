@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Post - frank-blog</title>
+  <meta name="robots" content="noindex">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; background-color: #0A0A0F; color: #E8E8EC; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; border-bottom: 1px solid #1E1E2E; padding-bottom: 20px; }
+    .header h1 { font-size: 20px; font-weight: 500; font-family: Georgia, serif; }
+    .back { color: #707080; text-decoration: none; font-size: 12px; margin-right: 16px; }
+    .back:hover { color: #E8E8EC; }
+    .btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; text-decoration: none; display: inline-block; }
+    .btn:hover { opacity: 0.8; }
+    .btn-primary { background: #00D4C8; color: #0A0A0F; font-weight: 500; }
+    .btn-secondary { background: #1E1E2E; color: #E8E8EC; }
+    .btn-danger { background: #3a1a1a; color: #ef4444; }
+    .error-msg { background: #2a1a1a; color: #ef4444; padding: 12px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 24px; }
+    .success-msg { background: #1a2a1a; color: #22c55e; padding: 12px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 24px; }
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 11px; color: #707080; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .field input, .field select { width: 100%; padding: 10px 14px; background: #111119; border: 1px solid #1E1E2E; border-radius: 8px; font-size: 13px; color: #E8E8EC; font-family: inherit; outline: none; }
+    .field input:focus, .field select:focus { border-color: #00D4C8; }
+    .field small { display: block; margin-top: 6px; color: #707080; font-size: 11px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .editor-field { margin-bottom: 20px; }
+    .editor-field label { display: block; font-size: 11px; color: #707080; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .toolbar { display: flex; gap: 4px; padding: 8px; background: #111119; border: 1px solid #1E1E2E; border-bottom: none; border-radius: 8px 8px 0 0; }
+    .toolbar button { padding: 5px 10px; background: #1E1E2E; border: none; border-radius: 4px; color: #707080; cursor: pointer; font-size: 11px; font-family: inherit; }
+    .toolbar button:hover { color: #E8E8EC; }
+    textarea { width: 100%; min-height: 400px; padding: 14px; background: #111119; border: 1px solid #1E1E2E; border-radius: 0 0 8px 8px; font-size: 13px; color: #E8E8EC; font-family: 'SF Mono', Consolas, monospace; line-height: 1.7; resize: vertical; outline: none; }
+    textarea:focus { border-color: #00D4C8; }
+    .actions { display: flex; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #1E1E2E; }
+    .loading { text-align: center; padding: 64px; color: #707080; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div style="display:flex;align-items:center;">
+        <a href="/admin/" class="back">← Admin</a>
+        <h1 id="pageTitle">Edit Post</h1>
+      </div>
+    </div>
+    <div id="msgBox"></div>
+
+    <div class="field">
+      <label>Language</label>
+      <select id="lang">
+        <option value="zh">中文</option>
+        <option value="ja">日本語</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label>Slug (URL path)</label>
+        <input type="text" id="slug" placeholder="my-awesome-post" />
+        <small>Only lowercase letters, numbers, and hyphens</small>
+      </div>
+      <div class="field">
+        <label>Published Date</label>
+        <input type="date" id="date" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="title" placeholder="My Awesome Post" />
+    </div>
+
+    <div class="field">
+      <label>Description / Excerpt</label>
+      <input type="text" id="description" placeholder="A brief description of the post" />
+    </div>
+
+    <div class="field">
+      <label>Tags (comma separated)</label>
+      <input type="text" id="tags" placeholder="AI, Tech, Japan" />
+    </div>
+
+    <div class="editor-field">
+      <label>Content (MDX)</label>
+      <div class="toolbar">
+        <button onclick="insertMd('## ')">H2</button>
+        <button onclick="insertMd('### ')">H3</button>
+        <button onclick="insertMd('**', '**')">Bold</button>
+        <button onclick="insertMd('\`', '\`')">Code</button>
+        <button onclick="insertMd('\n```\n', '\n```')">Block</button>
+        <button onclick="insertMd('- ')">List</button>
+        <button onclick="insertMd('\n> ', '')">Quote</button>
+      </div>
+      <textarea id="content" placeholder="Write your post content in MDX format..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="saveBtn">Save Post</button>
+      <button class="btn btn-danger" id="deleteBtn" style="display:none;">Delete</button>
+    </div>
+  </div>
+
+  <script>
+    var REPO = 'dingfeng901228-oss/frank-blog';
+    var BRANCH = 'master';
+    var FILE_SHA = null;
+    var IS_NEW = true;
+
+    function getParams() {
+      var params = {};
+      location.search.slice(1).split('&').forEach(function(p) {
+        var parts = p.split('=');
+        params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
+      });
+      return params;
+    }
+
+    function checkAuth() {
+      if (sessionStorage.getItem('ad') !== '1') location.href = '/admin/login.html';
+    }
+
+    function apiUrl(path) { return '/api/github?path=' + REPO + '/' + path; }
+
+    function showMsg(html, type) {
+      document.getElementById('msgBox').innerHTML = '<div class="' + type + '-msg">' + html + '</div>';
+      window.scrollTo(0, 0);
+    }
+
+    function insertMd(before, after) {
+      var ta = document.getElementById('content');
+      var start = ta.selectionStart, end = ta.selectionEnd;
+      var text = ta.value;
+      var sel = text.substring(start, end);
+      ta.value = text.substring(0, start) + before + sel + after + text.substring(end);
+      ta.focus();
+    }
+
+    function buildFrontmatter(title, description, date, tags, content) {
+      var tagsArr = tags.split(',').map(function(t) { return '"' + t.trim() + '"'; }).filter(function(t) { return t !== '""'; });
+      return '---\ntitle: "' + title.replace(/"/g, '\\"') + '"\ndescription: "' + description.replace(/"/g, '\\"') + '"\npublishedAt: "' + date + '"\ntags: [' + tagsArr.join(', ') + ']\nfeatured: false\n---\n\n' + content;
+    }
+
+    function savePost() {
+      var lang = document.getElementById('lang').value;
+      var slug = document.getElementById('slug').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      var title = document.getElementById('title').value.trim();
+      var description = document.getElementById('description').value.trim();
+      var date = document.getElementById('date').value;
+      var tags = document.getElementById('tags').value.trim();
+      var content = document.getElementById('content').value;
+
+      if (!slug || !title || !date || !content) {
+        showMsg('Please fill in all required fields (slug, title, date, content)', 'error');
+        return;
+      }
+
+      var filePath = 'contents/src/content/' + lang + '/posts/' + slug + '.mdx';
+      var fileContent = buildFrontmatter(title, description, date, tags, content);
+      var payload = {
+        message: (IS_NEW ? 'Add' : 'Update') + ' post: ' + slug,
+        content: btoa(unescape(encodeURIComponent(fileContent))),
+        branch: BRANCH
+      };
+      if (FILE_SHA) payload.sha = FILE_SHA;
+
+      document.getElementById('saveBtn').disabled = true;
+      document.getElementById('saveBtn').textContent = 'Saving...';
+
+      fetch(apiUrl(filePath), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function(r) { if (!r.ok) throw new Error('Save failed (status ' + r.status + ')'); return r.json(); })
+        .then(function(data) {
+          FILE_SHA = data.content.sha;
+          IS_NEW = false;
+          document.getElementById('saveBtn').disabled = false;
+          document.getElementById('saveBtn').textContent = 'Save Post';
+          showMsg('Post saved successfully!', 'success');
+        })
+        .catch(function(err) {
+          document.getElementById('saveBtn').disabled = false;
+          document.getElementById('saveBtn').textContent = 'Save Post';
+          showMsg('Save failed: ' + err.message, 'error');
+        });
+    }
+
+    function loadPost(lang, slug) {
+      fetch(apiUrl('contents/src/content/' + lang + '/posts/' + slug + '.mdx?ref=' + BRANCH))
+        .then(function(r) { if (!r.ok) throw new Error('Load failed'); return r.json(); })
+        .then(function(file) {
+          var content = decodeURIComponent(escape(atob(file.content)));
+          FILE_SHA = file.sha;
+          IS_NEW = false;
+          var match = content.match(/^---\n([\s\S]*?)\n---\n/);
+          if (match) {
+            var fm = match[1];
+            var body = content.slice(match[0].length);
+            var get = function(key) {
+              var m = fm.match(new RegExp('^' + key + ':\\s*["\']?(.+?)["\']?\\s*$', 'm'));
+              return m ? m[1] : '';
+            };
+            document.getElementById('slug').value = slug;
+            document.getElementById('title').value = get('title');
+            document.getElementById('description').value = get('description');
+            document.getElementById('date').value = get('publishedAt');
+            document.getElementById('tags').value = get('tags').replace(/[\[\]']/g, '').split(',').map(function(t) { return t.trim(); }).join(', ');
+            document.getElementById('content').value = body;
+          }
+          document.getElementById('deleteBtn').style.display = 'inline-block';
+          document.getElementById('pageTitle').textContent = 'Edit: ' + slug;
+        })
+        .catch(function() { showMsg('Failed to load post', 'error'); });
+    }
+
+    function deletePost() {
+      var lang = document.getElementById('lang').value;
+      var slug = document.getElementById('slug').value;
+      if (!confirm('Delete "' + slug + '"? This cannot be undone.')) return;
+      fetch(apiUrl('contents/src/content/' + lang + '/posts/' + slug + '.mdx?ref=' + BRANCH))
+        .then(function(r) { return r.json(); })
+        .then(function(file) {
+          return fetch(apiUrl('contents/src/content/' + lang + '/posts/' + slug + '.mdx'), {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: 'Delete post: ' + slug, sha: file.sha, branch: BRANCH })
+          });
+        })
+        .then(function(r) {
+          if (!r.ok) throw new Error('Delete failed');
+          location.href = '/admin/';
+        })
+        .catch(function(err) { showMsg('Delete failed: ' + err.message, 'error'); });
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', savePost);
+    document.getElementById('deleteBtn').addEventListener('click', deletePost);
+
+    var params = getParams();
+    if (params.lang) document.getElementById('lang').value = params.lang;
+    if (params.slug) {
+      loadPost(params.lang || 'zh', params.slug);
+    } else {
+      document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>

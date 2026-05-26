@@ -31,6 +31,9 @@ jobs:
       - name: Copy index.html
         run: cp out/ja.html out/index.html
 
+      - name: Copy admin pages
+        run: cp -r public/admin out/admin
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
