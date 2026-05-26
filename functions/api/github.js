@@ -23,7 +23,7 @@ export async function onRequest({ request, env }) {
   const method = request.method;
   const headers = {
     'Accept': 'application/vnd.github.v3+json',
-    'Authorization': '***' + token,
+    'Authorization': 'Bearer ' + token,
     'User-Agent': 'frank-blog-admin'
   };
 
