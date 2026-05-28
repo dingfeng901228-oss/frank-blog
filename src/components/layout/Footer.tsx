@@ -59,7 +59,7 @@ export default function Footer({ locale }: FooterProps) {
               <Rss size={20} />
             </Link>
             <a
-              href="mailto:frank@frank2025.com"
+              href="mailto:dingfeng901112@gmail.com"
               className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
               aria-label={t.email}
             >

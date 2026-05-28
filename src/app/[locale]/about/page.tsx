@@ -9,21 +9,21 @@ const aboutContent = {
     intro: `Frank Ding / 東京都在住 / エンジニア`,
     description: `このサイトは、静かに観察し思索したことを記録するための場所。日々の技術メモ、AIと自動化の実践、日本での生活、そして人生についての考察を残す。`,
     philosophy: `技術は問題を解決する手段であり、目的ではない。複雑なシステムをシンプルに保ち、読む人にとって価値ある情報だけを届けることを大切にしている。`,
-    contact: 'メール: frank@frank2025.com',
+    contact: 'メール: dingfeng901112@gmail.com',
   },
   zh: {
     title: '关于',
     intro: 'Frank Ding / 东京 / 工程师',
     description: '这个网站是记录安静观察与思考的空间。保留日常技术笔记、AI与自动化实践、日本生活以及人生观察。',
     philosophy: '技术是解决问题的手段，而非目的。我重视保持复杂系统的简洁，只传递对读者有价值的信息。',
-    contact: '邮箱: frank@frank2025.com',
+    contact: '邮箱: dingfeng901112@gmail.com',
   },
   en: {
     title: 'About',
     intro: 'Frank Ding / Tokyo / Engineer',
     description: `This site is a space for quiet observation and thinking. I write about daily tech notes, AI and automation practices, life in Japan, and reflections on life.`,
     philosophy: `Technology is a means to solve problems, not an end in itself. I value keeping complex systems simple and delivering only information that is valuable to the reader.`,
-    contact: 'Email: frank@frank2025.com',
+    contact: 'Email: dingfeng901112@gmail.com',
   },
 }
 
