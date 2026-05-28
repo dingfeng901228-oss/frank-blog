@@ -8,6 +8,15 @@
     <atom:link href="https://blog.frank2025.com/en/rss.xml" rel="self" type="application/rss+xml"/>
     
     <item>
+      <title><![CDATA[Why I Left China for Japan]]></title>
+      <link>https://blog.frank2025.com/en/blog/why-i-left-china-for-japan</link>
+      <description><![CDATA[A few years ago, I read a book that changed my life — 'The Courage to Be Disliked.' There's a line in it I still remember clearly.]]></description>
+      <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/en/blog/why-i-left-china-for-japan</guid>
+      <category>Japan</category>
+      <category>Life</category>
+    </item>
+    <item>
       <title><![CDATA[一个 AI 是怎么把博客从 404 修到上线的]]></title>
       <link>https://blog.frank2025.com/en/blog/ai-fixed-blog</link>
       <description><![CDATA[从早上 8 点到晚上 8 点，一个 AI 帮 Frank 修了一个 Next.js 博客。中间踩了差不多 20 个坑。]]></description>

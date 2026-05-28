@@ -8,6 +8,15 @@
     <atom:link href="https://blog.frank2025.com/ja/rss.xml" rel="self" type="application/rss+xml"/>
     
     <item>
+      <title><![CDATA[なぜ私は中国離れて、日本に来たのか]]></title>
+      <link>https://blog.frank2025.com/ja/blog/why-i-left-china-for-japan</link>
+      <description><![CDATA[数年前、一冊の本を読んだ——《被讨厌的勇气》、中国語では「勇敢に嫌われる勇気」。それは私に深く伝わった。]]></description>
+      <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/ja/blog/why-i-left-china-for-japan</guid>
+      <category>Japan</category>
+      <category>Life</category>
+    </item>
+    <item>
       <title><![CDATA[AI是怎样把博客を404から上线させたか]]></title>
       <link>https://blog.frank2025.com/ja/blog/ai-fixed-blog</link>
       <description><![CDATA[朝の8時から夜8時まで、AIがFrankのNext.jsブログを直した話。约20個のバグを踏んだ。]]></description>
