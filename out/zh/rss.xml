@@ -16,25 +16,5 @@
       <category>Japan</category>
       <category>Life</category>
     </item>
-    <item>
-      <title><![CDATA[一个AI是怎么把博客从404修到上线的]]></title>
-      <link>https://blog.frank2025.com/zh/blog/ai-fixed-blog</link>
-      <description><![CDATA[从早上8点到晚上8点，一个AI帮Frank修了一个Next.js博客。中间踩了差不多20个坑。]]></description>
-      <pubDate>Mon, 25 May 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/zh/blog/ai-fixed-blog</guid>
-      <category>AI</category>
-      <category>Next.js</category>
-      <category>Debug</category>
-      <category>Tech</category>
-    </item>
-    <item>
-      <title><![CDATA[东京一年：生活与技术的平衡]]></title>
-      <link>https://blog.frank2025.com/zh/blog/tokyo-one-year</link>
-      <description><![CDATA[在日本生活一年后，关于工作节奏、文化差异和技术实践的一些观察与思考]]></description>
-      <pubDate>Mon, 18 May 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/zh/blog/tokyo-one-year</guid>
-      <category>Japan</category>
-      <category>Life</category>
-    </item>
   </channel>
 </rss>
