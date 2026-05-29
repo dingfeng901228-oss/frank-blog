@@ -13,10 +13,14 @@
     .header h1 { font-size: 24px; font-weight: 500; font-family: Georgia, serif; }
     .logout { background: none; border: none; color: #707080; cursor: pointer; font-size: 12px; font-family: inherit; }
     .logout:hover { color: #E8E8EC; }
-    .lang-tabs { display: flex; gap: 4px; margin-bottom: 32px; }
-    .lang-tab { padding: 6px 16px; background: #1E1E2E; border: none; border-radius: 6px; color: #707080; cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.15s; }
-    .lang-tab.active { background: #00D4C8; color: #0A0A0F; font-weight: 500; }
-    .lang-tab:hover:not(.active) { color: #E8E8EC; }
+    .top-bar { display: flex; gap: 4px; margin-bottom: 8px; }
+    .top-bar .lang-tab { padding: 6px 16px; background: #1E1E2E; border: none; border-radius: 6px; color: #707080; cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.15s; }
+    .top-bar .lang-tab.active { background: #00D4C8; color: #0A0A0F; font-weight: 500; }
+    .top-bar .lang-tab:hover:not(.active) { color: #E8E8EC; }
+    .type-tabs { display: flex; gap: 4px; margin-bottom: 32px; }
+    .type-tab { padding: 6px 16px; background: #1E1E2E; border: none; border-radius: 6px; color: #707080; cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.15s; }
+    .type-tab.active { background: #7C3AED; color: #fff; font-weight: 500; }
+    .type-tab:hover:not(.active) { color: #E8E8EC; }
     .section-title { font-size: 11px; color: #707080; letter-spacing: 0.1em; margin-bottom: 16px; text-transform: uppercase; }
     .post-list { display: flex; flex-direction: column; gap: 2px; }
     .post-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #111119; border-radius: 8px; transition: background 0.1s; }
@@ -44,12 +48,20 @@
       <button class="logout" id="logoutBtn">Sign Out</button>
     </div>
     <div id="errorBox"></div>
+    <div id="topBar" class="top-bar"></div>
+    <div id="typeTabs" class="type-tabs"></div>
     <div id="mainContent"><div class="loading">Loading...</div></div>
   </div>
   <script>
     var REPO = 'dingfeng901228-oss/frank-blog';
     var BRANCH = 'master';
     var CURRENT_LANG = 'zh';
+    var CURRENT_TYPE = 'posts';
+
+    var LANG_NAMES = { ja: '日本語', zh: '中文', en: 'English' };
+    var TYPE_NAMES = { posts: '文章', notes: '随笔' };
+    var LANG_KEYS = ['zh', 'ja', 'en'];
+    var TYPE_KEYS = ['posts', 'notes'];
 
     function checkAuth() {
       if (sessionStorage.getItem('ad') !== '1') location.href = '/admin/login.html';
@@ -59,31 +71,43 @@
     function renderSuccess(msg) { document.getElementById('errorBox').innerHTML = '<div class="success-msg">' + msg + '</div>'; }
     function clearMsg() { document.getElementById('errorBox').innerHTML = ''; }
 
-    function loadPosts(lang) {
+    function buildTabs(id, keys, labels, current, activeCls, onClick) {
+      var el = document.getElementById(id);
+      var html = '';
+      keys.forEach(function(k) {
+        var label = labels[k] || k;
+        var cls = k === current ? activeCls + ' active' : '';
+        html += '<button class="' + cls + '" onclick="' + onClick + '(\'' + k + '\')">' + label + '</button>';
+      });
+      el.innerHTML = html;
+    }
+
+    function loadContent() {
       clearMsg();
-      CURRENT_LANG = lang;
-      document.getElementById('mainContent').innerHTML = '<div class="loading">Loading posts...</div>';
-      fetch(apiUrl('contents/src/content/' + lang + '/posts?ref=' + BRANCH))
-        .then(function(r) { if (!r.ok) throw new Error('Failed to load posts'); return r.json(); })
+      var typeLabel = TYPE_NAMES[CURRENT_TYPE] || CURRENT_TYPE;
+      var newUrl = '/admin/new.html?lang=' + CURRENT_LANG + '&type=' + CURRENT_TYPE;
+      document.getElementById('mainContent').innerHTML = '<div class="loading">Loading ' + typeLabel + '...</div>';
+      fetch(apiUrl('contents/src/content/' + CURRENT_LANG + '/' + CURRENT_TYPE + '?ref=' + BRANCH))
+        .then(function(r) { if (!r.ok) throw new Error('Failed to load ' + CURRENT_TYPE); return r.json(); })
         .then(function(files) {
           if (!Array.isArray(files)) throw new Error('Unexpected response');
           var posts = files.filter(function(f) { return f.name.endsWith('.mdx') || f.name.endsWith('.md'); });
           if (posts.length === 0) {
             document.getElementById('mainContent').innerHTML =
-              '<a href="/admin/new.html?lang=' + lang + '" class="btn btn-primary new-btn">+ New Post</a>' +
-              '<p class="section-title">Posts (0)</p><div class="empty">No posts yet.</div>';
+              '<a href="' + newUrl + '" class="btn btn-primary new-btn">+ New ' + typeLabel + '</a>' +
+              '<p class="section-title">' + typeLabel + ' (0)</p><div class="empty">No ' + CURRENT_TYPE + ' yet.</div>';
             return;
           }
-          var html = '<a href="/admin/new.html?lang=' + lang + '" class="btn btn-primary new-btn">+ New Post</a>';
-          html += '<p class="section-title">Posts (' + posts.length + ')</p><div class="post-list">';
+          var html = '<a href="' + newUrl + '" class="btn btn-primary new-btn">+ New ' + typeLabel + '</a>';
+          html += '<p class="section-title">' + typeLabel + ' (' + posts.length + ')</p><div class="post-list">';
           posts.forEach(function(f) {
             var slug = f.name.replace(/\.(mdx|md)$/, '');
             html += '<div class="post-item">';
             html += '<div class="post-info"><div class="post-title">' + slug + '</div>';
             html += '<div class="post-meta">' + f.name + ' · ' + new Date(f.updated_at).toLocaleDateString() + '</div></div>';
             html += '<div class="post-actions">';
-            html += '<a href="/admin/edit.html?lang=' + lang + '&slug=' + slug + '" class="btn btn-secondary">Edit</a>';
-            html += '<button class="btn btn-danger" onclick="deletePost(\'' + lang + '\', \'' + slug + '\')">Delete</button>';
+            html += '<a href="/admin/edit.html?lang=' + CURRENT_LANG + '&slug=' + slug + '&type=' + CURRENT_TYPE + '" class="btn btn-secondary">Edit</a>';
+            html += '<button class="btn btn-danger" onclick="deletePost(\'' + CURRENT_LANG + '\', \'' + slug + '\', \'' + CURRENT_TYPE + '\')">Delete</button>';
             html += '</div></div>';
           });
           html += '</div>';
@@ -92,25 +116,36 @@
         .catch(function(err) { document.getElementById('mainContent').innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>'; });
     }
 
-    function deletePost(lang, slug) {
+    function switchLang(lang) {
+      CURRENT_LANG = lang;
+      buildTabs('topBar', LANG_KEYS, LANG_NAMES, CURRENT_LANG, 'lang-tab', 'switchLang');
+      loadContent();
+    }
+    function switchType(type) {
+      CURRENT_TYPE = type;
+      buildTabs('typeTabs', TYPE_KEYS, TYPE_NAMES, CURRENT_TYPE, 'type-tab', 'switchType');
+      loadContent();
+    }
+
+    function deletePost(lang, slug, type) {
       if (!confirm('Delete "' + slug + '" from all languages (ja/zh/en)? This cannot be undone.')) return;
       renderSuccess('Deleting from all languages...');
       var langs = ['ja', 'zh', 'en'];
       Promise.all(langs.map(function(l) {
-        return fetch(apiUrl('contents/src/content/' + l + '/posts/' + slug + '.mdx?ref=' + BRANCH))
+        return fetch(apiUrl('contents/src/content/' + l + '/' + type + '/' + slug + '.mdx?ref=' + BRANCH))
           .then(function(r) { return r.ok ? r.json() : null; })
           .then(function(file) {
             if (!file || !file.sha) return Promise.resolve();
-            return fetch(apiUrl('contents/src/content/' + l + '/posts/' + slug + '.mdx'), {
+            return fetch(apiUrl('contents/src/content/' + l + '/' + type + '/' + slug + '.mdx'), {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: 'Delete post: ' + slug + ' (' + l + ')', sha: file.sha, branch: BRANCH })
+              body: JSON.stringify({ message: 'Delete ' + type + ': ' + slug + ' (' + l + ')', sha: file.sha, branch: BRANCH })
             });
           })
           .catch(function() { return Promise.resolve(); });
       })).then(function() {
         renderSuccess('Deleted from all languages.');
-        setTimeout(function() { loadPosts(CURRENT_LANG); }, 1500);
+        setTimeout(function() { loadContent(); }, 1500);
       });
     }
 
@@ -120,7 +155,9 @@
     });
 
     checkAuth();
-    loadPosts(CURRENT_LANG);
+    buildTabs('topBar', LANG_KEYS, LANG_NAMES, CURRENT_LANG, 'lang-tab', 'switchLang');
+    buildTabs('typeTabs', TYPE_KEYS, TYPE_NAMES, CURRENT_TYPE, 'type-tab', 'switchType');
+    loadContent();
   </script>
 </body>
 </html>

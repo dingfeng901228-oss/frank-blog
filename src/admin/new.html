@@ -39,7 +39,7 @@
     <div class="header">
       <div style="display:flex;align-items:center;">
         <a href="/admin/" class="back">← Admin</a>
-        <h1>New Post</h1>
+        <h1 id="pageTitle">New Post</h1>
       </div>
     </div>
     <div id="msgBox"></div>
@@ -131,11 +131,12 @@
       var date = document.getElementById('date').value;
       var tags = document.getElementById('tags').value.trim();
       var content = document.getElementById('content').value;
+      var type = CURRENT_TYPE || 'posts';
       if (!slug || !title || !date || !content) {
         showMsg('Please fill in all required fields (slug, title, date, content)', 'error');
         return;
       }
-      var filePath = 'contents/src/content/' + lang + '/posts/' + slug + '.mdx';
+      var filePath = 'contents/src/content/' + lang + '/' + type + '/' + slug + '.mdx';
       var fileContent = buildFrontmatter(title, description, date, tags, content);
       document.getElementById('saveBtn').disabled = true;
       document.getElementById('saveBtn').textContent = 'Creating...';
@@ -143,7 +144,7 @@
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: 'Add post: ' + slug,
+          message: 'Add ' + type + ': ' + slug,
           content: btoa(unescape(encodeURIComponent(fileContent))),
           branch: BRANCH
         })
@@ -151,18 +152,17 @@
         .then(function(r) { if (!r.ok) throw new Error('Create failed (status ' + r.status + ')'); return r.json(); })
         .then(function() {
           document.getElementById('saveBtn').disabled = false;
-          document.getElementById('saveBtn').textContent = 'Create Post';
+          document.getElementById('saveBtn').textContent = 'Create ' + (TYPE_NAMES[CURRENT_TYPE] || 'Post');
           showMsg('Post created! <a href="/admin/" style="color:#00D4C8">Back to admin</a>', 'success');
         })
         .catch(function(err) {
           document.getElementById('saveBtn').disabled = false;
-          document.getElementById('saveBtn').textContent = 'Create Post';
+          document.getElementById('saveBtn').textContent = 'Create ' + (TYPE_NAMES[CURRENT_TYPE] || 'Post');
           showMsg('Create failed: ' + err.message, 'error');
         });
     }
 
-    document.getElementById('saveBtn').addEventListener('click', savePost);
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    var TYPE_NAMES = { posts: 'Post', notes: 'Note' };
 
     var params = {};
     location.search.slice(1).split('&').forEach(function(p) {
@@ -170,6 +170,14 @@
       params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
     });
     if (params.lang) document.getElementById('lang').value = params.lang;
+
+    var CURRENT_TYPE = params.type || 'posts';
+    var typeLabel = TYPE_NAMES[CURRENT_TYPE] || 'Post';
+    document.getElementById('pageTitle').textContent = 'New ' + typeLabel;
+    document.getElementById('saveBtn').textContent = 'Create ' + typeLabel;
+
+    document.getElementById('saveBtn').addEventListener('click', savePost);
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
     checkAuth();
   </script>
