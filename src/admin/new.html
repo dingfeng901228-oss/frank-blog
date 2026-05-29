@@ -6,41 +6,65 @@
   <title>New Post - frank-blog</title>
   <meta name="robots" content="noindex">
   <style>
+    :root {
+      --bg: #0A0A0F;
+      --surface: #111119;
+      --surface-2: #16161f;
+      --border: #1E1E2E;
+      --muted: #707080;
+      --text: #E8E8EC;
+      --accent: #00D4C8;
+      --accent-dark: #00A89D;
+      --purple: #7C3AED;
+      --danger: #ef4444;
+      --radius: 8px;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { min-height: 100vh; background-color: #0A0A0F; color: #E8E8EC; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; -webkit-font-smoothing: antialiased; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; border-bottom: 1px solid #1E1E2E; padding-bottom: 20px; }
-    .header h1 { font-size: 20px; font-weight: 500; font-family: Georgia, serif; }
-    .back { color: #707080; text-decoration: none; font-size: 12px; margin-right: 16px; }
-    .back:hover { color: #E8E8EC; }
-    .btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; text-decoration: none; display: inline-block; }
-    .btn:hover { opacity: 0.8; }
-    .btn-primary { background: #00D4C8; color: #0A0A0F; font-weight: 500; }
-    .error-msg { background: #2a1a1a; color: #ef4444; padding: 12px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 24px; }
-    .success-msg { background: #1a2a1a; color: #22c55e; padding: 12px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 24px; }
-    .field { margin-bottom: 20px; }
-    .field label { display: block; font-size: 11px; color: #707080; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .field input, .field select { width: 100%; padding: 10px 14px; background: #111119; border: 1px solid #1E1E2E; border-radius: 8px; font-size: 13px; color: #E8E8EC; font-family: inherit; outline: none; }
-    .field input:focus, .field select:focus { border-color: #00D4C8; }
-    .field small { display: block; margin-top: 6px; color: #707080; font-size: 11px; }
+    body { min-height: 100vh; background-color: var(--bg); color: var(--text); font-family: 'SF Mono', 'Fira Code', Consolas, monospace; -webkit-font-smoothing: antialiased; line-height: 1.6; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+    .header { display: flex; align-items: center; gap: 16px; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .back { color: var(--muted); text-decoration: none; font-size: 13px; transition: color 0.15s; }
+    .back:hover { color: var(--text); }
+    .header h1 { font-size: 18px; font-weight: 500; font-family: Georgia, serif; }
+    .header h1 span { color: var(--muted); font-family: 'SF Mono', sans-serif; font-size: 12px; font-weight: 400; margin-left: 8px; }
+
+    .field { margin-bottom: 22px; }
+    .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .field input, .field select { width: 100%; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; color: var(--text); font-family: 'SF Mono', Consolas, monospace; outline: none; transition: border-color 0.15s; }
+    .field input:focus, .field select:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); }
+    .field small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .editor-field { margin-bottom: 20px; }
-    .editor-field label { display: block; font-size: 11px; color: #707080; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .toolbar { display: flex; gap: 4px; padding: 8px; background: #111119; border: 1px solid #1E1E2E; border-bottom: none; border-radius: 8px 8px 0 0; }
-    .toolbar button { padding: 5px 10px; background: #1E1E2E; border: none; border-radius: 4px; color: #707080; cursor: pointer; font-size: 11px; font-family: inherit; }
-    .toolbar button:hover { color: #E8E8EC; }
-    textarea { width: 100%; min-height: 400px; padding: 14px; background: #111119; border: 1px solid #1E1E2E; border-radius: 0 0 8px 8px; font-size: 13px; color: #E8E8EC; font-family: 'SF Mono', Consolas, monospace; line-height: 1.7; resize: vertical; outline: none; }
-    textarea:focus { border-color: #00D4C8; }
-    .actions { display: flex; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #1E1E2E; }
+
+    .editor-wrap { margin-bottom: 22px; }
+    .editor-wrap label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .toolbar { display: flex; gap: 4px; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; flex-wrap: wrap; }
+    .toolbar button { padding: 5px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; color: var(--muted); cursor: pointer; font-size: 11px; font-family: 'SF Mono', Consolas, monospace; transition: all 0.12s; }
+    .toolbar button:hover { background: var(--border); color: var(--text); }
+    textarea { width: 100%; min-height: 380px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); font-size: 13px; color: var(--text); font-family: 'SF Mono', Consolas, monospace; line-height: 1.7; resize: vertical; outline: none; transition: border-color 0.15s; }
+    textarea:focus { border-color: var(--accent); }
+
+    .actions { display: flex; gap: 12px; padding-top: 28px; border-top: 1px solid var(--border); margin-top: 28px; }
+    .btn { padding: 10px 20px; border-radius: var(--radius); font-size: 13px; cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--accent); color: #0A0A0F; font-weight: 500; }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .msg { padding: 12px 16px; border-radius: var(--radius); font-size: 12px; margin-bottom: 20px; }
+    .msg a { color: var(--accent); }
+    .msg-error { background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .msg-success { background: rgba(34, 197, 94, 0.08); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
+
+    @media (max-width: 600px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
-      <div style="display:flex;align-items:center;">
-        <a href="/admin/" class="back">← Admin</a>
-        <h1 id="pageTitle">New Post</h1>
-      </div>
+      <a href="/admin/" class="back">← Admin</a>
+      <h1 id="pageTitle">New Post <span id="typeTag"></span></h1>
     </div>
     <div id="msgBox"></div>
 
@@ -77,18 +101,18 @@
 
     <div class="field">
       <label>Tags (comma separated)</label>
-      <input type="text" id="tags" placeholder="AI, Tech, Japan" />
+      <input type="text" id="tags" placeholder="Japan, Life, Tech" />
     </div>
 
-    <div class="editor-field">
+    <div class="editor-wrap">
       <label>Content (MDX)</label>
       <div class="toolbar">
-        <button onclick="insertMd('## ')">H2</button>
-        <button onclick="insertMd('### ')">H3</button>
+        <button onclick="insertMd('## ', '')">H2</button>
+        <button onclick="insertMd('### ', '')">H3</button>
         <button onclick="insertMd('**', '**')">Bold</button>
-        <button onclick="insertMd('\`', '\`')">Code</button>
+        <button onclick="insertMd('`', '`')">Code</button>
         <button onclick="insertMd('\n```\n', '\n```')">Block</button>
-        <button onclick="insertMd('- ')">List</button>
+        <button onclick="insertMd('- ', '')">List</button>
         <button onclick="insertMd('\n> ', '')">Quote</button>
       </div>
       <textarea id="content" placeholder="Write your post content in MDX format..."></textarea>
@@ -102,13 +126,14 @@
   <script>
     var REPO = 'dingfeng901228-oss/frank-blog';
     var BRANCH = 'master';
+    var CURRENT_TYPE = 'posts';
 
     function checkAuth() {
       if (sessionStorage.getItem('ad') !== '1') location.href = '/admin/login.html';
     }
     function apiUrl(path) { return '/api/github?path=' + REPO + '/' + path; }
     function showMsg(html, type) {
-      document.getElementById('msgBox').innerHTML = '<div class="' + type + '-msg">' + html + '</div>';
+      document.getElementById('msgBox').innerHTML = '<div class="msg msg-' + type + '">' + html + '</div>';
       window.scrollTo(0, 0);
     }
     function insertMd(before, after) {
@@ -131,38 +156,35 @@
       var date = document.getElementById('date').value;
       var tags = document.getElementById('tags').value.trim();
       var content = document.getElementById('content').value;
-      var type = CURRENT_TYPE || 'posts';
       if (!slug || !title || !date || !content) {
-        showMsg('Please fill in all required fields (slug, title, date, content)', 'error');
+        showMsg('Please fill in all required fields', 'error');
         return;
       }
-      var filePath = 'contents/src/content/' + lang + '/' + type + '/' + slug + '.mdx';
-      var fileContent = buildFrontmatter(title, description, date, tags, content);
+      var filePath = 'contents/src/content/' + lang + '/' + CURRENT_TYPE + '/' + slug + '.mdx';
+      var typeLabel = CURRENT_TYPE === 'notes' ? '随笔' : '文章';
       document.getElementById('saveBtn').disabled = true;
       document.getElementById('saveBtn').textContent = 'Creating...';
       fetch(apiUrl(filePath), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: 'Add ' + type + ': ' + slug,
-          content: btoa(unescape(encodeURIComponent(fileContent))),
+          message: 'Add ' + CURRENT_TYPE + ': ' + slug,
+          content: btoa(unescape(encodeURIComponent(buildFrontmatter(title, description, date, tags, content)))),
           branch: BRANCH
         })
       })
         .then(function(r) { if (!r.ok) throw new Error('Create failed (status ' + r.status + ')'); return r.json(); })
         .then(function() {
           document.getElementById('saveBtn').disabled = false;
-          document.getElementById('saveBtn').textContent = 'Create ' + (TYPE_NAMES[CURRENT_TYPE] || 'Post');
-          showMsg('Post created! <a href="/admin/" style="color:#00D4C8">Back to admin</a>', 'success');
+          document.getElementById('saveBtn').textContent = 'Create ' + typeLabel;
+          showMsg(typeLabel + ' created! <a href="/admin/">← Back to Admin</a>', 'success');
         })
         .catch(function(err) {
           document.getElementById('saveBtn').disabled = false;
-          document.getElementById('saveBtn').textContent = 'Create ' + (TYPE_NAMES[CURRENT_TYPE] || 'Post');
-          showMsg('Create failed: ' + err.message, 'error');
+          document.getElementById('saveBtn').textContent = 'Create ' + typeLabel;
+          showMsg('Failed: ' + err.message, 'error');
         });
     }
-
-    var TYPE_NAMES = { posts: 'Post', notes: 'Note' };
 
     var params = {};
     location.search.slice(1).split('&').forEach(function(p) {
@@ -170,15 +192,15 @@
       params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
     });
     if (params.lang) document.getElementById('lang').value = params.lang;
-
-    var CURRENT_TYPE = params.type || 'posts';
-    var typeLabel = TYPE_NAMES[CURRENT_TYPE] || 'Post';
-    document.getElementById('pageTitle').textContent = 'New ' + typeLabel;
+    CURRENT_TYPE = params.type || 'posts';
+    var typeLabel = CURRENT_TYPE === 'notes' ? '随笔' : '文章';
+    var typeTag = CURRENT_TYPE === 'notes' ? '[随笔]' : '[文章]';
+    document.getElementById('pageTitle').innerHTML = 'New ' + typeLabel + ' <span>' + typeTag + '</span>';
+    document.getElementById('typeTag').textContent = typeTag;
     document.getElementById('saveBtn').textContent = 'Create ' + typeLabel;
 
     document.getElementById('saveBtn').addEventListener('click', savePost);
     document.getElementById('date').value = new Date().toISOString().split('T')[0];
-
     checkAuth();
   </script>
 </body>
