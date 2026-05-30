@@ -196,7 +196,6 @@
     var typeLabel = CURRENT_TYPE === 'notes' ? '随笔' : '文章';
     var typeTag = CURRENT_TYPE === 'notes' ? '[随笔]' : '[文章]';
     document.getElementById('pageTitle').innerHTML = 'New ' + typeLabel + ' <span>' + typeTag + '</span>';
-    document.getElementById('typeTag').textContent = typeTag;
     document.getElementById('saveBtn').textContent = 'Create ' + typeLabel;
 
     document.getElementById('saveBtn').addEventListener('click', savePost);
