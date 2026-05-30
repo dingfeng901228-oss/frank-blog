@@ -1,7 +1,7 @@
 export async function onRequest({ request, env }) {
-  const token = env.GITHUB_TOKEN;
+  const token = env.GITHUB_TOKEN || env.GH_TOKEN;
   if (!token) {
-    return new Response(JSON.stringify({ error: 'GITHUB_TOKEN not configured' }), {
+    return new Response(JSON.stringify({ error: 'GITHUB_TOKEN/GH_TOKEN not configured' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -60,9 +60,14 @@ export async function onRequest({ request, env }) {
   const fileName = `${ts}-${safeName}`;
   const filePath = `contents/src/images/${fileName}`;
 
-  // Read file as base64
+  // Read file as base64 (safe for large files)
   const arrayBuffer = await file.arrayBuffer();
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
 
   // Check if file already exists (get SHA)
   let sha = null;
@@ -97,10 +102,14 @@ export async function onRequest({ request, env }) {
   });
 
   if (!uploadRes.ok) {
-    const errData = await uploadRes.json();
-    return new Response(JSON.stringify({ error: 'GitHub upload failed: ' + (errData.message || uploadRes.status) }), {
+    let errDetail = uploadRes.status + ' ' + uploadRes.statusText;
+    try {
+      const errData = await uploadRes.json();
+      errDetail += ' — ' + (errData.message || JSON.stringify(errData));
+    } catch (_) {}
+    return new Response(JSON.stringify({ error: 'GitHub upload failed: ' + errDetail }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
   }
 
