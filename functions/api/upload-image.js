@@ -73,7 +73,11 @@ export async function onRequest({ request, env }) {
   let sha = null;
   try {
     const checkRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${filePath}?ref=${BRANCH}`, {
-      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'frank-blog-uploader/1.0'
+      }
     });
     if (checkRes.ok) {
       const checkData = await checkRes.json();
@@ -96,7 +100,8 @@ export async function onRequest({ request, env }) {
     headers: {
       'Authorization': 'Bearer ' + token,
       'Content-Type': 'application/json',
-      'Accept': 'application/vnd.github.v3+json'
+      'Accept': 'application/vnd.github.v3+json',
+      'User-Agent': 'frank-blog-uploader/1.0'
     },
     body: JSON.stringify(payload)
   });
@@ -111,10 +116,19 @@ export async function onRequest({ request, env }) {
     } catch (_) {}
     // DEBUG: log token prefix to help diagnose auth issues
     const tokenPrefix = token ? token.substring(0, 4) + '...' + token.substring(token.length - 4) : 'EMPTY';
+    const respHeaders = Object.fromEntries(uploadRes.headers);
     console.log('[upload-image] GitHub ' + uploadRes.status + ' body=' + errBody + ' token=' + tokenPrefix + ' path=' + filePath);
     return new Response(JSON.stringify({
       error: 'GitHub upload failed: ' + errDetail,
-      debug: { tokenPrefix, filePath, repo: REPO, branch: BRANCH }
+      debug: {
+        tokenPrefix,
+        filePath,
+        repo: REPO,
+        branch: BRANCH,
+        rateLimit: respHeaders['x-ratelimit-remaining'],
+        scopes: respHeaders['x-oauth-scopes'],
+        ghMsg: errBody
+      }
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
