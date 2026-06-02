@@ -5,6 +5,7 @@ import { getAllLocales } from '@/lib/blog'
 import { formatDate } from '@/lib/utils'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import Giscus from '@/components/blog/Giscus'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 
@@ -144,6 +145,15 @@ export default async function NotePage({ params }: PageProps) {
             )}
           </div>
         </nav>
+
+        <section className="mt-20 pt-12 border-t border-[var(--border)]">
+          <h2 className="text-xs font-mono text-[var(--muted)] tracking-widest mb-8">
+            {locale === 'ja' ? 'コメント' : locale === 'zh' ? '评论' : 'Comments'}
+          </h2>
+          {/* Prefix with 'note-' so notes and blog posts can never collide
+              on the same Giscus discussion term, even if slugs match. */}
+          <Giscus term={`note-${slug}`} />
+        </section>
       </main>
 
       <Footer locale={locale as Locale} />
