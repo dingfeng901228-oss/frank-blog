@@ -185,7 +185,13 @@
         });
     }
     function buildFrontmatter(title, description, date, tags, content) {
-      var tagsArr = tags.split(',').map(function(t) { return '"' + t.trim() + '"'; }).filter(function(t) { return t !== '""'; });
+      // Strip any existing double quotes from tag values before re-wrapping,
+      // otherwise repeated saves produce nested quotes like [""Life""] which
+      // breaks YAML parsing on the next build.
+      var tagsArr = tags.split(',')
+        .map(function(t) { return t.trim().replace(/"/g, ''); })
+        .filter(function(t) { return t.length > 0; })
+        .map(function(t) { return '"' + t + '"'; });
       return '---\ntitle: "' + title.replace(/"/g, '\\"') + '"\ndescription: "' + description.replace(/"/g, '\\"') + '"\npublishedAt: "' + date + '"\ntags: [' + tagsArr.join(', ') + ']\nfeatured: false\n---\n\n' + content;
     }
     function savePost() {
