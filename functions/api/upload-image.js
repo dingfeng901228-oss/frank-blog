@@ -103,11 +103,19 @@ export async function onRequest({ request, env }) {
 
   if (!uploadRes.ok) {
     let errDetail = uploadRes.status + ' ' + uploadRes.statusText;
+    let errBody = '';
     try {
       const errData = await uploadRes.json();
       errDetail += ' — ' + (errData.message || JSON.stringify(errData));
+      errBody = JSON.stringify(errData);
     } catch (_) {}
-    return new Response(JSON.stringify({ error: 'GitHub upload failed: ' + errDetail }), {
+    // DEBUG: log token prefix to help diagnose auth issues
+    const tokenPrefix = token ? token.substring(0, 4) + '...' + token.substring(token.length - 4) : 'EMPTY';
+    console.log('[upload-image] GitHub ' + uploadRes.status + ' body=' + errBody + ' token=' + tokenPrefix + ' path=' + filePath);
+    return new Response(JSON.stringify({
+      error: 'GitHub upload failed: ' + errDetail,
+      debug: { tokenPrefix, filePath, repo: REPO, branch: BRANCH }
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
