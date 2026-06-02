@@ -58,7 +58,7 @@ export async function onRequest({ request, env }) {
   const ext = file.name.split('.').pop() || 'jpg';
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/ /g, '_');
   const fileName = `${ts}-${safeName}`;
-  const filePath = `contents/src/images/${fileName}`;
+  const filePath = `public/images/${fileName}`;
 
   // Read file as base64 (safe for large files)
   const arrayBuffer = await file.arrayBuffer();
