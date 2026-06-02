@@ -81,7 +81,12 @@ async function saveFile(path: string, content: string, token: string, sha?: stri
 }
 
 function buildMdx(frontmatter: PostFrontmatter, content: string): string {
-  const tags = frontmatter.tags?.length ? `\ntags: [${frontmatter.tags.map(t => `"${t}"`).join(', ')}]` : ''
+  // Strip any existing double quotes from tag values before re-wrapping,
+  // otherwise repeated saves produce nested quotes like [""Life""] which
+  // breaks YAML parsing on the next build.
+  const tags = frontmatter.tags?.length
+    ? `\ntags: [${frontmatter.tags.map(t => `"${t.replace(/"/g, '')}"`).join(', ')}]`
+    : ''
   return `---
 title: "${frontmatter.title.replace(/"/g, '\\"')}"
 description: "${frontmatter.description.replace(/"/g, '\\"')}"
