@@ -72,6 +72,24 @@ export default async function PostPage({ params }: PageProps) {
     if (para.startsWith('## ')) return <h2 key={i} className="font-serif text-2xl font-medium mt-10 mb-4">{para.slice(3)}</h2>
     if (para.startsWith('# ')) return <h1 key={i} className="font-serif text-3xl font-medium mt-12 mb-6">{para.slice(2)}</h1>
     if (para.startsWith('```')) return <pre key={i} className="bg-[var(--muted)] rounded-lg p-4 my-6 overflow-x-auto text-sm font-mono"><code>{para.replace(/```\w*\n?/g, '')}</code></pre>
+    // Markdown image: ![alt](url) or ![alt](url "title")
+    const imgMatch = para.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/)
+    if (imgMatch) {
+      const [, alt, src, title] = imgMatch
+      const resolvedSrc = src
+      return (
+        <figure key={i} className="my-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={resolvedSrc}
+            alt={alt}
+            title={title}
+            className="rounded-lg w-full h-auto"
+            loading="lazy"
+          />
+        </figure>
+      )
+    }
     return <p key={i} className="my-5">{para}</p>
   })
 
