@@ -67,13 +67,21 @@ export default async function PostPage({ params }: PageProps) {
 
   const nav = navLabels[locale as keyof typeof navLabels]
 
-  const paragraphs = post.content.split('\n\n').filter(p => p.trim())
+  // Split on blank lines. Use /\r?\n\r?\n/ so MDX files saved with
+  // Windows-style CRLF (e.g. admin uploads) split the same way as
+  // LF-only files. Without this, a CRLF file becomes a single mega-
+  // paragraph and the per-para type checks below all fall through
+  // to the <p> branch — which is why zh content with images rendered
+  // as raw `![..](..)` text while ja/en (LF) rendered correctly.
+  const paragraphs = post.content.split(/\r?\n\r?\n/).filter(p => p.trim())
   const renderedContent = paragraphs.map((para, i) => {
     if (para.startsWith('## ')) return <h2 key={i} className="font-serif text-2xl font-medium mt-10 mb-4">{para.slice(3)}</h2>
     if (para.startsWith('# ')) return <h1 key={i} className="font-serif text-3xl font-medium mt-12 mb-6">{para.slice(2)}</h1>
     if (para.startsWith('```')) return <pre key={i} className="bg-[var(--muted)] rounded-lg p-4 my-6 overflow-x-auto text-sm font-mono"><code>{para.replace(/```\w*\n?/g, '')}</code></pre>
     // Markdown image: ![alt](url) or ![alt](url "title")
-    const imgMatch = para.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/)
+    // Allow leading/trailing whitespace so files saved with extra blank
+    // lines (e.g. zh admin saves) still get rendered as <img>.
+    const imgMatch = para.match(/^\s*!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*$/)
     if (imgMatch) {
       const [, alt, src, title] = imgMatch
       const resolvedSrc = src
