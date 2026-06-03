@@ -84,6 +84,9 @@ function buildMdx(frontmatter: PostFrontmatter, content: string): string {
   // Strip any existing double quotes from tag values before re-wrapping,
   // otherwise repeated saves produce nested quotes like [""Life""] which
   // breaks YAML parsing on the next build.
+  // Use \n when writing frontmatter back to disk. We always emit LF
+  // even for files that were originally CRLF — git + Cloudflare Pages
+  // handle both, and mixing them in a single file is the worst case.
   const tags = frontmatter.tags?.length
     ? `\ntags: [${frontmatter.tags.map(t => `"${t.replace(/"/g, '')}"`).join(', ')}]`
     : ''
@@ -136,8 +139,13 @@ export default function PostEditor({ mode, initialLocale = 'ja', initialSlug }: 
       setMessage({ type: 'error', text: `File not found: ${path}` })
       return
     }
-    const frontmatterMatch = fileContent.match(/^---\n([\s\S]*?)\n---/)
-    const contentMatch = fileContent.match(/---\n[\s\S]*?\n---\n([\s\S]*)/)
+    // Normalize CRLF → LF before regex parsing. Admin-saved MDX
+    // files use Windows line endings, and the frontmatter regex
+    // (and the .split('\n') below) would otherwise either fail to
+    // match the `---` fences or leave trailing \r on each line.
+    const normalized = fileContent.replace(/\r\n/g, '\n')
+    const frontmatterMatch = normalized.match(/^---\n([\s\S]*?)\n---/)
+    const contentMatch = normalized.match(/---\n[\s\S]*?\n---\n([\s\S]*)/)
     if (frontmatterMatch) {
       const fm: Record<string, unknown> = {}
       frontmatterMatch[1].split('\n').forEach(line => {
