@@ -1,0 +1,117 @@
+---
+title: "I redesigned the hero section"
+description: "Keep the dark-tech aesthetic, but push readability and visual hierarchy up a notch. Bringing the whitespace discipline of Vercel / Linear / Raycast into a personal blog."
+publishedAt: "2026-06-03"
+tags: ["Tech", "Notes"]
+featured: true
+---
+
+Looking back at the old hero, there is only one word for it: empty.
+
+A title and a tagline stood there alone. "What kind of person writes here?" — that didn't come across in the first line. If a visitor's first reaction is "wait, whose site is this?" the bounce is already locked in.
+
+So the goal this time: **keep the dark-tech vibe, but lift readability and visual hierarchy up one tier**.
+
+## 1. Background: drop pure black, go deep blue + purple-blue gradient
+
+It was `#0A0A0F` (near-pure black). Not bad, but the text "pops out" too hard and the whole frame feels heavy.
+
+The modern way: **the base is dark, but never actually black**. Specifically:
+
+- Base: `#0F1428` (deep blue)
+- Upper half: fades toward `#1A1B3A` (purple-leaning)
+- Centered at the top, a layer of **radial-gradient soft light**
+
+Stacking those three gives the screen real depth. Light has a direction and intensity, and the eye is naturally pulled toward the title.
+
+```css
+background-image:
+  radial-gradient(ellipse 80% 60% at 50% 0%,
+    rgba(139, 92, 246, 0.22) 0%,
+    rgba(59, 130, 246, 0.10) 35%,
+    rgba(15, 20, 40, 0) 70%),
+  radial-gradient(ellipse 60% 50% at 50% 30%,
+    rgba(59, 130, 246, 0.14) 0%,
+    rgba(15, 20, 40, 0) 60%),
+  linear-gradient(180deg, #0F1428 0%, #141937 40%, #0F1428 100%);
+```
+
+Key point: **never use pure black**. Pure black hurts the eyes on LED panels, and anything layered on top looks flat.
+
+## 2. Title: pure white + a faint glow, "the first eye-stop"
+
+The classic dark-mode mistake: setting the title to something like `#E8E8EC` — "white, but not really." On a dark background it looks bright enough — **but it doesn't separate from the rest**.
+
+This time:
+
+- Color: `#FFFFFF` (pure white)
+- Weight: `font-weight: 600-700` (semibold)
+- Tracking: `tracking-tight`
+- Glow: `text-shadow: 0 0 40px rgba(59,130,246,0.25)`
+
+```tsx
+<h1
+  className="font-serif text-5xl md:text-7xl font-semibold tracking-tight mb-6 text-white"
+  style={{
+    textShadow:
+      '0 0 40px rgba(59, 130, 246, 0.25), 0 0 80px rgba(139, 92, 246, 0.12)',
+  }}
+>
+  {hero.title}
+</h1>
+```
+
+The glow is **blue + purple, two layers**. One color reads as "neon sign." Two colors blended softly read as "elegantly luminous." That's exactly what Vercel does in its hero visuals.
+
+## 3. Subtitle: 75% white, "readable but not loud"
+
+The subtitle needs to sit **one notch below** the title. Mind the contrast:
+
+```css
+color: rgba(255, 255, 255, 0.75);
+```
+
+Pure white and the hierarchy breaks — the subtitle starts competing with the title. 75% is the sweet spot: "I can read it when I want to, but it doesn't grab me."
+
+## 4. CTA buttons: primary + secondary, two-tier
+
+To make "what can I do here" obvious in the first second, I lined up **two actions**:
+
+- **Primary: "Read the blog"** → blue gradient (`#3B82F6` → `#6366F1`), hover strengthens the glow and lifts 1px
+- **Secondary: "See what I built"** → glass (translucent + border + backdrop-blur), hover gains a blue border
+
+```css
+.hero-cta-primary {
+  background: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%);
+  box-shadow:
+    0 4px 20px rgba(59, 130, 246, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+.hero-cta-primary:hover {
+  box-shadow:
+    0 8px 32px rgba(59, 130, 246, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+```
+
+The hover `translateY(-1px)` is invisible on paper but actually works. Raycast and Linear both use this "lift" motion — there's a reason.
+
+## 5. Navigation: 78% white, hover turns blue
+
+```css
+.nav-link { color: rgba(255, 255, 255, 0.78); }
+.nav-link:hover { color: #3B82F6; }
+.nav-link[data-active='true'] { color: #FFFFFF; }
+```
+
+Before I was using `opacity-70` to dim things, but **controlling the color directly** is more predictable. The hover blue is the same `#3B82F6` as the primary button — color discipline.
+
+## Closing notes
+
+References: Vercel, Linear, Raycast. **"Dark but not black" / "Light concentrated at one point" / "Pure white only at the most important spot"** — if you hold these three, dark mode stops looking cheap.
+
+The scariest thing in dark UI is **stacking color without thinking, ending up with everything the same weight and a flat screen**. Think in three layers — light, shadow, color. Decide where the eye should land first, then assemble the rest.
+
+If a visitor's **first second** lands them thinking "oh, this person has taste" — that's the win. This redesign is for that one second.

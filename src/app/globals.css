@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+JP:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,11 +6,18 @@
 
 @layer base {
   :root {
-    --background: #0A0A0F;
-    --foreground: #E8E8EC;
-    --accent: #00D4C8;
-    --muted: #707080;
-    --border: #1E1E2E;
+    /* 深蓝 + 紫蓝渐变，亮度较原 #0A0A0F 提升约 25% */
+    --background: #0F1428;
+    --background-2: #1A1B3A;
+    --foreground: #F4F5F9;
+    --foreground-strong: #FFFFFF;
+    --accent: #3B82F6;     /* 科技蓝 */
+    --accent-2: #8B5CF6;   /* 紫蓝 */
+    --accent-soft: rgba(59, 130, 246, 0.18);
+    --muted: #B4B6C5;
+    --muted-2: #8A8DA0;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
     --font-sans: 'Noto Sans JP', sans-serif;
     --font-serif: 'Noto Serif JP', serif;
     --font-mono: 'IBM Plex Mono', monospace;
@@ -21,11 +28,91 @@
   }
 
   body {
-    @apply bg-[var(--background)] text-[var(--foreground)];
+    @apply text-[var(--foreground)];
     font-family: var(--font-sans);
     font-weight: 300;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: var(--background);
+    background-image:
+      radial-gradient(
+        ellipse 80% 60% at 50% 0%,
+        rgba(139, 92, 246, 0.22) 0%,
+        rgba(59, 130, 246, 0.10) 35%,
+        rgba(15, 20, 40, 0) 70%
+      ),
+      radial-gradient(
+        ellipse 60% 50% at 50% 30%,
+        rgba(59, 130, 246, 0.14) 0%,
+        rgba(15, 20, 40, 0) 60%
+      ),
+      linear-gradient(
+        180deg,
+        #0F1428 0%,
+        #141937 40%,
+        #0F1428 100%
+      );
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* 中央光晕 —— Hero 区域专用 */
+  .hero-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 70% 50% at 50% 40%,
+        rgba(59, 130, 246, 0.20) 0%,
+        rgba(139, 92, 246, 0.10) 30%,
+        rgba(15, 20, 40, 0) 65%
+      );
+    z-index: 0;
+  }
+
+  /* Hero 主 CTA 按钮 */
+  .hero-cta-primary {
+    background: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%);
+    box-shadow:
+      0 4px 20px rgba(59, 130, 246, 0.35),
+      0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+    transition: box-shadow 300ms ease, transform 300ms ease, filter 300ms ease;
+  }
+  .hero-cta-primary:hover {
+    box-shadow:
+      0 8px 32px rgba(59, 130, 246, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+  }
+
+  /* Hero 次 CTA 按钮 */
+  .hero-cta-secondary {
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 300ms ease, border-color 300ms ease, color 300ms ease, transform 300ms ease;
+  }
+  .hero-cta-secondary:hover {
+    color: #FFFFFF;
+    background: rgba(59, 130, 246, 0.10);
+    border-color: rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+  }
+
+  /* Navbar 链接 hover 蓝色高亮 */
+  .nav-link {
+    color: rgba(255, 255, 255, 0.78);
+    transition: color 200ms ease;
+  }
+  .nav-link:hover {
+    color: #3B82F6;
+  }
+  .nav-link[data-active='true'] {
+    color: #FFFFFF;
   }
 }
 
