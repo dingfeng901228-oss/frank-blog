@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import Giscus from '@/components/blog/Giscus'
+import Markdown from '@/components/Markdown'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 
@@ -67,39 +68,12 @@ export default async function PostPage({ params }: PageProps) {
 
   const nav = navLabels[locale as keyof typeof navLabels]
 
-  // Split on blank lines. Use /\r?\n\r?\n/ so MDX files saved with
-  // Windows-style CRLF (e.g. admin uploads) split the same way as
-  // LF-only files. Without this, a CRLF file becomes a single mega-
-  // paragraph and the per-para type checks below all fall through
-  // to the <p> branch — which is why zh content with images rendered
-  // as raw `![..](..)` text while ja/en (LF) rendered correctly.
-  const paragraphs = post.content.split(/\r?\n\r?\n/).filter(p => p.trim())
-  const renderedContent = paragraphs.map((para, i) => {
-    if (para.startsWith('## ')) return <h2 key={i} className="font-serif text-2xl font-medium mt-10 mb-4">{para.slice(3)}</h2>
-    if (para.startsWith('# ')) return <h1 key={i} className="font-serif text-3xl font-medium mt-12 mb-6">{para.slice(2)}</h1>
-    if (para.startsWith('```')) return <pre key={i} className="bg-[var(--muted)] rounded-lg p-4 my-6 overflow-x-auto text-sm font-mono"><code>{para.replace(/```\w*\n?/g, '')}</code></pre>
-    // Markdown image: ![alt](url) or ![alt](url "title")
-    // Allow leading/trailing whitespace so files saved with extra blank
-    // lines (e.g. zh admin saves) still get rendered as <img>.
-    const imgMatch = para.match(/^\s*!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*$/)
-    if (imgMatch) {
-      const [, alt, src, title] = imgMatch
-      const resolvedSrc = src
-      return (
-        <figure key={i} className="my-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={resolvedSrc}
-            alt={alt}
-            title={title}
-            className="rounded-lg w-full h-auto"
-            loading="lazy"
-          />
-        </figure>
-      )
-    }
-    return <p key={i} className="my-5">{para}</p>
-  })
+  // Render the post body through <Markdown> (react-markdown). This
+  // replaces the previous hand-rolled regex splitter, which broke on
+  // images sharing a paragraph with surrounding text, on Windows CRLF
+  // line endings, and on any future Markdown construct the regex
+  // didn't anticipate. See src/components/Markdown.tsx for details.
+  const renderedContent = <Markdown>{post.content}</Markdown>
 
   return (
     <div className="min-h-screen">
