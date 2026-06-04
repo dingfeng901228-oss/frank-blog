@@ -48,7 +48,7 @@ const cardContent = {
 const linkHrefs = {
   github: 'https://github.com/dingfeng901228-oss',
   blog: 'https://frankbot.org',
-  resume: 'https://frank2025.com',
+  resume: 'https://cv.frank2025.com/',
 }
 
 const techTags = ['TypeScript', 'Python', 'AI', 'Linux', 'Docker', 'Cloud']
