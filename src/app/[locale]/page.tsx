@@ -82,7 +82,7 @@ export default async function HomePage({ params }: PageProps) {
                   className="text-[10px] uppercase tracking-[0.18em] font-mono"
                   style={{ color: '#3B82F6' }}
                 >
-                  {locale === 'ja' ? 'パースポール' : locale === 'zh' ? '个人简介' : 'Personal'}
+                  {locale === 'ja' ? 'パーソナル' : locale === 'zh' ? '个人简介' : 'Personal'}
                 </span>
               </div>
               <h1
