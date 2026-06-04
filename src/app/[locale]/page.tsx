@@ -68,11 +68,35 @@ export default async function HomePage({ params }: PageProps) {
       <Navbar locale={locale as Locale} />
 
       <main className="mx-auto max-w-5xl px-6 pt-20 pb-16">
-        {/* Hero + Personal Card (side-by-side on lg+, with vertical glow divider) */}
+        {/* Hero + Personal Card (side-by-side on lg+, soft diagonal glow ties them) */}
         <section className="relative py-14 md:py-20 overflow-hidden">
           <div className="hero-glow" />
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_auto_320px] gap-8 lg:gap-12 items-center">
-            <div className="min-w-0">
+
+          {/* Diagonal soft glow tying left and right - "invisible rope" */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(ellipse 60% 80% at 65% 50%, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.05) 30%, transparent 60%)',
+            }}
+          />
+
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 lg:gap-12 items-center">
+            <div className="min-w-0 relative">
+              {/* Dot pattern background to give 'Notes' context, not isolated */}
+              <div
+                className="absolute -inset-x-4 -inset-y-8 -z-10 opacity-[0.07] pointer-events-none rounded-3xl"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px)',
+                  backgroundSize: '20px 20px',
+                  maskImage:
+                    'linear-gradient(135deg, black 0%, transparent 70%)',
+                  WebkitMaskImage:
+                    'linear-gradient(135deg, black 0%, transparent 70%)',
+                }}
+              />
+
               <div className="flex items-center gap-2 mb-4">
                 <span
                   className="h-px w-8"
@@ -126,15 +150,6 @@ export default async function HomePage({ params }: PageProps) {
                 </Link>
               </div>
             </div>
-
-            {/* Vertical glow divider - 涓や晶鐨勮瑙夌粦缁� */}
-            <div
-              className="hidden lg:block w-px h-40 self-center"
-              style={{
-                background:
-                  'linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.35) 50%, transparent 100%)',
-              }}
-            />
 
             <div className="min-w-0">
               <PersonalCard locale={locale} />
