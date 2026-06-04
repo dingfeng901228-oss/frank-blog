@@ -4,6 +4,9 @@ import { getAllNotes } from '@/lib/notes'
 import { formatDate } from '@/lib/utils'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import PersonalCard from '@/components/home/PersonalCard'
+import StatisticsSection from '@/components/home/StatisticsSection'
+import TimelineSection from '@/components/home/TimelineSection'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import type { Post } from '@/lib/types'
@@ -111,6 +114,16 @@ export default async function HomePage({ params }: PageProps) {
               </Link>
             </div>
           </div>
+        </section>
+
+        {/* Personal Card */}
+        <section className="mb-16">
+          <PersonalCard locale={locale} />
+        </section>
+
+        {/* Statistics */}
+        <section className="mb-20">
+          <StatisticsSection locale={locale} />
         </section>
 
         {/* Topics */}
@@ -234,6 +247,11 @@ export default async function HomePage({ params }: PageProps) {
               {locale === 'ja' ? 'すべての随笔 →' : locale === 'zh' ? '查看所有随笔 →' : 'View all notes →'}
             </Link>
           </div>
+        </section>
+
+        {/* Timeline */}
+        <section className="mb-20">
+          <TimelineSection locale={locale} />
         </section>
       </main>
 
