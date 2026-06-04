@@ -5,7 +5,6 @@ import { formatDate } from '@/lib/utils'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PersonalCard from '@/components/home/PersonalCard'
-import StatisticsSection from '@/components/home/StatisticsSection'
 import TimelineSection from '@/components/home/TimelineSection'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
@@ -120,11 +119,6 @@ export default async function HomePage({ params }: PageProps) {
               <PersonalCard locale={locale} />
             </div>
           </div>
-        </section>
-
-        {/* Statistics */}
-        <section className="mb-20">
-          <StatisticsSection locale={locale} />
         </section>
 
         {/* Topics */}
