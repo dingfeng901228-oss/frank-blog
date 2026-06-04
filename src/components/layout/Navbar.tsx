@@ -12,21 +12,18 @@ const navLabels: Record<Locale, { label: string; href: string }[]> = {
     { label: 'ホーム', href: '/' },
     { label: 'ブログ', href: '/blog' },
     { label: 'ノート', href: '/notes' },
-    { label: 'タグ', href: '/tags' },
     { label: '概要', href: '/about' },
   ],
   zh: [
     { label: '首页', href: '/' },
     { label: '博客', href: '/blog' },
     { label: '笔记', href: '/notes' },
-    { label: '标签', href: '/tags' },
     { label: '关于', href: '/about' },
   ],
   en: [
     { label: 'Home', href: '/' },
     { label: 'Blog', href: '/blog' },
     { label: 'Notes', href: '/notes' },
-    { label: 'Tags', href: '/tags' },
     { label: 'About', href: '/about' },
   ],
 }
