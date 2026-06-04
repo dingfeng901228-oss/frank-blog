@@ -23,3 +23,7 @@ npm-debug.log*
 *.swp
 *.swo
 *~
+
+# Cloudflare Pages deploy secrets (local-only, never commit)
+.env.wrangler
+.env*.local
