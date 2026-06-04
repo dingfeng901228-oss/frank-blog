@@ -103,16 +103,39 @@
     transform: translateY(-1px);
   }
 
-  /* Navbar 链接 hover 蓝色高亮 */
+  /* Navbar 鏈接 - 鎻愰珮瀵规瘮搴︼紝active 鐘舵€佸姞涓婅櫄榧氳姃 */
   .nav-link {
-    color: rgba(255, 255, 255, 0.78);
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    position: relative;
+    padding: 0.25rem 0;
     transition: color 200ms ease;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 1px;
+    background: #3B82F6;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 200ms ease;
   }
   .nav-link:hover {
     color: #3B82F6;
   }
+  .nav-link:hover::after {
+    transform: scaleX(1);
+  }
   .nav-link[data-active='true'] {
     color: #FFFFFF;
+  }
+  .nav-link[data-active='true']::after {
+    transform: scaleX(1);
+    background: linear-gradient(90deg, transparent 0%, #3B82F6 50%, transparent 100%);
   }
 }
 

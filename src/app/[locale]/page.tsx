@@ -68,13 +68,25 @@ export default async function HomePage({ params }: PageProps) {
       <Navbar locale={locale as Locale} />
 
       <main className="mx-auto max-w-5xl px-6 pt-20 pb-16">
-        {/* Hero + Personal Card (side-by-side on lg+) */}
-        <section className="relative py-20 md:py-28 overflow-hidden">
+        {/* Hero + Personal Card (side-by-side on lg+, with vertical glow divider) */}
+        <section className="relative py-14 md:py-20 overflow-hidden">
           <div className="hero-glow" />
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10 lg:gap-14 items-start">
-            <div>
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_auto_320px] gap-8 lg:gap-12 items-center">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-4">
+                <span
+                  className="h-px w-8"
+                  style={{ background: 'linear-gradient(90deg, transparent 0%, #3B82F6 100%)' }}
+                />
+                <span
+                  className="text-[10px] uppercase tracking-[0.18em] font-mono"
+                  style={{ color: '#3B82F6' }}
+                >
+                  {locale === 'ja' ? 'パースポール' : locale === 'zh' ? '个人简介' : 'Personal'}
+                </span>
+              </div>
               <h1
-                className="font-serif text-5xl md:text-7xl font-semibold tracking-tight mb-6 text-white"
+                className="font-serif text-5xl md:text-7xl font-semibold tracking-tight mb-5 text-white"
                 style={{
                   textShadow:
                     '0 0 40px rgba(59, 130, 246, 0.25), 0 0 80px rgba(139, 92, 246, 0.12)',
@@ -83,15 +95,15 @@ export default async function HomePage({ params }: PageProps) {
                 {hero.title}
               </h1>
               <p
-                className="text-lg md:text-xl font-light mb-10 max-w-2xl"
-                style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                className="text-base md:text-lg font-light mb-8 max-w-xl leading-relaxed"
+                style={{ color: 'rgba(255, 255, 255, 0.78)' }}
               >
                 {hero.tagline}
               </p>
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href={`/${locale}/blog`}
-                  className="hero-cta-primary group inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium text-sm tracking-wide text-white"
+                  className="hero-cta-primary group inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm tracking-wide text-white"
                 >
                   {locale === 'ja'
                     ? 'ブログを読む'
@@ -104,7 +116,7 @@ export default async function HomePage({ params }: PageProps) {
                 </Link>
                 <Link
                   href={`/${locale}/notes`}
-                  className="hero-cta-secondary inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium text-sm tracking-wide"
+                  className="hero-cta-secondary inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm tracking-wide"
                 >
                   {locale === 'ja'
                     ? '作ったもの'
@@ -115,7 +127,16 @@ export default async function HomePage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="lg:pt-2">
+            {/* Vertical glow divider - 涓や晶鐨勮瑙夌粦缁� */}
+            <div
+              className="hidden lg:block w-px h-40 self-center"
+              style={{
+                background:
+                  'linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.35) 50%, transparent 100%)',
+              }}
+            />
+
+            <div className="min-w-0">
               <PersonalCard locale={locale} />
             </div>
           </div>

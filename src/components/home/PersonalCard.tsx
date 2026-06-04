@@ -1,13 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Github, FileText, BookOpen, MapPin, Code2, Sparkles } from 'lucide-react'
+import { Github, FileText, BookOpen, MapPin, Code2, Sparkles, ArrowUpRight } from 'lucide-react'
 
 const cardContent = {
   ja: {
     name: 'Ding Feng',
     role: 'IT Infrastructure Engineer',
-    sub: 'AI Enthusiast',
     location: 'Tokyo, Japan',
     links: {
       github: 'GitHub',
@@ -16,11 +15,11 @@ const cardContent = {
     },
     status: 'OPEN TO WORK',
     statusSub: 'Tokyo / Remote',
+    aboutLabel: 'About me',
   },
   zh: {
     name: 'Ding Feng',
     role: 'IT 基础设施工程师',
-    sub: 'AI 爱好者',
     location: 'Tokyo, Japan',
     links: {
       github: 'GitHub',
@@ -29,11 +28,11 @@ const cardContent = {
     },
     status: '可工作',
     statusSub: '东京 / 远程',
+    aboutLabel: '关于我',
   },
   en: {
     name: 'Ding Feng',
     role: 'IT Infrastructure Engineer',
-    sub: 'AI Enthusiast',
     location: 'Tokyo, Japan',
     links: {
       github: 'GitHub',
@@ -42,6 +41,7 @@ const cardContent = {
     },
     status: 'OPEN TO WORK',
     statusSub: 'Tokyo / Remote',
+    aboutLabel: 'About me',
   },
 }
 
@@ -51,6 +51,8 @@ const linkHrefs = {
   resume: 'https://frank2025.com',
 }
 
+const techTags = ['TypeScript', 'Python', 'AI', 'Linux', 'Docker', 'Cloud']
+
 export default function PersonalCard({ locale }: { locale: string }) {
   const t = cardContent[locale as keyof typeof cardContent] || cardContent.en
 
@@ -59,13 +61,13 @@ export default function PersonalCard({ locale }: { locale: string }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.5, ease: 'easeOut' }}
-      className="relative w-full max-w-sm mx-auto"
+      className="relative w-full mx-auto lg:mx-0"
     >
       <div
-        className="relative overflow-hidden rounded-2xl p-6"
+        className="relative overflow-hidden rounded-2xl p-5"
         style={{
           background:
-            'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.01) 100%)',
+            'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.008) 100%)',
           border: '1px solid rgba(255,255,255,0.08)',
           backdropFilter: 'blur(10px)',
         }}
@@ -78,7 +80,8 @@ export default function PersonalCard({ locale }: { locale: string }) {
           }}
         />
 
-        <div className="flex items-center justify-between mb-6">
+        {/* Status row */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-1.5">
             <span className="relative flex h-1.5 w-1.5">
               <span
@@ -91,24 +94,25 @@ export default function PersonalCard({ locale }: { locale: string }) {
               />
             </span>
             <span
-              className="text-[10px] uppercase tracking-[0.12em]"
+              className="text-[10px] uppercase tracking-[0.14em]"
               style={{ fontFamily: 'var(--font-mono)', color: '#3B82F6' }}
             >
               {t.status}
             </span>
           </div>
           <span
-            className="text-[10px] uppercase tracking-[0.08em]"
+            className="text-[10px] tracking-wide"
             style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}
           >
             {t.statusSub}
           </span>
         </div>
 
-        <div className="flex items-center gap-4 mb-5">
+        {/* Avatar + name + role + tech tags (moved up here) */}
+        <div className="flex items-center gap-3.5 mb-4">
           <div className="relative flex-shrink-0">
             <div
-              className="w-16 h-16 rounded-full overflow-hidden"
+              className="w-14 h-14 rounded-full overflow-hidden"
               style={{
                 border: '1px solid rgba(255,255,255,0.12)',
                 boxShadow:
@@ -134,29 +138,42 @@ export default function PersonalCard({ locale }: { locale: string }) {
 
           <div className="min-w-0 flex-1">
             <h3
-              className="text-lg font-semibold leading-tight"
+              className="text-base font-semibold leading-tight"
               style={{ fontFamily: 'var(--font-serif)', color: 'var(--foreground-strong)' }}
             >
               {t.name}
             </h3>
             <p
-              className="text-xs mt-1 leading-relaxed"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--foreground)' }}
-            >
-              {t.role}
-            </p>
-            <p
-              className="text-xs leading-relaxed"
+              className="text-[11px] mt-0.5 leading-snug"
               style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}
             >
-              {t.sub}
+              {t.role}
             </p>
           </div>
         </div>
 
-        <div className="h-px w-full mb-4" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        {/* Tech tags - now prominently right under avatar */}
+        <div className="flex flex-wrap gap-1 mb-4">
+          {techTags.map((tag) => (
+            <span
+              key={tag}
+              className="px-1.5 py-0.5 rounded text-[10px]"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                background: 'rgba(59, 130, 246, 0.08)',
+                color: 'rgba(147, 197, 253, 0.95)',
+                border: '1px solid rgba(59, 130, 246, 0.18)',
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
-        <div className="flex items-center gap-2 mb-4">
+        <div className="h-px w-full mb-3" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
+        {/* Location + about label */}
+        <div className="flex items-center gap-2 mb-3">
           <MapPin className="w-3 h-3" style={{ color: 'var(--muted)' }} />
           <span
             className="text-[11px]"
@@ -169,7 +186,7 @@ export default function PersonalCard({ locale }: { locale: string }) {
           </span>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <CardLink
             icon={<Github className="w-3.5 h-3.5" />}
             label={t.links.github}
@@ -185,34 +202,6 @@ export default function PersonalCard({ locale }: { locale: string }) {
             label={t.links.resume}
             href={linkHrefs.resume}
           />
-        </div>
-
-        <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-1.5 mb-2">
-            <Code2 className="w-2.5 h-2.5" style={{ color: 'var(--muted)' }} />
-            <span
-              className="text-[9px] uppercase tracking-[0.12em]"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)' }}
-            >
-              {locale === 'ja' ? '技術スタック' : locale === 'zh' ? '技术栈' : 'Stack'}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {['TypeScript', 'Python', 'AI', 'Linux', 'Docker', 'Cloud'].map((tag) => (
-              <span
-                key={tag}
-                className="px-1.5 py-0.5 rounded text-[10px]"
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  background: 'rgba(255,255,255,0.04)',
-                  color: 'var(--muted)',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
     </motion.div>
@@ -233,7 +222,7 @@ function CardLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-colors duration-150"
+      className="group flex items-center gap-2.5 px-2 py-1.5 rounded-md transition-colors duration-150"
       style={{ background: 'transparent' }}
       onMouseEnter={(e) => {
         ;(e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'
@@ -254,12 +243,10 @@ function CardLink({
       >
         {label}
       </span>
-      <span
-        className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+      <ArrowUpRight
+        className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"
         style={{ color: 'var(--muted)' }}
-      >
-        ↗
-      </span>
+      />
     </a>
   )
 }
