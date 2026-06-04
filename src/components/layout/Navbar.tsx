@@ -39,8 +39,10 @@ export default function Navbar({ locale }: NavbarProps) {
     const m = pathname.match(/^\/(ja|zh|en)(\/.*)?$/)
     if (!m) return `/${newLocale}/`
     const pathPart = m[2] || '/'
-    // Blog post slugs are per-locale, so redirect to new locale's blog list
-    if (pathPart.startsWith('/blog/')) return `/${newLocale}/blog`
+    // Blog post slugs are the same across locales (Frank translates manually
+    // so /ja/blog/<slug>, /zh/blog/<slug>, /en/blog/<slug> all exist with the
+    // same filename), so we KEEP the slug when switching languages - the same
+    // way /notes/<slug> already works.
     return `/${newLocale}${pathPart}`
   }
 
