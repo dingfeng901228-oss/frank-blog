@@ -2,58 +2,90 @@
 
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { Briefcase, GraduationCap, Rocket, Star } from 'lucide-react'
+import { Briefcase, GraduationCap, Home, MapPin, Plane, Rocket, Star } from 'lucide-react'
 
+// 8 entries: 1991 birth -> 2025-now Tokyo.
+// Years go from earliest to latest, so the timeline reads top-to-bottom.
 const timelineData = [
   {
-    date: '2025 - Present',
-    title: 'Tokyo, Japan — Student & Engineer',
-    title_ja: '東京 — 学生 & エンジニア',
-    title_zh: '东京 — 学生 & 工程师',
-    description: 'Studying in Tokyo. Building AI tools, OpenClaw, and shipping this blog.',
-    description_ja: '東京で留学中。AIツール・OpenClaw・ブログを構築。',
-    description_zh: '在东京留学。构建AI工具、OpenClaw 和本博客。',
-    type: 'work' as const,
+    date: '1991',
+    title: 'Born in Zaozhuang, Shandong',
+    title_ja: '山東省枣庄市で生まれる',
+    title_zh: '出生于山东省枣庄市',
+    description: 'Born in Zaozhuang, Shandong Province, China.',
+    description_ja: '中国山東省枣庄市で生まれる。',
+    description_zh: '出生于中国山东省枣庄市。',
+    type: 'milestone' as const,
   },
   {
-    date: '2017 - 2025',
-    title: 'IT Infrastructure Engineer — Weihai',
-    title_ja: 'ITインフラエンジニア — 山東威海',
-    title_zh: 'IT 基础设施工程师 — 山东威海',
-    description: 'Eight years building and operating IT infrastructure. Data centers, networks, and internal systems.',
-    description_ja: '8年間ITインフラを構築・運用。データセンター、ネットワーク、社内システム。',
-    description_zh: '8年IT基础设施搭建与运维。数据中心、网络和内部系统。',
+    date: '1996',
+    title: 'Moved to Weihai, Shandong with parents',
+    title_ja: '馬強市に走り、山東省威海へ',
+    title_zh: '随父母搬家至山东威海',
+    description: 'Moved to Weihai, Shandong Province with my parents.',
+    description_ja: '父母と一緒に山東省威海へ走る。',
+    description_zh: '随父母搬家至山东省威海。',
+    type: 'milestone' as const,
+  },
+  {
+    date: '1996 - 2010',
+    title: 'Primary, middle, and high school in Weihai',
+    title_ja: '威海で小・中・高校生涯',
+    title_zh: '在威海读小学、初中、高中',
+    description: 'Grew up in Weihai. Fourteen years of school on the Shandong peninsula.',
+    description_ja: '威海で成长。山東半島での14年の学生生涯。',
+    description_zh: '在威海成长。山东半岛上的 14 年学生生活。',
+    type: 'education' as const,
+  },
+  {
+    date: '2010 - 2014',
+    title: 'Studied CS in Beijing, then started working',
+    title_ja: '北京でコンピューター科学を学ぶ、そして勤務につく',
+    title_zh: '北京学习计算机科学并参与工作',
+    description: 'Wrote my first programs in Beijing. Discovered systems thinking. Started working before graduation.',
+    description_ja: '北京で初めてのプログラムを書く。システム思考に出会う。卒業前に勤務を始める。',
+    description_zh: '在北京写下第一个程序。发现系统思维。毕业前开始参与工作。',
+    type: 'education' as const,
+  },
+  {
+    date: '2014 - 2015',
+    title: 'Outsourced to Qingdao, Shandong',
+    title_ja: '山東省青岛へ外派工作',
+    title_zh: '外派到山东青岛工作',
+    description: 'First job out of school: sent to Qingdao on a project assignment. Network admin, server deployment, technical support.',
+    description_ja: '卒業後初の勤務。プロジェクトで青岛へ外派。ネットワーク管理、サーバー展開、技術サポート。',
+    description_zh: '毕业后的第一份工作，外派到青岛项目。网络管理、服务器部署、技术支持。',
     type: 'work' as const,
   },
   {
     date: '2015 - 2017',
-    title: 'IT Engineer — Beijing',
-    title_ja: 'ITエンジニア — 北京',
-    title_zh: 'IT 工程师 — 北京',
-    description: 'Worked in Beijing. Network engineering, server operations, automation scripts.',
-    description_ja: '北京で勤務。ネットワーク、サーバー運用、自動化スクリプト。',
-    description_zh: '在北京工作。网络工程、服务器运维、自动化脚本。',
+    title: 'Back to Beijing to work',
+    title_ja: '再び北京へ戻り勤務',
+    title_zh: '回到北京工作',
+    description: 'Moved back to Beijing. Network engineering, server operations, automation scripts.',
+    description_ja: '再び北京へ。ネットワークエンジニアリング、サーバー運用、自動化スクリプト。',
+    description_zh: '重返北京。网络工程、服务器运维、自动化脚本。',
     type: 'work' as const,
   },
   {
-    date: '2014 - 2015',
-    title: 'IT Engineer — Qingdao',
-    title_ja: 'ITエンジニア — 山東青岛',
-    title_zh: 'IT 工程师 — 山东青岛',
-    description: 'First job out of school. Network administration, server deployment, technical support.',
-    description_ja: '卒業後の初仕事。ネットワーク管理、サーバー展開、技術サポート。',
-    description_zh: '毕业后第一份工作。网络管理、服务器部署、技术支持。',
+    date: '2017 - 2025',
+    title: 'Back to Weihai, Shandong to work',
+    title_ja: '山東省威海へ戻り勤務',
+    title_zh: '回到山东威海工作',
+    description: 'Eight years building and operating IT infrastructure in Weihai. Data centers, networks, internal systems.',
+    description_ja: '8年間、威海でITインフラを構築・運用。データセンター、ネットワーク、社内システム。',
+    description_zh: '在威海跟 IT 基础设施打交道 8 年。数据中心、网络和内部系统。',
     type: 'work' as const,
   },
   {
-    date: '2010 - 2014',
-    title: 'Studied in Beijing',
-    title_ja: '北京で学ぶ',
-    title_zh: '北京求学',
-    description: 'Studied computer science in Beijing. Wrote first programs, discovered systems thinking.',
-    description_ja: '北京で情報科学を勉強。初めてのプログラムを書き、システム思考に出会う。',
-    description_zh: '在北京学习计算机科学。写下第一个程序，发现系统思维。',
-    type: 'education' as const,
+    date: '2025 - Present',
+    title: 'Tokyo, Japan - language school & job hunting',
+    title_ja: '東京・言語学校留学中、探して勤務先を検索',
+    title_zh: '东京 - 语言学校留学中，探索工作中',
+    description: 'Studying Japanese in Tokyo. Job hunting for IT infrastructure / AI roles.',
+    description_ja: '東京で日本語を学んでいます。ITインフラやAIポジションを検索中。',
+    description_zh: '在东京学习日语。探索 IT 基础设施 / AI 领域工作机会。',
+    type: 'work' as const,
   },
 ]
 
@@ -63,6 +95,10 @@ const iconMap = {
   project: Rocket,
   milestone: Star,
 }
+
+// Extra icons not used directly in the map but kept for the JSX inline
+// references; Home / MapPin / Plane used to call out location changes.
+const _extraIcons = { Home, MapPin, Plane }
 
 const colorMap = {
   work: 'from-blue-500 to-cyan-500',
@@ -109,10 +145,10 @@ export default function TimelineSection({ locale }: { locale: string }) {
           style={{ color: 'var(--muted)' }}
         >
           {locale === 'ja'
-            ? 'これまでの遍歴。こんなことやってきました。'
+            ? '34年の走り。起点から現在まで。'
             : locale === 'zh'
-            ? '我的技术成长之路。每一个里程碑。'
-            : 'My journey in tech. Every milestone.'}
+            ? '从 1991 到今天的一路走来。'
+            : 'From 1991 to today. 34 years on the road.'}
         </p>
       </motion.div>
 
@@ -132,7 +168,7 @@ export default function TimelineSection({ locale }: { locale: string }) {
                 key={item.date + item.title}
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.08 }}
                 className="relative pl-8 md:pl-0"
               >
                 <div
