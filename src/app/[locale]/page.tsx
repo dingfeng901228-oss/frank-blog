@@ -25,20 +25,6 @@ const heroContent = {
   },
 }
 
-const topicLabels = {
-  ja: ['Tech', 'AI', 'Life', 'Japan', 'Notes'],
-  zh: ['技术', 'AI', '生活', '日本', '随笔'],
-  en: ['Tech', 'AI', 'Life', 'Japan', 'Notes'],
-}
-
-const topicColors: Record<string, string> = {
-  Tech: 'text-cyan-400',
-  AI: 'text-violet-400',
-  Life: 'text-emerald-400',
-  Japan: 'text-rose-400',
-  Notes: 'text-amber-400',
-}
-
 interface PageProps {
   params: Promise<{ locale: string }>
 }
@@ -47,8 +33,15 @@ export default async function HomePage({ params }: PageProps) {
   const { locale } = await params
   setRequestLocale(locale as Locale)
 
-  const hero = heroContent[locale as keyof typeof heroContent]
-  const topics = topicLabels[locale as keyof typeof topicLabels]
+  const topicColors: Record<string, string> = {
+  Tech: 'text-cyan-400',
+  AI: 'text-violet-400',
+  Life: 'text-emerald-400',
+  Japan: 'text-rose-400',
+  Notes: 'text-amber-400',
+}
+
+const hero = heroContent[locale as keyof typeof heroContent]
   const allPosts = getAllPosts(locale as Locale)
   const allNotes = getAllNotes(locale as Locale)
   const featuredPosts = getFeaturedPosts(locale as Locale, 3)
@@ -154,21 +147,6 @@ export default async function HomePage({ params }: PageProps) {
             <div className="min-w-0">
               <PersonalCard locale={locale} />
             </div>
-          </div>
-        </section>
-
-        {/* Topics */}
-        <section className="mb-20">
-          <div className="flex flex-wrap gap-3">
-            {topics.map((topic) => (
-              <Link
-                key={topic}
-                href={`/${locale}/tags?tag=${topic}`}
-                className={`${topicColors[topic]} text-sm font-mono tracking-wide px-4 py-2 border border-[var(--border)] rounded-full hover:bg-[var(--muted)]/20 transition-colors`}
-              >
-                {topic}
-              </Link>
-            ))}
           </div>
         </section>
 
