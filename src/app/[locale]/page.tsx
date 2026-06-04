@@ -69,56 +69,57 @@ export default async function HomePage({ params }: PageProps) {
       <Navbar locale={locale as Locale} />
 
       <main className="mx-auto max-w-5xl px-6 pt-20 pb-16">
-        {/* Hero */}
-        <section className="relative py-24 md:py-32 overflow-hidden">
+        {/* Hero + Personal Card (side-by-side on lg+) */}
+        <section className="relative py-20 md:py-28 overflow-hidden">
           <div className="hero-glow" />
-          <div className="relative z-10">
-            <h1
-              className="font-serif text-5xl md:text-7xl font-semibold tracking-tight mb-6 text-white"
-              style={{
-                textShadow:
-                  '0 0 40px rgba(59, 130, 246, 0.25), 0 0 80px rgba(139, 92, 246, 0.12)',
-              }}
-            >
-              {hero.title}
-            </h1>
-            <p
-              className="text-lg md:text-xl font-light mb-10 max-w-2xl"
-              style={{ color: 'rgba(255, 255, 255, 0.75)' }}
-            >
-              {hero.tagline}
-            </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link
-                href={`/${locale}/blog`}
-                className="hero-cta-primary group inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium text-sm tracking-wide text-white"
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10 lg:gap-14 items-start">
+            <div>
+              <h1
+                className="font-serif text-5xl md:text-7xl font-semibold tracking-tight mb-6 text-white"
+                style={{
+                  textShadow:
+                    '0 0 40px rgba(59, 130, 246, 0.25), 0 0 80px rgba(139, 92, 246, 0.12)',
+                }}
               >
-                {locale === 'ja'
-                  ? 'ブログを読む'
-                  : locale === 'zh'
-                  ? '阅读博客'
-                  : 'Read the blog'}
-                <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5">
-                  →
-                </span>
-              </Link>
-              <Link
-                href={`/${locale}/notes`}
-                className="hero-cta-secondary inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium text-sm tracking-wide"
+                {hero.title}
+              </h1>
+              <p
+                className="text-lg md:text-xl font-light mb-10 max-w-2xl"
+                style={{ color: 'rgba(255, 255, 255, 0.75)' }}
               >
-                {locale === 'ja'
-                  ? '作ったもの'
-                  : locale === 'zh'
-                  ? '作品集'
-                  : 'See what I built'}
-              </Link>
+                {hero.tagline}
+              </p>
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  href={`/${locale}/blog`}
+                  className="hero-cta-primary group inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium text-sm tracking-wide text-white"
+                >
+                  {locale === 'ja'
+                    ? 'ブログを読む'
+                    : locale === 'zh'
+                    ? '阅读博客'
+                    : 'Read the blog'}
+                  <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5">
+                    →
+                  </span>
+                </Link>
+                <Link
+                  href={`/${locale}/notes`}
+                  className="hero-cta-secondary inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium text-sm tracking-wide"
+                >
+                  {locale === 'ja'
+                    ? '作ったもの'
+                    : locale === 'zh'
+                    ? '作品集'
+                    : 'See what I built'}
+                </Link>
+              </div>
+            </div>
+
+            <div className="lg:pt-2">
+              <PersonalCard locale={locale} />
             </div>
           </div>
-        </section>
-
-        {/* Personal Card */}
-        <section className="mb-16">
-          <PersonalCard locale={locale} />
         </section>
 
         {/* Statistics */}
