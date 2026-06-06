@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { setRequestLocale } from 'next-intl/server'
@@ -5,14 +6,48 @@ import type { Locale } from '@/i18n/config'
 import { getNotes } from '@/lib/notes'
 import Link from 'next/link'
 
+interface PageProps {
+  params: Promise<{ locale: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params
+
+  const meta = {
+    ja: {
+      title: 'ノート一覧',
+      description: '日常の思考、整理されたメモ、考察の断片。Ding Feng のノート。',
+    },
+    zh: {
+      title: '随笔列表',
+      description: '日常思考、整理的笔记、考察的片段。Ding Feng 的随笔。',
+    },
+    en: {
+      title: 'Notes',
+      description: 'Notes by Ding Feng. Daily thoughts, organized notes, fragments of reflection.',
+    },
+  }
+
+  const t = meta[locale as keyof typeof meta] ?? meta.ja
+
+  return {
+    title: t.title,
+    description: t.description,
+    openGraph: {
+      title: `${t.title} — Frank Ding`,
+      description: t.description,
+      url: `https://blog.frank2025.com/${locale}/notes`,
+    },
+    alternates: {
+      canonical: `https://blog.frank2025.com/${locale}/notes`,
+    },
+  }
+}
+
 const notesLabels = {
   ja: { title: 'Notes', description: '日常の思考、整理されたメモ、考察の断片。', readMore: '読む' },
   zh: { title: '随笔', description: '日常思考、整理的笔记、考察的片段。', readMore: '阅读' },
   en: { title: 'Notes', description: 'Daily thoughts, organized notes, fragments of reflection.', readMore: 'Read' },
-}
-
-interface PageProps {
-  params: Promise<{ locale: string }>
 }
 
 export default async function NotesPage({ params }: PageProps) {

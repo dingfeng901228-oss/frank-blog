@@ -3,8 +3,9 @@
   <channel>
     <title>Frank Ding - ZH</title>
     <link>https://blog.frank2025.com/zh</link>
-    <description>Thoughts, code, and quiet observations.</description>
-    <language>zh-ZH</language>
+    <description>技术是工具，思考才是核心。持续学习，记录思考，用技术探索世界。</description>
+    <language>zh</language>
+    <lastBuildDate>Sat, 06 Jun 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://blog.frank2025.com/zh/rss.xml" rel="self" type="application/rss+xml"/>
     
     <item>
@@ -12,7 +13,17 @@
       <link>https://blog.frank2025.com/zh/blog/some-roads</link>
       <description><![CDATA[]]></description>
       <pubDate>Sat, 06 Jun 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/zh/blog/some-roads</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/zh/blog/some-roads</guid>
+      <category>Blog</category>
+      
+    </item>
+    <item>
+      <title><![CDATA[✏️ 关于强者与弱者]]></title>
+      <link>https://blog.frank2025.com/zh/notes/strong-weak</link>
+      <description><![CDATA[]]></description>
+      <pubDate>Sat, 06 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/zh/notes/strong-weak</guid>
+      <category>Note</category>
       
     </item>
     <item>
@@ -20,7 +31,38 @@
       <link>https://blog.frank2025.com/zh/blog/why-writing</link>
       <description><![CDATA[]]></description>
       <pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/zh/blog/why-writing</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/zh/blog/why-writing</guid>
+      <category>Blog</category>
+      
+    </item>
+    <item>
+      <title><![CDATA[✏️ 当我发现AI会遗忘]]></title>
+      <link>https://blog.frank2025.com/zh/notes/ai-forgets</link>
+      <description><![CDATA[AI,Learning]]></description>
+      <pubDate>Wed, 03 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/zh/notes/ai-forgets</guid>
+      <category>Note</category>
+      <category>AI</category>
+      <category>Learning</category>
+    </item>
+    <item>
+      <title><![CDATA[✏️ 人生真正能够掌握的，从来都不是明天，而是此时此刻。]]></title>
+      <link>https://blog.frank2025.com/zh/notes/lived-in-the-present</link>
+      <description><![CDATA[Life,Time,Future]]></description>
+      <pubDate>Tue, 02 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/zh/notes/lived-in-the-present</guid>
+      <category>Note</category>
+      <category>Life</category>
+      <category>Time</category>
+      <category>Future</category>
+    </item>
+    <item>
+      <title><![CDATA[✏️ 相对于未来的我，今天的我永远最年轻。]]></title>
+      <link>https://blog.frank2025.com/zh/notes/always-youngest</link>
+      <description><![CDATA[Life,young]]></description>
+      <pubDate>Sat, 30 May 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/zh/notes/always-youngest</guid>
+      <category>Note</category>
       
     </item>
     <item>
@@ -28,8 +70,20 @@
       <link>https://blog.frank2025.com/zh/blog/why-i-left-china-for-japan</link>
       <description><![CDATA[前几年，我读过一本书——《被讨厌的勇气》。那本书对我影响很深。书里有一句话，我至今记得很清楚：「所有的不幸，都是自己选择的。」]]></description>
       <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/zh/blog/why-i-left-china-for-japan</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/zh/blog/why-i-left-china-for-japan</guid>
+      <category>Blog</category>
       
+    </item>
+    <item>
+      <title><![CDATA[✏️ 七月的JLPT N2，对我至关重要]]></title>
+      <link>https://blog.frank2025.com/zh/notes/july-jlpt-n2</link>
+      <description><![CDATA[它不仅仅是一场考试，也不只是日语能力的证明。它更像是来到日本之后，这一路努力生活、努力适应、努力学习的一个阶段性答案。]]></description>
+      <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/zh/notes/july-jlpt-n2</guid>
+      <category>Note</category>
+      <category>JLPT</category>
+      <category>Life</category>
+      <category>Japan</category>
     </item>
   </channel>
 </rss>

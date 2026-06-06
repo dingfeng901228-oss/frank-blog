@@ -3,8 +3,9 @@
   <channel>
     <title>Frank Ding - JA</title>
     <link>https://blog.frank2025.com/ja</link>
-    <description>Thoughts, code, and quiet observations.</description>
-    <language>ja-JA</language>
+    <description>技術は手段であり、思考こそが本質。学び続け、考え続け、技術を通して世界を探求する。</description>
+    <language>ja</language>
+    <lastBuildDate>Sat, 06 Jun 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://blog.frank2025.com/ja/rss.xml" rel="self" type="application/rss+xml"/>
     
     <item>
@@ -12,7 +13,17 @@
       <link>https://blog.frank2025.com/ja/blog/some-roads</link>
       <description><![CDATA[]]></description>
       <pubDate>Sat, 06 Jun 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/ja/blog/some-roads</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/blog/some-roads</guid>
+      <category>Blog</category>
+      
+    </item>
+    <item>
+      <title><![CDATA[✏️ 強者と弱者について]]></title>
+      <link>https://blog.frank2025.com/ja/notes/strong-weak</link>
+      <description><![CDATA[]]></description>
+      <pubDate>Sat, 06 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/notes/strong-weak</guid>
+      <category>Note</category>
       
     </item>
     <item>
@@ -20,7 +31,38 @@
       <link>https://blog.frank2025.com/ja/blog/why-writing</link>
       <description><![CDATA[]]></description>
       <pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/ja/blog/why-writing</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/blog/why-writing</guid>
+      <category>Blog</category>
+      
+    </item>
+    <item>
+      <title><![CDATA[✏️ AIの物忘れに気づいたとき]]></title>
+      <link>https://blog.frank2025.com/ja/notes/ai-forgets</link>
+      <description><![CDATA[AI,Learning]]></description>
+      <pubDate>Wed, 03 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/notes/ai-forgets</guid>
+      <category>Note</category>
+      <category>AI</category>
+      <category>Learning</category>
+    </item>
+    <item>
+      <title><![CDATA[✏️ 人生で本当に握れるのは、明日ではなく、今この瞬間である。]]></title>
+      <link>https://blog.frank2025.com/ja/notes/lived-in-the-present</link>
+      <description><![CDATA[Life,Time,Future]]></description>
+      <pubDate>Tue, 02 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/notes/lived-in-the-present</guid>
+      <category>Note</category>
+      <category>Life</category>
+      <category>Time</category>
+      <category>Future</category>
+    </item>
+    <item>
+      <title><![CDATA[✏️ 未来の自分と比べれば、今日の自分がいちばん若い。]]></title>
+      <link>https://blog.frank2025.com/ja/notes/always-youngest</link>
+      <description><![CDATA[Life,young]]></description>
+      <pubDate>Sat, 30 May 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/notes/always-youngest</guid>
+      <category>Note</category>
       
     </item>
     <item>
@@ -28,8 +70,20 @@
       <link>https://blog.frank2025.com/ja/blog/why-i-left-china-for-japan</link>
       <description><![CDATA[前に、嫌われる勇気という本を読みました。その本は、自分にとても大きな影響を与えてくれました。特に今でも強く印象に残っている言葉があります。]]></description>
       <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/ja/blog/why-i-left-china-for-japan</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/blog/why-i-left-china-for-japan</guid>
+      <category>Blog</category>
       
+    </item>
+    <item>
+      <title><![CDATA[✏️ 7月のJLPT N2は、自分にとってとても大切]]></title>
+      <link>https://blog.frank2025.com/ja/notes/july-jlpt-n2</link>
+      <description><![CDATA[ただの試験じゃない。日本に来てから積み重ねてきた努力の証でもある。]]></description>
+      <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/notes/july-jlpt-n2</guid>
+      <category>Note</category>
+      <category>JLPT</category>
+      <category>Life</category>
+      <category>Japan</category>
     </item>
   </channel>
 </rss>

@@ -3,8 +3,9 @@
   <channel>
     <title>Frank Ding - EN</title>
     <link>https://blog.frank2025.com/en</link>
-    <description>Thoughts, code, and quiet observations.</description>
-    <language>en-EN</language>
+    <description>Technology is a tool. Thinking is the core. Keep learning, keep exploring, and understand the world through technology.</description>
+    <language>en</language>
+    <lastBuildDate>Sat, 06 Jun 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://blog.frank2025.com/en/rss.xml" rel="self" type="application/rss+xml"/>
     
     <item>
@@ -12,7 +13,17 @@
       <link>https://blog.frank2025.com/en/blog/some-roads</link>
       <description><![CDATA[]]></description>
       <pubDate>Sat, 06 Jun 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/en/blog/some-roads</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/en/blog/some-roads</guid>
+      <category>Blog</category>
+      
+    </item>
+    <item>
+      <title><![CDATA[✏️ On the Strong and the Weak]]></title>
+      <link>https://blog.frank2025.com/en/notes/strong-weak</link>
+      <description><![CDATA[]]></description>
+      <pubDate>Sat, 06 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/en/notes/strong-weak</guid>
+      <category>Note</category>
       
     </item>
     <item>
@@ -20,7 +31,38 @@
       <link>https://blog.frank2025.com/en/blog/why-writing</link>
       <description><![CDATA[]]></description>
       <pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/en/blog/why-writing</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/en/blog/why-writing</guid>
+      <category>Blog</category>
+      
+    </item>
+    <item>
+      <title><![CDATA[✏️ When I Realized AI Forgets Too]]></title>
+      <link>https://blog.frank2025.com/en/notes/ai-forgets</link>
+      <description><![CDATA[AI,Learning]]></description>
+      <pubDate>Wed, 03 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/en/notes/ai-forgets</guid>
+      <category>Note</category>
+      <category>AI</category>
+      <category>Learning</category>
+    </item>
+    <item>
+      <title><![CDATA[✏️ Don't expect too much from your future self]]></title>
+      <link>https://blog.frank2025.com/en/notes/lived-in-the-present</link>
+      <description><![CDATA[Life,Time,Future]]></description>
+      <pubDate>Tue, 02 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/en/notes/lived-in-the-present</guid>
+      <category>Note</category>
+      <category>Life</category>
+      <category>Time</category>
+      <category>Future</category>
+    </item>
+    <item>
+      <title><![CDATA[✏️ Today is the youngest I will ever be.]]></title>
+      <link>https://blog.frank2025.com/en/notes/always-youngest</link>
+      <description><![CDATA[Life,young]]></description>
+      <pubDate>Sat, 30 May 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/en/notes/always-youngest</guid>
+      <category>Note</category>
       
     </item>
     <item>
@@ -28,8 +70,20 @@
       <link>https://blog.frank2025.com/en/blog/why-i-left-china-for-japan</link>
       <description><![CDATA[A few years ago, I read a book that changed my life — 'The Courage to Be Disliked.' There's a line in it I still remember clearly.]]></description>
       <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
-      <guid>https://blog.frank2025.com/en/blog/why-i-left-china-for-japan</guid>
+      <guid isPermaLink="true">https://blog.frank2025.com/en/blog/why-i-left-china-for-japan</guid>
+      <category>Blog</category>
       
+    </item>
+    <item>
+      <title><![CDATA[✏️ July JLPT N2 — It Matters to Me]]></title>
+      <link>https://blog.frank2025.com/en/notes/july-jlpt-n2</link>
+      <description><![CDATA[It's not just an exam. It's a milestone — proof of the effort I've put into living, adapting, and studying since arriving in Japan.]]></description>
+      <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/en/notes/july-jlpt-n2</guid>
+      <category>Note</category>
+      <category>JLPT</category>
+      <category>Life</category>
+      <category>Japan</category>
     </item>
   </channel>
 </rss>

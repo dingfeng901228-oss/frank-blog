@@ -43,6 +43,9 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: note.title,
     description: note.description,
+    alternates: {
+      canonical: `https://blog.frank2025.com/${locale}/notes/${slug}`,
+    },
     openGraph: {
       title: note.title,
       description: note.description,
@@ -51,6 +54,15 @@ export async function generateMetadata({ params }: PageProps) {
       publishedTime: note.publishedAt,
       modifiedTime: note.updatedAt,
       tags: note.tags,
+      url: `https://blog.frank2025.com/${locale}/notes/${slug}`,
+      images: note.coverImage
+        ? [{ url: note.coverImage, width: 1200, height: 630, alt: note.title }]
+        : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: note.title,
+      description: note.description,
     },
   }
 }

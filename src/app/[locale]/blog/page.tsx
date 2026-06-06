@@ -4,10 +4,45 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
 interface PageProps {
   params: Promise<{ locale: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params
+
+  const meta = {
+    ja: {
+      title: 'ブログ一覧',
+      description: 'Ding Feng のブログ記事一覧。テクノロジー、AI、思考、生活について。',
+    },
+    zh: {
+      title: '博客文章',
+      description: 'Ding Feng 的博客文章列表。关于技术、AI、思考和生活。',
+    },
+    en: {
+      title: 'Blog Posts',
+      description: 'Blog posts by Ding Feng. Thoughts on technology, AI, life in Japan, and quiet observations.',
+    },
+  }
+
+  const t = meta[locale as keyof typeof meta] ?? meta.ja
+
+  return {
+    title: t.title,
+    description: t.description,
+    openGraph: {
+      title: `${t.title} — Frank Ding`,
+      description: t.description,
+      url: `https://blog.frank2025.com/${locale}/blog`,
+    },
+    alternates: {
+      canonical: `https://blog.frank2025.com/${locale}/blog`,
+    },
+  }
 }
 
 export default async function BlogPage({ params }: PageProps) {

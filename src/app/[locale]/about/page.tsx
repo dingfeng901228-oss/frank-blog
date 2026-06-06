@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { setRequestLocale } from 'next-intl/server'
@@ -31,9 +32,21 @@ interface PageProps {
   params: Promise<{ locale: string }>
 }
 
-export const metadata = {
-  title: 'About',
-  description: 'About Frank Ding - Engineer in Tokyo',
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params
+  const meta = {
+    ja: { title: 'About', description: '東京都在住のエンジニア Frank Ding について。' },
+    zh: { title: '关于我', description: '关于 Frank Ding — 东京的工程师。' },
+    en: { title: 'About', description: 'About Frank Ding — Engineer in Tokyo.' },
+  }
+  const t = meta[locale as keyof typeof meta] ?? meta.ja
+  return {
+    title: t.title,
+    description: t.description,
+    alternates: {
+      canonical: `https://blog.frank2025.com/${locale}/about`,
+    },
+  }
 }
 
 export default async function AboutPage({ params }: PageProps) {
