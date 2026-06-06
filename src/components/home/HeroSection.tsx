@@ -89,7 +89,7 @@ export default function HeroSection({ locale }: { locale: string }) {
     heroContent[locale as keyof typeof heroContent] ?? heroContent.en
 
   return (
-    <section className="relative py-20 md:py-28 overflow-hidden">
+    <section className="relative py-14 md:py-20 overflow-hidden">
       {/* ── star particles (CSS-only) ── */}
       <div className="star-particles" aria-hidden="true">
         <div className="star-layer star-layer-1" />
@@ -105,7 +105,7 @@ export default function HeroSection({ locale }: { locale: string }) {
       <div className="hero-horizon-glow" />
 
       <div className={`${CONTAINER} relative z-10`}>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10 lg:gap-14 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 lg:gap-12 items-start">
           {/* ======== LEFT COLUMN ======== */}
           <div className="min-w-0">
             {/* badge */}
