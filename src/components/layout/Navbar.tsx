@@ -1,31 +1,56 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import type { Locale } from '@/i18n/config'
-import { localeFlags } from '@/i18n/config'
 
+/* ── 3-language nav labels ── */
 const navLabels: Record<Locale, { label: string; href: string }[]> = {
   ja: [
-    { label: 'ホーム', href: '/' },
     { label: 'ブログ', href: '/blog' },
     { label: 'ノート', href: '/notes' },
     { label: '概要', href: '/about' },
   ],
   zh: [
-    { label: '首页', href: '/' },
     { label: '博客', href: '/blog' },
     { label: '笔记', href: '/notes' },
     { label: '关于', href: '/about' },
   ],
   en: [
-    { label: 'Home', href: '/' },
     { label: 'Blog', href: '/blog' },
     { label: 'Notes', href: '/notes' },
     { label: 'About', href: '/about' },
   ],
+}
+
+/* ── Logo subtitle ── */
+const logoSub: Record<Locale, string> = {
+  ja: '世界を探求する技術人',
+  zh: '探索世界的技术人',
+  en: 'Exploring the World with Tech',
+}
+
+/* ── Status tag ── */
+const statusLabels: Record<Locale, string> = {
+  ja: '東京',
+  zh: 'Tokyo',
+  en: 'Tokyo',
+}
+
+/* ── Locale display names ── */
+const localeNames: Record<Locale, string> = {
+  ja: '日本語',
+  zh: '中文',
+  en: 'English',
+}
+
+/* ── Locale short flags ── */
+const localeShort: Record<Locale, string> = {
+  ja: 'JP',
+  zh: 'ZH',
+  en: 'EN',
 }
 
 interface NavbarProps {
@@ -34,42 +59,94 @@ interface NavbarProps {
 
 export default function Navbar({ locale }: NavbarProps) {
   const pathname = usePathname()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const getLocalePath = (newLocale: Locale) => {
     const m = pathname.match(/^\/(ja|zh|en)(\/.*)?$/)
     if (!m) return `/${newLocale}/`
     const pathPart = m[2] || '/'
-    // Blog post slugs are the same across locales (Frank translates manually
-    // so /ja/blog/<slug>, /zh/blog/<slug>, /en/blog/<slug> all exist with the
-    // same filename), so we KEEP the slug when switching languages - the same
-    // way /notes/<slug> already works.
     return `/${newLocale}${pathPart}`
   }
 
+  const links = navLabels[locale] ?? navLabels.ja
+  const currentLangLabel = localeShort[locale]
+
+  const isActiveLink = (href: string) => {
+    if (href === '/') return pathname === `/${locale}` || pathname === `/${locale}/`
+    return pathname.includes(href)
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full">
-      <div className="absolute inset-0 backdrop-blur-xl border-b border-[var(--border)]" style={{ background: 'rgba(15, 20, 40, 0.7)' }} />
-      <nav className="relative mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
-        {/* Logo */}
-        <Link
-          href={`/${locale}`}
-          className="font-serif text-lg tracking-wide transition-colors text-white/90 hover:text-[var(--accent)]"
-        >
-          Frank
+    <header className="sticky top-0 z-50 w-full h-[72px]">
+      {/* Glass background */}
+      <div
+        className="absolute inset-0 border-b"
+        style={{
+          background: 'rgba(8, 12, 32, 0.65)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderColor: 'rgba(255, 255, 255, 0.06)',
+        }}
+      />
+
+      <nav
+        className="relative mx-auto flex h-full items-center justify-between"
+        style={{
+          paddingLeft: 'clamp(1.5rem, 4vw, 5rem)',
+          paddingRight: 'clamp(1.5rem, 4vw, 5rem)',
+          maxWidth: '1480px',
+        }}
+      >
+        {/* ── Logo + subtitle ── */}
+        <Link href={`/${locale}`} className="flex flex-col group flex-shrink-0">
+          <span
+            className="font-serif text-lg tracking-wide transition-colors text-white/92 group-hover:text-[var(--accent)]"
+            style={{ fontWeight: 600 }}
+          >
+            Frank
+          </span>
+          <span
+            className="text-xs leading-none mt-0.5"
+            style={{ color: 'rgba(255, 255, 255, 0.55)', fontFamily: 'var(--font-mono)' }}
+          >
+            {logoSub[locale]}
+          </span>
         </Link>
 
-        {/* Nav Links */}
+        {/* ── Desktop nav links ── */}
         <div className="hidden md:flex items-center gap-8">
-          {(navLabels[locale] || navLabels.ja).map((item) => {
-            const isActive = item.href === '/'
-              ? pathname === `/${locale}` || pathname === `/${locale}/`
-              : pathname.includes(item.href)
+          {links.map((item) => {
+            const active = isActiveLink(item.href)
             return (
               <Link
                 key={item.href}
                 href={`/${locale}${item.href}`}
-                className="nav-link text-sm tracking-wide"
-                data-active={isActive ? 'true' : 'false'}
+                className="text-sm transition-colors"
+                style={{
+                  fontWeight: 500,
+                  letterSpacing: '0.02em',
+                  color: active ? '#ffffff' : 'rgba(255, 255, 255, 0.72)',
+                  fontFamily: 'var(--font-sans)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = '#ffffff'
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(255, 255, 255, 0.72)'
+                }}
               >
                 {item.label}
               </Link>
@@ -77,24 +154,160 @@ export default function Navbar({ locale }: NavbarProps) {
           })}
         </div>
 
-        {/* Language Switcher - JP | EN | ZH */}
-        <div className="flex items-center gap-1">
-          {(['ja', 'en', 'zh'] as Locale[]).map((loc) => (
-            <Link
-              key={loc}
-              href={getLocalePath(loc)}
-              className={cn(
-                'px-3 py-1.5 text-xs font-mono tracking-wider transition-all rounded-md',
-                loc === locale
-                  ? 'bg-[var(--accent)] text-white font-medium shadow-[0_0_20px_rgba(59,130,246,0.35)]'
-                  : 'text-white/70 hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]'
-              )}
+        {/* ── Right group: status + lang dropdown + mobile toggle ── */}
+        <div className="flex items-center gap-3">
+          {/* Status pill */}
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono"
+            style={{
+              background: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.15)',
+              color: 'rgba(147, 197, 253, 0.9)',
+              letterSpacing: '0.03em',
+            }}
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span
+                className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping"
+                style={{ background: '#3B82F6' }}
+              />
+              <span
+                className="relative inline-flex rounded-full h-1.5 w-1.5"
+                style={{ background: '#3B82F6' }}
+              />
+            </span>
+            {statusLabels[locale]}
+          </div>
+
+          {/* ── Language dropdown ── */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-mono tracking-wider rounded-md transition-all"
+              style={{
+                color: 'rgba(255, 255, 255, 0.8)',
+                background: dropdownOpen ? 'rgba(255,255,255,0.05)' : 'transparent',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'
+              }}
+              onMouseLeave={(e) => {
+                if (!dropdownOpen) (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
             >
-              {localeFlags[loc]}
-            </Link>
-          ))}
+              <span style={{ fontWeight: 500 }}>{currentLangLabel}</span>
+              <svg
+                className={`w-3 h-3 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {/* Dropdown menu */}
+            {dropdownOpen && (
+              <div
+                className="absolute right-0 top-full mt-1.5 min-w-[120px] rounded-xl overflow-hidden z-50"
+                style={{
+                  background: 'rgba(12, 16, 36, 0.92)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                }}
+              >
+                {(['ja', 'zh', 'en'] as Locale[]).map((loc) => (
+                  <Link
+                    key={loc}
+                    href={getLocalePath(loc)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-xs font-mono tracking-wider transition-colors"
+                    style={{
+                      color: loc === locale ? '#ffffff' : 'rgba(255, 255, 255, 0.65)',
+                      background: loc === locale ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                      fontWeight: loc === locale ? 500 : 400,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (loc !== locale) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (loc !== locale) (e.currentTarget as HTMLElement).style.background = 'transparent'
+                    }}
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    <span>{localeShort[loc]}</span>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 400 }}>{localeNames[loc]}</span>
+                    {loc === locale && (
+                      <svg className="w-3 h-3 ml-auto" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Mobile hamburger ── */}
+          <button
+            className="md:hidden flex flex-col gap-1 p-1"
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            aria-label="Toggle navigation"
+          >
+            <span className="block w-5 h-px" style={{ background: 'rgba(255,255,255,0.6)' }} />
+            <span className="block w-5 h-px" style={{ background: 'rgba(255,255,255,0.6)' }} />
+            <span className="block w-5 h-px" style={{ background: 'rgba(255,255,255,0.6)' }} />
+          </button>
         </div>
       </nav>
+
+      {/* ── Mobile nav panel ── */}
+      {mobileNavOpen && (
+        <div
+          className="md:hidden absolute left-0 right-0 z-50 border-b"
+          style={{
+            background: 'rgba(8, 12, 32, 0.95)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderColor: 'rgba(255, 255, 255, 0.06)',
+          }}
+        >
+          <div className="flex flex-col gap-1 px-6 py-6">
+            {links.map((item) => {
+              const active = isActiveLink(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={`/${locale}${item.href}`}
+                  className="px-4 py-3 rounded-lg text-sm transition-colors"
+                  style={{
+                    fontWeight: 500,
+                    letterSpacing: '0.02em',
+                    color: active ? '#ffffff' : 'rgba(255, 255, 255, 0.72)',
+                    background: active ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
+                  }}
+                  onClick={() => setMobileNavOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+            {/* Mobile status */}
+            <div className="flex items-center gap-1.5 px-4 py-3 mt-2 text-xs font-mono"
+              style={{ color: 'rgba(147, 197, 253, 0.8)' }}
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ background: '#3B82F6' }} />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: '#3B82F6' }} />
+              </span>
+              {statusLabels[locale]}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
