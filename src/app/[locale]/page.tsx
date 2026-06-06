@@ -4,26 +4,11 @@ import { getAllNotes } from '@/lib/notes'
 import { formatDate } from '@/lib/utils'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import PersonalCard from '@/components/home/PersonalCard'
+import HeroSection from '@/components/home/HeroSection'
 import TimelineSection from '@/components/home/TimelineSection'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import type { Post } from '@/lib/types'
-
-const heroContent = {
-  ja: {
-    title: 'Notes',
-    tagline: '静かに観察し思索する',
-  },
-  zh: {
-    title: '随笔',
-    tagline: '安静地观察与思考',
-  },
-  en: {
-    title: 'Journal',
-    tagline: 'Thoughts, code, and quiet observations',
-  },
-}
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -41,7 +26,7 @@ export default async function HomePage({ params }: PageProps) {
   Notes: 'text-amber-400',
 }
 
-const hero = heroContent[locale as keyof typeof heroContent]
+
   const allPosts = getAllPosts(locale as Locale)
   const allNotes = getAllNotes(locale as Locale)
   const featuredPosts = getFeaturedPosts(locale as Locale, 3)
@@ -61,94 +46,8 @@ const hero = heroContent[locale as keyof typeof heroContent]
       <Navbar locale={locale as Locale} />
 
       <main className="mx-auto max-w-5xl px-6 pt-20 pb-16">
-        {/* Hero + Personal Card (side-by-side on lg+, soft diagonal glow ties them) */}
-        <section className="relative py-14 md:py-20 overflow-hidden">
-          <div className="hero-glow" />
-
-          {/* Diagonal soft glow tying left and right - "invisible rope" */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(ellipse 60% 80% at 65% 50%, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.05) 30%, transparent 60%)',
-            }}
-          />
-
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 lg:gap-12 items-center">
-            <div className="min-w-0 relative">
-              {/* Dot pattern background to give 'Notes' context, not isolated */}
-              <div
-                className="absolute -inset-x-4 -inset-y-8 -z-10 opacity-[0.07] pointer-events-none rounded-3xl"
-                style={{
-                  backgroundImage:
-                    'radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px)',
-                  backgroundSize: '20px 20px',
-                  maskImage:
-                    'linear-gradient(135deg, black 0%, transparent 70%)',
-                  WebkitMaskImage:
-                    'linear-gradient(135deg, black 0%, transparent 70%)',
-                }}
-              />
-
-              <div className="flex items-center gap-2 mb-4">
-                <span
-                  className="h-px w-8"
-                  style={{ background: 'linear-gradient(90deg, transparent 0%, #3B82F6 100%)' }}
-                />
-                <span
-                  className="text-[10px] uppercase tracking-[0.18em] font-mono"
-                  style={{ color: '#3B82F6' }}
-                >
-                  {locale === 'ja' ? 'パーソナル' : locale === 'zh' ? '个人简介' : 'Personal'}
-                </span>
-              </div>
-              <h1
-                className="font-serif text-5xl md:text-7xl font-semibold tracking-tight mb-5 text-white"
-                style={{
-                  textShadow:
-                    '0 0 40px rgba(59, 130, 246, 0.25), 0 0 80px rgba(139, 92, 246, 0.12)',
-                }}
-              >
-                {hero.title}
-              </h1>
-              <p
-                className="text-base md:text-lg font-light mb-8 max-w-xl leading-relaxed"
-                style={{ color: 'rgba(255, 255, 255, 0.78)' }}
-              >
-                {hero.tagline}
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                <Link
-                  href={`/${locale}/blog`}
-                  className="hero-cta-primary group inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm tracking-wide text-white"
-                >
-                  {locale === 'ja'
-                    ? 'ブログを読む'
-                    : locale === 'zh'
-                    ? '阅读博客'
-                    : 'Read the blog'}
-                  <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5">
-                    →
-                  </span>
-                </Link>
-                <Link
-                  href={`/${locale}/notes`}
-                  className="hero-cta-secondary inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm tracking-wide"
-                >
-                  {locale === 'ja'
-                    ? '作ったもの'
-                    : locale === 'zh'
-                    ? '作品集'
-                    : 'See what I built'}
-                </Link>
-              </div>
-            </div>
-
-            <div className="min-w-0">
-              <PersonalCard locale={locale} />
-            </div>
-          </div>
-        </section>
+        {/* ── Hero Section ── */}
+        <HeroSection locale={locale} />
 
         {/* Featured Notes */}
         {featuredPosts.length > 0 && (

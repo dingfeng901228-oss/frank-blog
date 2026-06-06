@@ -8,13 +8,20 @@
     <atom:link href="https://blog.frank2025.com/zh/rss.xml" rel="self" type="application/rss+xml"/>
     
     <item>
+      <title><![CDATA[曾经最讨厌写作文的我，为什么开始写博客]]></title>
+      <link>https://blog.frank2025.com/zh/blog/why-writing</link>
+      <description><![CDATA[]]></description>
+      <pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/zh/blog/why-writing</guid>
+      
+    </item>
+    <item>
       <title><![CDATA[关于我为什么离开中国，来到日本]]></title>
       <link>https://blog.frank2025.com/zh/blog/why-i-left-china-for-japan</link>
       <description><![CDATA[前几年，我读过一本书——《被讨厌的勇气》。那本书对我影响很深。书里有一句话，我至今记得很清楚：「所有的不幸，都是自己选择的。」]]></description>
       <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
       <guid>https://blog.frank2025.com/zh/blog/why-i-left-china-for-japan</guid>
-      <category>Japan</category>
-      <category>Life</category>
+      
     </item>
   </channel>
 </rss>

@@ -8,13 +8,20 @@
     <atom:link href="https://blog.frank2025.com/en/rss.xml" rel="self" type="application/rss+xml"/>
     
     <item>
+      <title><![CDATA[Why Someone Who Hated Writing Essays Started a Blog]]></title>
+      <link>https://blog.frank2025.com/en/blog/why-writing</link>
+      <description><![CDATA[]]></description>
+      <pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/en/blog/why-writing</guid>
+      
+    </item>
+    <item>
       <title><![CDATA[Why I Left China for Japan]]></title>
       <link>https://blog.frank2025.com/en/blog/why-i-left-china-for-japan</link>
       <description><![CDATA[A few years ago, I read a book that changed my life — 'The Courage to Be Disliked.' There's a line in it I still remember clearly.]]></description>
       <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
       <guid>https://blog.frank2025.com/en/blog/why-i-left-china-for-japan</guid>
-      <category>Japan</category>
-      <category>Life</category>
+      
     </item>
   </channel>
 </rss>

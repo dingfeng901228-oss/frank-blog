@@ -9,10 +9,10 @@ export function generateStaticParams() {
 
 export const metadata: Metadata = {
   title: {
-    default: 'Notes — Frank Ding',
+    default: 'Frank Ding — A Person Who Always Stays Curious About the World',
     template: '%s — Frank Ding',
   },
-  description: 'Thoughts, code, and quiet observations.',
+  description: 'Technology is a tool. Thinking is the core. Keep learning, keep exploring, and understand the world through technology.',
   metadataBase: new URL('https://blog.frank2025.com'),
   openGraph: {
     type: 'website',

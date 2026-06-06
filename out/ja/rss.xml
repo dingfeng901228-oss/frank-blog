@@ -8,13 +8,20 @@
     <atom:link href="https://blog.frank2025.com/ja/rss.xml" rel="self" type="application/rss+xml"/>
     
     <item>
+      <title><![CDATA[作文が大嫌いだった私が、なぜブログを書き始めたのか]]></title>
+      <link>https://blog.frank2025.com/ja/blog/why-writing</link>
+      <description><![CDATA[]]></description>
+      <pubDate>Thu, 04 Jun 2026 00:00:00 GMT</pubDate>
+      <guid>https://blog.frank2025.com/ja/blog/why-writing</guid>
+      
+    </item>
+    <item>
       <title><![CDATA[なぜ私は中国離れて、日本に来たのか]]></title>
       <link>https://blog.frank2025.com/ja/blog/why-i-left-china-for-japan</link>
       <description><![CDATA[前に、嫌われる勇気という本を読みました。その本は、自分にとても大きな影響を与えてくれました。特に今でも強く印象に残っている言葉があります。]]></description>
       <pubDate>Thu, 28 May 2026 00:00:00 GMT</pubDate>
       <guid>https://blog.frank2025.com/ja/blog/why-i-left-china-for-japan</guid>
-      <category>Japan</category>
-      <category>Life</category>
+      
     </item>
   </channel>
 </rss>
