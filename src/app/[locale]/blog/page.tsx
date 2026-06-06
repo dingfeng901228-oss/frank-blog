@@ -55,7 +55,7 @@ export default async function BlogPage({ params }: PageProps) {
     <div className="min-h-screen">
       <Navbar locale={locale as Locale} />
 
-      <main className="mx-auto max-w-5xl px-6 pt-20 pb-16">
+      <main className="mx-auto max-w-[1480px] px-6 lg:px-16 xl:px-20 pt-20 pb-16">
         {/* Header */}
         <section className="py-16 border-b border-[var(--border)]">
           <h1 className="font-serif text-4xl font-medium mb-4">

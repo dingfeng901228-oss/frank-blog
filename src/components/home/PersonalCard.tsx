@@ -64,7 +64,7 @@ export default function PersonalCard({ locale }: { locale: string }) {
       className="relative w-full mx-auto lg:mx-0"
     >
       <div
-        className="relative overflow-hidden rounded-2xl p-5"
+        className="relative overflow-hidden rounded-2xl p-6"
         style={{
           background:
             'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.008) 100%)',

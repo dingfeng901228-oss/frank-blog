@@ -50,7 +50,7 @@ const heroContent = {
   },
 }
 
-const CONTAINER = 'mx-auto max-w-5xl px-6'
+const CONTAINER = 'mx-auto max-w-[1480px] px-6 lg:px-16 xl:px-20'
 
 /* ── Value card ── */
 function ValueCard({
@@ -105,7 +105,7 @@ export default function HeroSection({ locale }: { locale: string }) {
       <div className="hero-horizon-glow" />
 
       <div className={`${CONTAINER} relative z-10`}>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 lg:gap-14 items-start">
           {/* ======== LEFT COLUMN ======== */}
           <div className="min-w-0">
             {/* badge */}
@@ -170,7 +170,7 @@ export default function HeroSection({ locale }: { locale: string }) {
           </div>
 
           {/* ======== RIGHT COLUMN ======== */}
-          <div className="min-w-0">
+          <div className="min-w-0 max-w-[520px] lg:max-w-[480px] xl:max-w-[520px]">
             <PersonalCard locale={locale} />
           </div>
         </div>
