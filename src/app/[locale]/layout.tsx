@@ -7,10 +7,16 @@ export function generateStaticParams() {
 }
 
 const siteName = 'Frank Ding'
-const defaultDescription = {
+const defaultDescription: Record<string, string> = {
   ja: '技術は手段であり、思考こそが本質。学び続け、考え続け、技術を通して世界を探求する。',
   zh: '技术是工具，思考才是核心。持续学习，记录思考，用技术探索世界。',
   en: 'Technology is a tool. Thinking is the core. Keep learning, keep exploring, and understand the world through technology.',
+}
+
+const defaultTitles: Record<string, string> = {
+  ja: 'Frank Ding — 世界に対して、いつも好奇心を持ち続ける人',
+  zh: 'Frank Ding — 对世界始终保持好奇的人',
+  en: 'Frank Ding — A Person Who Always Stays Curious About the World',
 }
 
 const ogLocale: Record<string, string> = {
@@ -28,10 +34,10 @@ export async function generateMetadata({
 
   return {
     title: {
-      default: `${siteName} — 世界に対して、いつも好奇心を持ち続ける人`,
+      default: defaultTitles[locale] ?? defaultTitles.ja,
       template: `%s — ${siteName}`,
     },
-    description: defaultDescription[locale as keyof typeof defaultDescription] ?? defaultDescription.ja,
+    description: defaultDescription[locale] ?? defaultDescription.ja,
     metadataBase: new URL('https://blog.frank2025.com'),
     alternates: {
       canonical: `https://blog.frank2025.com/${locale}`,
@@ -47,8 +53,8 @@ export async function generateMetadata({
       siteName,
       locale: ogLocale[locale] ?? 'ja_JP',
       alternateLocale: ['ja_JP', 'zh_CN', 'en_US'],
-      title: `${siteName} — 世界に対して、いつも好奇心を持ち続ける人`,
-      description: defaultDescription[locale as keyof typeof defaultDescription] ?? defaultDescription.ja,
+      title: defaultTitles[locale] ?? defaultTitles.ja,
+      description: defaultDescription[locale] ?? defaultDescription.ja,
       url: `https://blog.frank2025.com/${locale}`,
       images: [
         {
@@ -61,8 +67,8 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${siteName} — A Person Who Always Stays Curious About the World`,
-      description: defaultDescription.en,
+      title: defaultTitles[locale] ?? defaultTitles.ja,
+      description: defaultDescription[locale] ?? defaultDescription.ja,
       images: ['/og-image.jpg'],
     },
     icons: {
