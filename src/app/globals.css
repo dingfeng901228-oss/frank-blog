@@ -437,8 +437,69 @@
 }
 
 @layer components {
+  /* ── Article page wrapper ── */
+  .article-page-wrapper {
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 5rem 1.5rem 4rem;
+  }
+  @media (min-width: 768px) {
+    .article-page-wrapper {
+      padding-left: 4rem;
+      padding-right: 4rem;
+    }
+  }
+  @media (min-width: 1800px) {
+    .article-page-wrapper {
+      max-width: 1500px;
+    }
+  }
+
+  /* ── Three-column article grid ── */
+  .article-three-col {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 1024px) {
+    .article-three-col {
+      grid-template-columns: 220px minmax(0, 780px) 260px;
+      gap: 2rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .article-three-col {
+      grid-template-columns: 240px minmax(0, 780px) 280px;
+      gap: 2.5rem;
+    }
+  }
+
+  /* Hide side columns on mobile */
+  .article-toc-col {
+    display: none;
+  }
+  .article-sidebar-col {
+    display: none;
+  }
+  @media (min-width: 1024px) {
+    .article-toc-col {
+      display: block;
+    }
+    .article-sidebar-col {
+      display: block;
+    }
+  }
+
+  /* ── Reading content typography ── */
   .reading-content {
-    @apply leading-[1.9] tracking-wide;
+    font-size: 1.05rem;
+    line-height: 1.9;
+    letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.88);
+  }
+  @media (min-width: 768px) {
+    .reading-content {
+      font-size: 1.125rem;
+    }
   }
 
   .reading-content h1 {
@@ -454,7 +515,8 @@
   }
 
   .reading-content p {
-    @apply my-5;
+    margin-top: 0;
+    margin-bottom: 2em;
   }
 
   .reading-content a {
@@ -462,11 +524,14 @@
   }
 
   .reading-content blockquote {
-    @apply border-l-2 border-[var(--accent)] pl-6 my-6 italic text-[var(--muted)];
+    @apply border-l-2 border-[var(--accent)] pl-6 my-6 italic;
+    color: rgba(255, 255, 255, 0.6);
   }
 
   .reading-content pre {
-    @apply bg-[var(--muted)] rounded-lg p-4 my-6 overflow-x-auto;
+    @apply rounded-lg p-4 my-6 overflow-x-auto;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .reading-content code {
@@ -474,14 +539,25 @@
   }
 
   .reading-content ul {
-    @apply list-disc ml-6 my-4 space-y-2;
+    @apply list-disc ml-6 my-6 space-y-2;
   }
 
   .reading-content ol {
-    @apply list-decimal ml-6 my-4 space-y-2;
+    @apply list-decimal ml-6 my-6 space-y-2;
+  }
+
+  .reading-content li {
+    margin-bottom: 0.5em;
   }
 
   .reading-content img {
     @apply rounded-lg my-8;
+  }
+
+  .reading-content hr {
+    border: none;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 3rem 0;
   }
 }

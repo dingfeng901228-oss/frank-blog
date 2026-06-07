@@ -7,6 +7,8 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import Giscus from '@/components/blog/Giscus'
 import Markdown from '@/components/Markdown'
+import ArticleTOC from '@/components/blog/ArticleTOC'
+import ArticleSidebar from '@/components/blog/ArticleSidebar'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 
@@ -29,7 +31,7 @@ export async function generateStaticParams() {
 }
 
 const navLabels = {
-  ja: { back: '← ノートに戻る' },
+  ja: { back: '← ノート一覧' },
   zh: { back: '← 返回随笔' },
   en: { back: '← Back to Notes' },
 }
@@ -80,66 +82,100 @@ export default async function NotePage({ params }: PageProps) {
   const nextNote = currentIndex > 0 ? allNotes[currentIndex - 1] : null
 
   const nav = navLabels[locale as keyof typeof navLabels]
-
-  // Render the post body through <Markdown> (react-markdown). This
-  // replaces the previous hand-rolled regex splitter, which broke on
-  // images sharing a paragraph with surrounding text, on Windows CRLF
-  // line endings, and on any future Markdown construct the regex
-  // didn't anticipate. See src/components/Markdown.tsx for details.
   const renderedContent = <Markdown>{note.content}</Markdown>
 
   return (
     <div className="min-h-screen">
       <Navbar locale={locale as Locale} />
 
-      <main className="mx-auto max-w-reading px-6 pt-20 pb-16">
-        <div className="mb-12">
+      <main className="article-page-wrapper">
+        {/* Back link */}
+        <div className="mb-8 lg:mb-12">
           <Link
             href={`/${locale}/notes`}
-            className="text-sm font-mono text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+            className="text-xs font-mono transition-colors hover:text-white"
+            style={{ color: 'rgba(255,255,255,0.5)' }}
           >
             {nav.back}
           </Link>
         </div>
 
-        <header className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            {note.tags?.map((tag) => (
-              <span key={tag} className="text-xs font-mono text-[var(--accent)]">{tag}</span>
-            ))}
-          </div>
-          <h1 className="font-serif text-4xl md:text-5xl font-medium leading-tight mb-6">{note.title}</h1>
-          {note.description && (
-            <p className="text-[var(--muted)] text-lg mb-8 leading-relaxed">{note.description}</p>
+        {/* Header */}
+        <header className="mb-10 lg:mb-12 lg:col-span-3">
+          {note.tags && note.tags.length > 0 && (
+            <div className="flex items-center gap-3 mb-5">
+              {note.tags.map((tag) => (
+                <span key={tag} className="text-[10px] font-mono px-2.5 py-0.5 rounded-full" style={{
+                  background: 'rgba(59,130,246,0.10)',
+                  border: '1px solid rgba(59,130,246,0.15)',
+                  color: 'rgba(147,197,253,0.9)',
+                }}>{tag}</span>
+              ))}
+            </div>
           )}
-          <div className="flex items-center gap-6 text-sm text-[var(--muted)] font-mono">
+          <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white">
+            {note.title}
+          </h1>
+          {note.description && (
+            <p className="text-base lg:text-lg leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
+              {note.description}
+            </p>
+          )}
+          <div className="flex items-center gap-4 text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>
             <time dateTime={note.publishedAt}>{formatDate(note.publishedAt, locale)}</time>
           </div>
         </header>
 
-        <article className="reading-content">{renderedContent}</article>
+        {/* Three-column layout */}
+        <div className="article-three-col">
+          {/* Left: TOC */}
+          <div className="article-toc-col">
+            <ArticleTOC />
+          </div>
 
-        <nav className="mt-20 pt-8 border-t border-[var(--border)] grid grid-cols-2 gap-8">
+          {/* Center: Content */}
+          <article className="reading-content min-w-0">
+            {renderedContent}
+          </article>
+
+          {/* Right: Sidebar */}
+          <div className="article-sidebar-col">
+            <ArticleSidebar
+              locale={locale}
+              publishedAt={note.publishedAt}
+              tags={note.tags}
+            />
+          </div>
+        </div>
+
+        {/* Divider */}
+        {renderedContent && (
+          <div className="mt-16 mb-12 h-px w-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        )}
+
+        {/* Prev / Next nav */}
+        <nav className="grid grid-cols-2 gap-8 mb-16">
           <div>
             {prevNote && (
               <Link href={`/${locale}/notes/${prevNote.slug}`} className="block group">
-                <span className="text-xs font-mono text-[var(--muted)] mb-2 block">← Previous</span>
-                <span className="font-serif text-lg group-hover:text-[var(--accent)] transition-colors">{prevNote.title}</span>
+                <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>← Previous</span>
+                <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{prevNote.title}</span>
               </Link>
             )}
           </div>
           <div className="text-right">
             {nextNote && (
               <Link href={`/${locale}/notes/${nextNote.slug}`} className="block group">
-                <span className="text-xs font-mono text-[var(--muted)] mb-2 block">Next →</span>
-                <span className="font-serif text-lg group-hover:text-[var(--accent)] transition-colors">{nextNote.title}</span>
+                <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>Next →</span>
+                <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{nextNote.title}</span>
               </Link>
             )}
           </div>
         </nav>
 
-        <section className="mt-20 pt-12 border-t border-[var(--border)]">
-          <h2 className="text-xs font-mono text-[var(--muted)] tracking-widest mb-8">
+        {/* Comments */}
+        <section className="pt-12 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          <h2 className="text-[10px] font-mono tracking-[0.18em] mb-8 uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
             {locale === 'ja' ? 'コメント' : locale === 'zh' ? '评论' : 'Comments'}
           </h2>
           {/* Prefix with 'note-' so notes and blog posts can never collide
