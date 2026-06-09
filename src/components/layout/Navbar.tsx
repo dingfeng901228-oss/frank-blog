@@ -208,10 +208,10 @@ export default function Navbar({ locale }: NavbarProps) {
               </svg>
             </button>
 
-            {/* Dropdown menu */}
+            {/* Dropdown menu —— 只显示「可切换」语言，不显示当前语言 */}
             {dropdownOpen && (
               <div
-                className="absolute right-0 top-full mt-1.5 min-w-[120px] rounded-xl overflow-hidden z-50"
+                className="dropdown-enter absolute right-0 top-full mt-1.5 min-w-[140px] p-1.5 rounded-xl z-50"
                 style={{
                   background: 'rgba(12, 16, 36, 0.92)',
                   backdropFilter: 'blur(20px)',
@@ -220,33 +220,32 @@ export default function Navbar({ locale }: NavbarProps) {
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
                 }}
               >
-                {(['ja', 'zh', 'en'] as Locale[]).map((loc) => (
-                  <Link
-                    key={loc}
-                    href={getLocalePath(loc)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-xs font-mono tracking-wider transition-colors"
-                    style={{
-                      color: loc === locale ? '#ffffff' : 'rgba(255, 255, 255, 0.65)',
-                      background: loc === locale ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
-                      fontWeight: loc === locale ? 500 : 400,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (loc !== locale) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
-                    }}
-                    onMouseLeave={(e) => {
-                      if (loc !== locale) (e.currentTarget as HTMLElement).style.background = 'transparent'
-                    }}
-                    onClick={() => setDropdownOpen(false)}
-                  >
-                    <span>{localeShort[loc]}</span>
-                    <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 400 }}>{localeNames[loc]}</span>
-                    {loc === locale && (
-                      <svg className="w-3 h-3 ml-auto" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </Link>
-                ))}
+                {(['ja', 'zh', 'en'] as Locale[])
+                  .filter((loc) => loc !== locale)
+                  .map((loc) => (
+                    <Link
+                      key={loc}
+                      href={getLocalePath(loc)}
+                      className="flex items-center px-3 text-sm rounded-lg transition-colors"
+                      style={{
+                        height: '44px',
+                        color: 'rgba(255, 255, 255, 0.75)',
+                        fontFamily: 'var(--font-sans)',
+                        fontWeight: 500,
+                        letterSpacing: '0.02em',
+                        background: 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(255, 255, 255, 0.06)'
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = 'transparent'
+                      }}
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      {localeNames[loc]}
+                    </Link>
+                  ))}
               </div>
             )}
           </div>

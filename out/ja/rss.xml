@@ -5,9 +5,18 @@
     <link>https://blog.frank2025.com/ja</link>
     <description>技術は手段であり、思考こそが本質。学び続け、考え続け、技術を通して世界を探求する。</description>
     <language>ja</language>
-    <lastBuildDate>Sat, 06 Jun 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Sun, 07 Jun 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://blog.frank2025.com/ja/rss.xml" rel="self" type="application/rss+xml"/>
     
+    <item>
+      <title><![CDATA[AI時代は、誰かの反対によって止まるものではない]]></title>
+      <link>https://blog.frank2025.com/ja/blog/ai-era</link>
+      <description><![CDATA[]]></description>
+      <pubDate>Sun, 07 Jun 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://blog.frank2025.com/ja/blog/ai-era</guid>
+      <category>Blog</category>
+      
+    </item>
     <item>
       <title><![CDATA[自分で歩いてみなければ分からない道がある]]></title>
       <link>https://blog.frank2025.com/ja/blog/some-roads</link>
