@@ -1,0 +1,155 @@
+1:"$Sreact.fragment"
+2:I[9766,[],""]
+3:I[8924,[],""]
+6:I[4431,[],"OutletBoundary"]
+8:I[5278,[],"AsyncMetadataOutlet"]
+a:I[4431,[],"ViewportBoundary"]
+c:I[4431,[],"MetadataBoundary"]
+d:"$Sreact.suspense"
+f:I[7150,[],""]
+:HL["/_next/static/css/4482c9ede16dc4cb.css","style"]
+0:{"P":null,"b":"xAcmphfaiE8aieWwuu0N2","p":"","c":["","zh","blog","some-roads"],"i":false,"f":[[["",{"children":[["locale","zh","d"],{"children":["blog",{"children":[["slug","some-roads","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true]}],["",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["locale","zh","d"],["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/4482c9ede16dc4cb.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],"$L4"]}],{"children":["blog",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["slug","some-roads","d"],["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["__PAGE__",["$","$1","c",{"children":["$L5",null,["$","$L6",null,{"children":["$L7",["$","$L8",null,{"promise":"$@9"}]]}]]}],{},null,false]},null,false]},null,false]},null,false]},null,false],["$","$1","h",{"children":[null,[["$","$La",null,{"children":"$Lb"}],null],["$","$Lc",null,{"children":["$","div",null,{"hidden":true,"children":["$","$d",null,{"fallback":null,"children":"$Le"}]}]}]]}],false]],"m":"$undefined","G":["$f",[]],"s":false,"S":true}
+10:I[9998,["450","static/chunks/app/%5Blocale%5D/layout-32ae2a0c4ef77cc4.js"],"default"]
+11:I[705,["450","static/chunks/app/%5Blocale%5D/layout-32ae2a0c4ef77cc4.js"],"default"]
+12:I[63,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+13:I[2619,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],""]
+14:I[8936,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+15:I[4090,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+17:I[5666,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+4:["$","html",null,{"lang":"zh","className":"dark","children":[["$","head",null,{"children":[["$","meta",null,{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","link",null,{"rel":"apple-touch-icon","sizes":"180x180","href":"/apple-touch-icon.png"}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"Person\",\"name\":\"Ding Feng\",\"alternateName\":\"Frank Ding\",\"url\":\"https://blog.frank2025.com\",\"jobTitle\":\"IT Infrastructure Engineer\",\"address\":{\"@type\":\"PostalAddress\",\"addressLocality\":\"Tokyo\",\"addressCountry\":\"JP\"},\"knowsAbout\":[\"TypeScript\",\"Python\",\"AI\",\"Linux\",\"Docker\",\"Cloud\"],\"sameAs\":[\"https://github.com/dingfeng901228-oss\"]}"}}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"WebSite\",\"name\":\"Frank Ding\",\"url\":\"https://blog.frank2025.com\",\"description\":\"持续学习，记录思考，用技术探索世界\"}"}}]]}],["$","body",null,{"className":"min-h-screen antialiased","children":[["$","$L10",null,{}],["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}],["$","$L11",null,{}]]}]]}]
+16:T11c7,
+
+![choose.png](https://blog.frank2025.com/images/2026-06-06T12-45-12-choose.png)
+
+
+## Token 见底摆在我面前的两条路
+
+前天，我用小龙虾蒸馏了几个名人，并开启了“使用名人的思考方式回答问题”的功能。
+
+结果是显而易见的——Token 消耗速度直线上升。我订阅的 MiniMax 配额很快就见底了。
+
+于是，摆在我面前的有两条路：
+
+一条是继续升级 MiniMax，购买更高额度的套餐；
+
+另一条，则是尝试其他大模型。
+
+其实在这之前，我的朋友 ZJ 就曾告诉过我，MiniMax 是他用过性价比最高的大模型。
+
+但坦白说，我对此一直抱有怀疑。
+
+于是我开始四处求证，问 ChatGPT，问其他 AI，也查阅了不少资料。最终，根据各方给出的建议，我购买了被许多人称为“性价比之王”的 DeepSeek API，充值了 100 元。
+
+## 朋友 ZJ 的建议和我的怀疑
+
+我也把这个决定告诉了 ZJ。
+
+他说，他以前用过 DeepSeek，觉得没有 MiniMax 聪明。
+
+而我依然保持怀疑。
+
+我心想，他用的或许是旧版本，现在的 DeepSeek 已经更新了那么多次，说不定早已今非昔比。
+
+## 亲自验证之后，我赞同他了
+
+然而，仅仅体验了一天之后，我开始慢慢赞同他的看法。
+
+先说价格。
+
+按照我目前的使用强度，一天大约消耗 10 元左右。这样算下来，100 元大概只能坚持 10 天。和 MiniMax 相比，远没有想象中那么“便宜”。
+
+再说体验。
+
+代码能力确实不错，完成一些开发任务没有太大问题。
+
+但在写作方面，却让我相当失望。
+
+无论是文章的结构、内容的深度，还是整体的表达能力，都难以达到我的预期。甚至连生成一篇我愿意发布到博客上的完整文章，都显得有些吃力。
+
+这与我之前使用 MiniMax 时的体验，存在明显差距。
+
+那么，我后悔这次尝试吗？
+
+一点也不。
+
+因为我始终相信，很多事情，如果不亲自尝试，永远不会真正知道答案。
+
+即使 ZJ 是我非常信任的朋友，即使我知道他的建议一定是真诚的，我也不会因此完全照单全收。
+
+这并不是不信任他。
+
+恰恰相反，正因为我尊重他的判断，所以我会认真听取他的意见；但也正因为我知道他不是神，所以我不会把他的意见当作最终答案。
+
+别人走过的路，可以成为参考。
+
+但不能代替自己迈出的脚步。
+
+想到这里，我忽然觉得，这一点其实和 ZJ 很像。
+
+他的网站域名是 antisubmissivist.com。
+
+他说，“antisubmissivist”这个词是他自己创造的，大致可以理解为“反顺从主义者”。
+
+仔细想想，我们或许真的是同一类人。
+
+我们愿意听取建议，但不愿盲从。
+
+我们尊重经验，但更相信亲身验证。
+
+哪怕最后证明别人是对的，我们也希望这个答案是自己走出来的，而不是被别人直接告诉的。
+
+## 延伸到父母对子女的教育
+
+想到这里，我又联想到了父母对子女的教育。
+
+父母究竟应该如何管理孩子的人生？
+
+是尽可能干预，让他们避开所有风险？
+
+还是放手，让他们自己去踩坑、跌倒、受伤？
+
+很多父母都希望用自己几十年积累的经验，为孩子规划出一条最安全、最正确的道路。
+
+这种想法并没有错。
+
+毕竟，谁都不希望自己的孩子走弯路。
+
+但问题在于，人生中有些东西，是无法通过讲述获得的。
+
+只有亲身经历，才能真正理解。
+
+就像今天的我。
+
+如果当初因为 ZJ 的一句话，就直接放弃尝试 DeepSeek，那么我永远不会获得现在这样的认识。
+
+我只是知道“别人说它不如 MiniMax”。
+
+而不是“我亲自验证过它不如 MiniMax”。
+
+这两者看似相同，实际上完全不同。
+
+在我看来，只要不是那些足以毁掉人生的大坑，那么一些小坑、小弯路，反而应该让孩子自己去经历。
+
+跌倒一次，可能比听一百次劝告更让人记忆深刻。
+
+走错一次，可能比看十本成功学更让人成长。
+
+人生本来就不是一道标准答案题。
+
+很多事情，即使最后证明是错的，也依然有价值。
+
+因为那段亲自探索的过程，本身就是成长的一部分。
+
+有些路，别人可以告诉你方向。
+
+但最终，还是要靠自己走过，才会真正明白。
+5:["$","div",null,{"className":"min-h-screen","children":[["$","$L12",null,{"locale":"zh"}],["$","main",null,{"className":"article-page-wrapper","children":[["$","div",null,{"className":"mb-8 lg:mb-12","children":["$","$L13",null,{"href":"/zh/blog","className":"text-xs font-mono transition-colors hover:text-white","style":{"color":"rgba(255,255,255,0.5)"},"children":"← 返回博客"}]}],["$","header",null,{"className":"mb-10 lg:mb-12 lg:col-span-3","children":[false,["$","h1",null,{"className":"font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white","children":"有些路，必须亲自走过才知道"}],"",["$","div",null,{"className":"flex items-center gap-4 text-xs font-mono","style":{"color":"rgba(255,255,255,0.45)"},"children":[["$","time",null,{"dateTime":"2026-06-06","children":"2026年6月6日"}],[["$","span",null,{"children":"·"}],["$","span",null,{"children":"7 min read"}]]]}]]}],["$","div",null,{"className":"article-three-col","children":[["$","div",null,{"className":"article-toc-col","children":["$","$L14",null,{}]}],["$","article",null,{"className":"reading-content min-w-0","children":["$","$L15",null,{"children":"$16"}]}],["$","div",null,{"className":"article-sidebar-col","children":["$","$L17",null,{"locale":"zh","publishedAt":"2026-06-06","readingTime":"7 min read","tags":[]}]}]]}],["$","div",null,{"className":"mt-16 mb-12 h-px w-full","style":{"background":"rgba(255,255,255,0.06)"}}],["$","nav",null,{"className":"grid grid-cols-2 gap-8 mb-16","children":[["$","div",null,{"children":["$","$L13",null,{"href":"/zh/blog/why-writing","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-mono tracking-wider mb-2 block","style":{"color":"rgba(255,255,255,0.35)"},"children":"← Previous"}],["$","span",null,{"className":"text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80","children":"曾经最讨厌写作文的我，为什么开始写博客"}]]}]}],"$L18"]}],"$L19"]}],"$L1a"]}]
+1b:I[6122,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+18:["$","div",null,{"className":"text-right","children":["$","$L13",null,{"href":"/zh/blog/ai-era","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-mono tracking-wider mb-2 block","style":{"color":"rgba(255,255,255,0.35)"},"children":"Next →"}],["$","span",null,{"className":"text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80","children":"AI时代，不会因为你的反对而停止前进"}]]}]}]
+19:["$","section",null,{"className":"pt-12 border-t","style":{"borderColor":"rgba(255,255,255,0.06)"},"children":[["$","h2",null,{"className":"text-[10px] font-mono tracking-[0.18em] mb-8 uppercase","style":{"color":"rgba(255,255,255,0.35)"},"children":"评论"}],["$","$L1b",null,{"term":"some-roads"}]]}]
+1a:["$","footer",null,{"className":"border-t border-[var(--border)] py-16 mt-32","children":["$","div",null,{"className":"mx-auto max-w-5xl px-6","children":["$","div",null,{"className":"flex flex-col md:flex-row items-start md:items-center justify-between gap-8","children":[["$","div",null,{"className":"space-y-3","children":[["$","p",null,{"className":"font-serif text-lg","children":"安静地观察、思考、记录。"}],["$","p",null,{"className":"text-xs text-[var(--muted)] font-mono","children":"© 2026 Frank Ding"}]]}],["$","div",null,{"className":"flex items-center gap-6","children":[["$","a",null,{"href":"https://github.com/dingfeng901228-oss","target":"_blank","rel":"noopener noreferrer","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"GitHub","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-github","children":[["$","path","tonef",{"d":"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"}],["$","path","9comsn",{"d":"M9 18c-4.51 2-5-2-7-2"}],"$undefined"]}]}],["$","$L13",null,{"href":"/zh/rss.xml","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"RSS","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-rss","children":[["$","path","pv89mb",{"d":"M4 11a9 9 0 0 1 9 9"}],["$","path","k0647b",{"d":"M4 4a16 16 0 0 1 16 16"}],["$","circle","bfqh0e",{"cx":"5","cy":"19","r":"1"}],"$undefined"]}]}],["$","a",null,{"href":"mailto:dingfeng901112@gmail.com","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"邮箱","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-mail","children":[["$","rect","18n3k1",{"width":"20","height":"16","x":"2","y":"4","rx":"2"}],["$","path","1ocrg3",{"d":"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"}],"$undefined"]}]}]]}]]}]}]}]
+b:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#3B82F6"}]]
+7:null
+1c:I[622,[],"IconMark"]
+9:{"metadata":[["$","title","0",{"children":"有些路，必须亲自走过才知道 — Frank Ding"}],["$","link","1",{"rel":"manifest","href":"/manifest.json","crossOrigin":"$undefined"}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","meta","3",{"name":"googlebot","content":"index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"}],["$","link","4",{"rel":"canonical","href":"https://blog.frank2025.com/zh/blog/some-roads"}],["$","meta","5",{"property":"og:title","content":"有些路，必须亲自走过才知道"}],["$","meta","6",{"property":"og:url","content":"https://blog.frank2025.com/zh/blog/some-roads"}],["$","meta","7",{"property":"og:locale","content":"zh_CN"}],["$","meta","8",{"property":"og:type","content":"article"}],["$","meta","9",{"property":"article:published_time","content":"2026-06-06"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"有些路，必须亲自走过才知道"}],["$","link","12",{"rel":"icon","href":"/favicon.ico"}],["$","link","13",{"rel":"icon","href":"/favicon.jpg","type":"image/jpeg"}],["$","link","14",{"rel":"icon","href":"/feng_favicon.svg","type":"image/svg+xml"}],["$","link","15",{"rel":"apple-touch-icon","href":"/apple-touch-icon.png"}],["$","$L1c","16",{}]],"error":null,"digest":"$undefined"}
+e:"$9:metadata"

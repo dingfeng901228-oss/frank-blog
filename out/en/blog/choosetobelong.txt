@@ -1,0 +1,237 @@
+1:"$Sreact.fragment"
+2:I[9766,[],""]
+3:I[8924,[],""]
+6:I[4431,[],"OutletBoundary"]
+8:I[5278,[],"AsyncMetadataOutlet"]
+a:I[4431,[],"ViewportBoundary"]
+c:I[4431,[],"MetadataBoundary"]
+d:"$Sreact.suspense"
+f:I[7150,[],""]
+:HL["/_next/static/css/4482c9ede16dc4cb.css","style"]
+0:{"P":null,"b":"xAcmphfaiE8aieWwuu0N2","p":"","c":["","en","blog","choosetobelong"],"i":false,"f":[[["",{"children":[["locale","en","d"],{"children":["blog",{"children":[["slug","choosetobelong","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true]}],["",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["locale","en","d"],["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/4482c9ede16dc4cb.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],"$L4"]}],{"children":["blog",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["slug","choosetobelong","d"],["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["__PAGE__",["$","$1","c",{"children":["$L5",null,["$","$L6",null,{"children":["$L7",["$","$L8",null,{"promise":"$@9"}]]}]]}],{},null,false]},null,false]},null,false]},null,false]},null,false],["$","$1","h",{"children":[null,[["$","$La",null,{"children":"$Lb"}],null],["$","$Lc",null,{"children":["$","div",null,{"hidden":true,"children":["$","$d",null,{"fallback":null,"children":"$Le"}]}]}]]}],false]],"m":"$undefined","G":["$f",[]],"s":false,"S":true}
+10:I[9998,["450","static/chunks/app/%5Blocale%5D/layout-32ae2a0c4ef77cc4.js"],"default"]
+11:I[705,["450","static/chunks/app/%5Blocale%5D/layout-32ae2a0c4ef77cc4.js"],"default"]
+12:I[63,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+13:I[2619,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],""]
+14:I[8936,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+15:I[4090,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+4:["$","html",null,{"lang":"en","className":"dark","children":[["$","head",null,{"children":[["$","meta",null,{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","link",null,{"rel":"apple-touch-icon","sizes":"180x180","href":"/apple-touch-icon.png"}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"Person\",\"name\":\"Ding Feng\",\"alternateName\":\"Frank Ding\",\"url\":\"https://blog.frank2025.com\",\"jobTitle\":\"IT Infrastructure Engineer\",\"address\":{\"@type\":\"PostalAddress\",\"addressLocality\":\"Tokyo\",\"addressCountry\":\"JP\"},\"knowsAbout\":[\"TypeScript\",\"Python\",\"AI\",\"Linux\",\"Docker\",\"Cloud\"],\"sameAs\":[\"https://github.com/dingfeng901228-oss\"]}"}}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"WebSite\",\"name\":\"Frank Ding\",\"url\":\"https://blog.frank2025.com\",\"description\":\"Keep learning, keep exploring, and understand the world through technology.\"}"}}]]}],["$","body",null,{"className":"min-h-screen antialiased","children":[["$","$L10",null,{}],["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}],["$","$L11",null,{}]]}]]}]
+16:T148a,
+
+
+![齐鲁.jpg](https://blog.frank2025.com/images/2026-06-14T09-32-32-__.jpg)
+
+One of the most common questions people ask after learning your name is:
+
+“Where are you from?”
+
+For me, the answer has never stayed the same.
+
+I was born in Zaozhuang, Shandong Province, China.
+
+When I was six years old, my parents moved our family to Weihai, and our household registration moved with us.
+
+As a child in Weihai, when people asked where I was from, I would answer:
+
+“Zaozhuang.”
+
+Later, after graduating from high school and moving to Beijing for study and work, my answer became:
+
+“Shandong.”
+
+Or sometimes:
+
+“Weihai.”
+
+Today, living in Japan, my answer is even simpler:
+
+“I’m Chinese.”
+
+As my world expanded, so did my understanding of where I belonged.
+
+![枣庄.jpg](https://blog.frank2025.com/images/2026-06-14T09-40-27-__.jpg)
+
+## A Birthplace Without a Sense of Belonging
+
+My hometown is a small village in Zaozhuang, Shandong Province.
+
+To be honest, it was a poor place.
+
+The hills were mostly bare rock, with very few trees.
+
+Water came from wells, not taps.
+
+Life was difficult, and opportunities were limited.
+
+The main reason my parents left was simple:
+
+There was no future there.
+
+Few jobs, few factories, and little hope for upward mobility.
+
+Because I spent only a few years there, I never developed a strong attachment to the place.
+
+The only thing that still feels familiar is the local dialect.
+
+![威海.jpg](https://blog.frank2025.com/images/2026-06-14T09-39-58-__.jpg)
+
+## Weihai: The City That Raised Me
+
+People often ask whether I like Weihai.
+
+As a child, my answer would have been a firm “No.”
+
+In fact, I hated it.
+
+Shortly after we moved there, my younger brother and I were frequently bullied by older children.
+
+My parents were honest and gentle people, but they were not the type to confront others.
+
+Many times I cried and begged them to return to our hometown.
+
+They never did.
+
+I hated the children who bullied us.
+
+And I hated myself as well.
+
+I hated my lack of courage.
+
+I hated my inability to protect my younger brother.
+
+At the time, local people sometimes referred to newcomers like us as “people from the west.”
+
+It sounded harmless on the surface, but it carried a clear sense of exclusion.
+
+Only later did I realize that this was not unique to Weihai.
+
+## Everywhere Has Outsiders
+
+For a long time, I thought only people in Weihai looked down on outsiders.
+
+Then I lived in Beijing.
+
+Then Qingdao.
+
+And eventually, Japan.
+
+I realized that every place has its own version of locals and outsiders.
+
+I also saw stories of Chinese immigrants facing discrimination abroad.
+
+The more I observed, the more I understood:
+
+This is not a problem unique to one city or one country.
+
+It is a universal part of human society.
+
+The difference lies only in the degree.
+
+## The Migration That Changed My Family's Future
+
+Although I spent nearly thirty years in Weihai, I never felt a deep sense of belonging there.
+
+Yet as I grew older, I became increasingly grateful to my parents.
+
+Their decision to leave our hometown and move to Weihai changed the trajectory of our family.
+
+Life gradually improved.
+
+Opportunities became more accessible.
+
+Compared with many relatives who stayed behind, we had a better future.
+
+That experience taught me an important lesson:
+
+Hard work matters.
+
+But choosing where to live matters too.
+
+Sometimes, a single decision about where to settle can change the fate of an entire family.
+
+![东京.jpg](https://blog.frank2025.com/images/2026-06-14T09-39-20-__.jpg)
+
+## From Weihai to Tokyo
+
+After high school, I moved to Beijing.
+
+Not because I wanted to stay there forever.
+
+I simply wanted to see more of the world.
+
+Later, I moved to Qingdao, hoping to build my future there.
+
+But reality did not match my expectations.
+
+The cost of living was high.
+
+Salaries were low.
+
+And local favoritism was more common than I had imagined.
+
+Eventually, I realized that nowhere in China truly felt like the place where I wanted to put down roots.
+
+So I came to Japan.
+
+I came to Tokyo.
+
+Before leaving, I told my parents:
+
+“You moved from your hometown to Weihai. I can move from Weihai to Tokyo.”
+
+I want to build a life here.
+
+Not only for myself.
+
+But also for future generations of my family.
+
+For my future children, if I have any.
+
+For my nephews and nieces.
+
+I want them to have more choices than I did.
+
+## Choosing Where You Belong
+
+Over the years, I have come to believe something deeply:
+
+Life is about pursuing a better future.
+
+You cannot choose where you are born.
+
+But you can choose where you live.
+
+You are not defined by your birthplace.
+
+You are defined by where you choose to build your life.
+
+So if someone asks me where I am from today, my answer would be:
+
+I was born in Shandong, China.
+
+I grew up in Weihai.
+
+I lived in Beijing and Qingdao.
+
+Now I live in Tokyo.
+
+And in the future, I hope to become a person who truly belongs to the place I have chosen.
+
+Because you are not from where you were born.
+
+You are from where you choose to belong.
+
+
+5:["$","div",null,{"className":"min-h-screen","children":[["$","$L12",null,{"locale":"en"}],["$","main",null,{"className":"article-page-wrapper","children":[["$","div",null,{"className":"mb-8 lg:mb-12","children":["$","$L13",null,{"href":"/en/blog","className":"text-xs font-mono transition-colors hover:text-white","style":{"color":"rgba(255,255,255,0.5)"},"children":"← Back to Blog"}]}],["$","header",null,{"className":"mb-10 lg:mb-12 lg:col-span-3","children":[false,["$","h1",null,{"className":"font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white","children":"You Are Not Defined by Where You Were Born, but by Where You Choose to Belong"}],"",["$","div",null,{"className":"flex items-center gap-4 text-xs font-mono","style":{"color":"rgba(255,255,255,0.45)"},"children":[["$","time",null,{"dateTime":"2026-06-14","children":"June 14, 2026"}],[["$","span",null,{"children":"·"}],["$","span",null,{"children":"5 min read"}]]]}]]}],["$","div",null,{"className":"article-three-col","children":[["$","div",null,{"className":"article-toc-col","children":["$","$L14",null,{}]}],["$","article",null,{"className":"reading-content min-w-0","children":["$","$L15",null,{"children":"$16"}]}],"$L17"]}],"$L18","$L19","$L1a"]}],"$L1b"]}]
+1c:I[5666,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+1d:I[6122,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+17:["$","div",null,{"className":"article-sidebar-col","children":["$","$L1c",null,{"locale":"en","publishedAt":"2026-06-14","readingTime":"5 min read","tags":[]}]}]
+18:["$","div",null,{"className":"mt-16 mb-12 h-px w-full","style":{"background":"rgba(255,255,255,0.06)"}}]
+19:["$","nav",null,{"className":"grid grid-cols-2 gap-8 mb-16","children":[["$","div",null,{"children":["$","$L13",null,{"href":"/en/blog/limits","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-mono tracking-wider mb-2 block","style":{"color":"rgba(255,255,255,0.35)"},"children":"← Previous"}],["$","span",null,{"className":"text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80","children":"Maybe What Limits Us Has Never Been Our Ability"}]]}]}],["$","div",null,{"className":"text-right","children":["$","$L13",null,{"href":"/en/blog/eventually-end","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-mono tracking-wider mb-2 block","style":{"color":"rgba(255,255,255,0.35)"},"children":"Next →"}],["$","span",null,{"className":"text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80","children":"Life Is a Game That Will Eventually End"}]]}]}]]}]
+1a:["$","section",null,{"className":"pt-12 border-t","style":{"borderColor":"rgba(255,255,255,0.06)"},"children":[["$","h2",null,{"className":"text-[10px] font-mono tracking-[0.18em] mb-8 uppercase","style":{"color":"rgba(255,255,255,0.35)"},"children":"Comments"}],["$","$L1d",null,{"term":"choosetobelong"}]]}]
+1b:["$","footer",null,{"className":"border-t border-[var(--border)] py-16 mt-32","children":["$","div",null,{"className":"mx-auto max-w-5xl px-6","children":["$","div",null,{"className":"flex flex-col md:flex-row items-start md:items-center justify-between gap-8","children":[["$","div",null,{"className":"space-y-3","children":[["$","p",null,{"className":"font-serif text-lg","children":"Quietly observing, thinking, and writing."}],["$","p",null,{"className":"text-xs text-[var(--muted)] font-mono","children":"© 2026 Frank Ding"}]]}],["$","div",null,{"className":"flex items-center gap-6","children":[["$","a",null,{"href":"https://github.com/dingfeng901228-oss","target":"_blank","rel":"noopener noreferrer","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"GitHub","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-github","children":[["$","path","tonef",{"d":"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"}],["$","path","9comsn",{"d":"M9 18c-4.51 2-5-2-7-2"}],"$undefined"]}]}],["$","$L13",null,{"href":"/en/rss.xml","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"RSS","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-rss","children":[["$","path","pv89mb",{"d":"M4 11a9 9 0 0 1 9 9"}],["$","path","k0647b",{"d":"M4 4a16 16 0 0 1 16 16"}],["$","circle","bfqh0e",{"cx":"5","cy":"19","r":"1"}],"$undefined"]}]}],["$","a",null,{"href":"mailto:dingfeng901112@gmail.com","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"Email","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-mail","children":[["$","rect","18n3k1",{"width":"20","height":"16","x":"2","y":"4","rx":"2"}],["$","path","1ocrg3",{"d":"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"}],"$undefined"]}]}]]}]]}]}]}]
+b:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#3B82F6"}]]
+7:null
+1e:I[622,[],"IconMark"]
+9:{"metadata":[["$","title","0",{"children":"You Are Not Defined by Where You Were Born, but by Where You Choose to Belong — Frank Ding"}],["$","link","1",{"rel":"manifest","href":"/manifest.json","crossOrigin":"$undefined"}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","meta","3",{"name":"googlebot","content":"index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"}],["$","link","4",{"rel":"canonical","href":"https://blog.frank2025.com/en/blog/choosetobelong"}],["$","meta","5",{"property":"og:title","content":"You Are Not Defined by Where You Were Born, but by Where You Choose to Belong"}],["$","meta","6",{"property":"og:url","content":"https://blog.frank2025.com/en/blog/choosetobelong"}],["$","meta","7",{"property":"og:locale","content":"en_US"}],["$","meta","8",{"property":"og:type","content":"article"}],["$","meta","9",{"property":"article:published_time","content":"2026-06-14"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"You Are Not Defined by Where You Were Born, but by Where You Choose to Belong"}],["$","link","12",{"rel":"icon","href":"/favicon.ico"}],["$","link","13",{"rel":"icon","href":"/favicon.jpg","type":"image/jpeg"}],["$","link","14",{"rel":"icon","href":"/feng_favicon.svg","type":"image/svg+xml"}],["$","link","15",{"rel":"apple-touch-icon","href":"/apple-touch-icon.png"}],["$","$L1e","16",{}]],"error":null,"digest":"$undefined"}
+e:"$9:metadata"

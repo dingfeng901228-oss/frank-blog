@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#3B82F6" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<title>Offline · Frank Ding Blog</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    min-height: 100vh;
+    background: #0F1428;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .box { max-width: 480px; text-align: center; }
+  .icon { font-size: 64px; line-height: 1; margin-bottom: 20px; opacity: 0.6; }
+  h1 {
+    font-weight: 600; font-size: 32px; margin: 0 0 12px;
+    text-shadow: 0 0 24px rgba(59, 130, 246, 0.18);
+  }
+  p { margin: 0 0 16px; color: rgba(255, 255, 255, 0.75); font-size: 16px; line-height: 1.6; }
+  p.note { font-size: 14px; color: rgba(255, 255, 255, 0.55); margin-bottom: 28px; }
+  button {
+    padding: 10px 20px; border-radius: 10px; font-size: 13px;
+    color: #0A0A0F; background: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    cursor: pointer; font-family: inherit;
+  }
+  button:active { transform: translateY(1px); }
+</style>
+</head>
+<body>
+  <main class="box">
+    <div class="icon" aria-hidden="true">📡</div>
+    <h1>You're offline</h1>
+    <p>No internet connection detected.</p>
+    <p class="note">
+      This page isn't cached, so it can't be shown while you're offline.
+      Please try again once your connection is back.
+    </p>
+    <button type="button" onclick="window.location.reload()">Retry</button>
+  </main>
+</body>
+</html>

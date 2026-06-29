@@ -1,0 +1,160 @@
+1:"$Sreact.fragment"
+2:I[9766,[],""]
+3:I[8924,[],""]
+6:I[4431,[],"OutletBoundary"]
+8:I[5278,[],"AsyncMetadataOutlet"]
+a:I[4431,[],"ViewportBoundary"]
+c:I[4431,[],"MetadataBoundary"]
+d:"$Sreact.suspense"
+f:I[7150,[],""]
+:HL["/_next/static/css/4482c9ede16dc4cb.css","style"]
+0:{"P":null,"b":"xAcmphfaiE8aieWwuu0N2","p":"","c":["","en","blog","why-i-left-china-for-japan"],"i":false,"f":[[["",{"children":[["locale","en","d"],{"children":["blog",{"children":[["slug","why-i-left-china-for-japan","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true]}],["",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["locale","en","d"],["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/4482c9ede16dc4cb.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],"$L4"]}],{"children":["blog",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["slug","why-i-left-china-for-japan","d"],["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["__PAGE__",["$","$1","c",{"children":["$L5",null,["$","$L6",null,{"children":["$L7",["$","$L8",null,{"promise":"$@9"}]]}]]}],{},null,false]},null,false]},null,false]},null,false]},null,false],["$","$1","h",{"children":[null,[["$","$La",null,{"children":"$Lb"}],null],["$","$Lc",null,{"children":["$","div",null,{"hidden":true,"children":["$","$d",null,{"fallback":null,"children":"$Le"}]}]}]]}],false]],"m":"$undefined","G":["$f",[]],"s":false,"S":true}
+10:I[9998,["450","static/chunks/app/%5Blocale%5D/layout-32ae2a0c4ef77cc4.js"],"default"]
+11:I[705,["450","static/chunks/app/%5Blocale%5D/layout-32ae2a0c4ef77cc4.js"],"default"]
+12:I[63,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+13:I[2619,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],""]
+14:I[8936,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+15:I[4090,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+4:["$","html",null,{"lang":"en","className":"dark","children":[["$","head",null,{"children":[["$","meta",null,{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","link",null,{"rel":"apple-touch-icon","sizes":"180x180","href":"/apple-touch-icon.png"}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"Person\",\"name\":\"Ding Feng\",\"alternateName\":\"Frank Ding\",\"url\":\"https://blog.frank2025.com\",\"jobTitle\":\"IT Infrastructure Engineer\",\"address\":{\"@type\":\"PostalAddress\",\"addressLocality\":\"Tokyo\",\"addressCountry\":\"JP\"},\"knowsAbout\":[\"TypeScript\",\"Python\",\"AI\",\"Linux\",\"Docker\",\"Cloud\"],\"sameAs\":[\"https://github.com/dingfeng901228-oss\"]}"}}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"WebSite\",\"name\":\"Frank Ding\",\"url\":\"https://blog.frank2025.com\",\"description\":\"Keep learning, keep exploring, and understand the world through technology.\"}"}}]]}],["$","body",null,{"className":"min-h-screen antialiased","children":[["$","$L10",null,{}],["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}],["$","$L11",null,{}]]}]]}]
+16:T1428,
+A few years ago, I read a book that changed my life.
+
+The book was called *The Courage to Be Disliked* — a dialogue between philosopher Alfred Adler and a young man seeking answers about happiness and human relationships.
+
+There's a line in it I still remember clearly:
+
+> "All unhappiness is determined by oneself."
+
+When I first read it, I was shaken.
+
+It wasn't blaming anyone. It was reminding me that many things aren't fixed — that change is always possible. The real question is whether you have the courage to act on it.
+
+And the reason I eventually chose to leave my old life behind was, in some way, connected to this idea.
+
+## What I Couldn't Stand Anymore
+
+Too much. So much that I sometimes didn't even know where to start.
+
+Living in China, I often felt like an **endangered species**.
+
+It's hard to describe. Not just dislike — a kind of persistent alienation. Like I was surrounded by people but never truly able to connect.
+
+In high school, our Chinese teacher asked us to write about our own weaknesses.
+
+I wrote: *I'm too honest.*
+
+The teacher read it and said, "That's not a weakness."
+
+But to me, it really felt like one.
+
+My parents had always told me: "Don't be too honest — you'll get吃亏 (吃亏 =吃亏 = get taken advantage of)."
+
+They were honest people themselves. They knew — in real life, honesty often costs you.
+
+In many situations, the ones who actually get ahead aren't the honest ones. They're the ones who know how to flatter, read the room, say the right things to the right faces.
+
+I never could.
+
+It made me feel out of place in a lot of settings.
+
+## How Environment Shapes You
+
+Later, I started noticing how much my environment was changing me — in small ways I didn't expect.
+
+Here's a small example.
+
+Chinese traffic law clearly states that **pedestrians have priority**.
+
+When I first started driving, I always stopped to let pedestrians cross.
+
+But slowly, I noticed a lot of cars around me didn't do this. Especially at intersections without cameras, everyone drove like whoever was fastest got to go.
+
+Over time, I started changing too.
+
+Sometimes I'd find myself not stopping anymore.
+
+When I caught myself doing this, I felt uncomfortable.
+
+Because I realized — you can't always live the way you believe is right. The environment changes you, slowly and quietly.
+
+When most people in an environment don't follow the rules, the ones who do become the odd ones out.
+
+Even the ones who seem "out of sync" with everyone else.
+
+## Food Safety
+
+And then there's food safety.
+
+Every year around Consumer Rights Day in China, there's a wave of food safety scandals. Additives exceeding limits. Fake ingredients. Unsanitary conditions. Almost every year.
+
+A few years ago, there was news about edible oil being transported in trucks that previously carried gasoline.
+
+The public was outraged — and then, as usual, things quietly disappeared.
+
+This kind of powerlessness was hard to accept.
+
+Sometimes I felt like even the basic peace of mind around food had become a luxury.
+
+## About Freedom
+
+What weighed on me most was the lack of freedom to live the way I wanted.
+
+I'm in my late thirties. Not married.
+
+My parents kept pushing me to get married — arranging dates without asking whether I wanted them.
+
+What mattered to them wasn't whether I was happy. It was whether I'd make them "lose face" in front of relatives and friends.
+
+Marriage, it seemed, wasn't my personal decision — it was a social obligation I had to fulfill.
+
+Nobody asked me: *Do you actually want to get married? Are you happy?*
+
+What they asked was: *Why aren't you married like everyone else?*
+
+At family gatherings and neighbor visits, the same questions came up. Over and over. Like clockwork.
+
+Eventually it felt suffocating.
+
+Beyond that — there's the information environment.
+
+In China, accessing Google, YouTube, and other services requires extra tools. The internet isn't truly open.
+
+There are many boundaries on what you can say on social platforms too. People learn what's off-limits and stop saying it. Eventually, they stop even caring about whether they want to speak. Silence becomes a habit.
+
+## The Decision to Leave
+
+Slowly, I started feeling lost. My expectations for the future faded.
+
+Then one day, I stumbled across an interview on YouTube — about Chinese immigrants living in Canada.
+
+That was the first time I seriously considered: *maybe I could live somewhere else.*
+
+Until that moment, "leaving" had never been on my radar. But for the first time, it felt like a real possibility.
+
+I started researching what it would actually take to live abroad.
+
+In the end, I chose **Japan**.
+
+The reason was simple.
+
+I like the relatively calm atmosphere of Japanese society. The appropriate sense of distance between people. The restraint, the modesty, the respect for rules.
+
+Japan isn't perfect, of course.
+
+But it has a lot of qualities that feel comfortable to me — qualities that also happen to align closely with my own personality.
+
+So ultimately —
+
+I came here.5:["$","div",null,{"className":"min-h-screen","children":[["$","$L12",null,{"locale":"en"}],["$","main",null,{"className":"article-page-wrapper","children":[["$","div",null,{"className":"mb-8 lg:mb-12","children":["$","$L13",null,{"href":"/en/blog","className":"text-xs font-mono transition-colors hover:text-white","style":{"color":"rgba(255,255,255,0.5)"},"children":"← Back to Blog"}]}],["$","header",null,{"className":"mb-10 lg:mb-12 lg:col-span-3","children":["$undefined",["$","h1",null,{"className":"font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white","children":"Why I Left China for Japan"}],["$","p",null,{"className":"text-base lg:text-lg leading-relaxed mb-6","style":{"color":"rgba(255,255,255,0.65)"},"children":"A few years ago, I read a book that changed my life — 'The Courage to Be Disliked.' There's a line in it I still remember clearly."}],["$","div",null,{"className":"flex items-center gap-4 text-xs font-mono","style":{"color":"rgba(255,255,255,0.45)"},"children":[["$","time",null,{"dateTime":"2026-05-28","children":"May 28, 2026"}],[["$","span",null,{"children":"·"}],["$","span",null,{"children":"5 min read"}]]]}]]}],["$","div",null,{"className":"article-three-col","children":[["$","div",null,{"className":"article-toc-col","children":["$","$L14",null,{}]}],["$","article",null,{"className":"reading-content min-w-0","children":["$","$L15",null,{"children":"$16"}]}],"$L17"]}],"$L18","$L19","$L1a"]}],"$L1b"]}]
+1c:I[5666,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+1d:I[6122,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+17:["$","div",null,{"className":"article-sidebar-col","children":["$","$L1c",null,{"locale":"en","publishedAt":"2026-05-28","readingTime":"5 min read","tags":"$undefined"}]}]
+18:["$","div",null,{"className":"mt-16 mb-12 h-px w-full","style":{"background":"rgba(255,255,255,0.06)"}}]
+19:["$","nav",null,{"className":"grid grid-cols-2 gap-8 mb-16","children":[["$","div",null,{"children":null}],["$","div",null,{"className":"text-right","children":["$","$L13",null,{"href":"/en/blog/why-writing","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-mono tracking-wider mb-2 block","style":{"color":"rgba(255,255,255,0.35)"},"children":"Next →"}],["$","span",null,{"className":"text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80","children":"Why Someone Who Hated Writing Essays Started a Blog"}]]}]}]]}]
+1a:["$","section",null,{"className":"pt-12 border-t","style":{"borderColor":"rgba(255,255,255,0.06)"},"children":[["$","h2",null,{"className":"text-[10px] font-mono tracking-[0.18em] mb-8 uppercase","style":{"color":"rgba(255,255,255,0.35)"},"children":"Comments"}],["$","$L1d",null,{"term":"why-i-left-china-for-japan"}]]}]
+1b:["$","footer",null,{"className":"border-t border-[var(--border)] py-16 mt-32","children":["$","div",null,{"className":"mx-auto max-w-5xl px-6","children":["$","div",null,{"className":"flex flex-col md:flex-row items-start md:items-center justify-between gap-8","children":[["$","div",null,{"className":"space-y-3","children":[["$","p",null,{"className":"font-serif text-lg","children":"Quietly observing, thinking, and writing."}],["$","p",null,{"className":"text-xs text-[var(--muted)] font-mono","children":"© 2026 Frank Ding"}]]}],["$","div",null,{"className":"flex items-center gap-6","children":[["$","a",null,{"href":"https://github.com/dingfeng901228-oss","target":"_blank","rel":"noopener noreferrer","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"GitHub","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-github","children":[["$","path","tonef",{"d":"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"}],["$","path","9comsn",{"d":"M9 18c-4.51 2-5-2-7-2"}],"$undefined"]}]}],["$","$L13",null,{"href":"/en/rss.xml","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"RSS","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-rss","children":[["$","path","pv89mb",{"d":"M4 11a9 9 0 0 1 9 9"}],["$","path","k0647b",{"d":"M4 4a16 16 0 0 1 16 16"}],["$","circle","bfqh0e",{"cx":"5","cy":"19","r":"1"}],"$undefined"]}]}],["$","a",null,{"href":"mailto:dingfeng901112@gmail.com","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"Email","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-mail","children":[["$","rect","18n3k1",{"width":"20","height":"16","x":"2","y":"4","rx":"2"}],["$","path","1ocrg3",{"d":"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"}],"$undefined"]}]}]]}]]}]}]}]
+b:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#3B82F6"}]]
+7:null
+1e:I[622,[],"IconMark"]
+9:{"metadata":[["$","title","0",{"children":"Why I Left China for Japan — Frank Ding"}],["$","meta","1",{"name":"description","content":"A few years ago, I read a book that changed my life — 'The Courage to Be Disliked.' There's a line in it I still remember clearly."}],["$","link","2",{"rel":"manifest","href":"/manifest.json","crossOrigin":"$undefined"}],["$","meta","3",{"name":"robots","content":"index, follow"}],["$","meta","4",{"name":"googlebot","content":"index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"}],["$","link","5",{"rel":"canonical","href":"https://blog.frank2025.com/en/blog/why-i-left-china-for-japan"}],["$","meta","6",{"property":"og:title","content":"Why I Left China for Japan"}],["$","meta","7",{"property":"og:description","content":"A few years ago, I read a book that changed my life — 'The Courage to Be Disliked.' There's a line in it I still remember clearly."}],["$","meta","8",{"property":"og:url","content":"https://blog.frank2025.com/en/blog/why-i-left-china-for-japan"}],["$","meta","9",{"property":"og:locale","content":"en_US"}],["$","meta","10",{"property":"og:type","content":"article"}],["$","meta","11",{"property":"article:published_time","content":"2026-05-28"}],["$","meta","12",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","13",{"name":"twitter:title","content":"Why I Left China for Japan"}],["$","meta","14",{"name":"twitter:description","content":"A few years ago, I read a book that changed my life — 'The Courage to Be Disliked.' There's a line in it I still remember clearly."}],["$","link","15",{"rel":"icon","href":"/favicon.ico"}],["$","link","16",{"rel":"icon","href":"/favicon.jpg","type":"image/jpeg"}],["$","link","17",{"rel":"icon","href":"/feng_favicon.svg","type":"image/svg+xml"}],["$","link","18",{"rel":"apple-touch-icon","href":"/apple-touch-icon.png"}],["$","$L1e","19",{}]],"error":null,"digest":"$undefined"}
+e:"$9:metadata"

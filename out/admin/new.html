@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Post - frank-blog</title>
+  <meta name="robots" content="noindex">
+  <style>
+    :root {
+      --bg: #0A0A0F;
+      --surface: #111119;
+      --surface-2: #16161f;
+      --border: #1E1E2E;
+      --muted: #707080;
+      --text: #E8E8EC;
+      --accent: #00D4C8;
+      --accent-dark: #00A89D;
+      --purple: #7C3AED;
+      --danger: #ef4444;
+      --radius: 8px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; background-color: var(--bg); color: var(--text); font-family: 'SF Mono', 'Fira Code', Consolas, monospace; -webkit-font-smoothing: antialiased; line-height: 1.6; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+    .header { display: flex; align-items: center; gap: 16px; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .back { color: var(--muted); text-decoration: none; font-size: 13px; transition: color 0.15s; }
+    .back:hover { color: var(--text); }
+    .header h1 { font-size: 18px; font-weight: 500; font-family: Georgia, serif; }
+    .header h1 span { color: var(--muted); font-family: 'SF Mono', sans-serif; font-size: 12px; font-weight: 400; margin-left: 8px; }
+
+    .field { margin-bottom: 22px; }
+    .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .field input, .field select { width: 100%; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; color: var(--text); font-family: 'SF Mono', Consolas, monospace; outline: none; transition: border-color 0.15s; }
+    .field input:focus, .field select:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); }
+    .field small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .editor-wrap { margin-bottom: 22px; }
+    .editor-wrap label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .toolbar { display: flex; gap: 4px; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; flex-wrap: wrap; align-items: center; }
+    .toolbar button { padding: 5px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; color: var(--muted); cursor: pointer; font-size: 11px; font-family: 'SF Mono', Consolas, monospace; transition: all 0.12s; }
+    .toolbar button:hover { background: var(--border); color: var(--text); }
+    .toolbar .btn-upload { position: relative; display: inline-block; }
+    .toolbar input[type=file] { position: absolute; top: 0; left: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+    .toolbar button.uploading { opacity: 0.6; cursor: wait; }
+    .toolbar button.upload-done { border-color: #22c55e; color: #22c55e; }
+    textarea { width: 100%; min-height: 380px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); font-size: 13px; color: var(--text); font-family: 'SF Mono', Consolas, monospace; line-height: 1.7; resize: vertical; outline: none; transition: border-color 0.15s; }
+    textarea:focus { border-color: var(--accent); }
+
+    .actions { display: flex; gap: 12px; padding-top: 28px; border-top: 1px solid var(--border); margin-top: 28px; }
+    .btn { padding: 10px 20px; border-radius: var(--radius); font-size: 13px; cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--accent); color: #0A0A0F; font-weight: 500; }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .msg { padding: 12px 16px; border-radius: var(--radius); font-size: 12px; margin-bottom: 20px; }
+    .msg a { color: var(--accent); }
+    .msg-error { background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .msg-success { background: rgba(34, 197, 94, 0.08); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
+
+    @media (max-width: 600px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <a href="/admin/" class="back">← Admin</a>
+      <h1 id="pageTitle">New Post <span id="typeTag"></span></h1>
+    </div>
+    <div id="msgBox"></div>
+
+    <div class="field">
+      <label>Language</label>
+      <select id="lang">
+        <option value="zh">中文</option>
+        <option value="ja">日本語</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label>Slug (URL path)</label>
+        <input type="text" id="slug" placeholder="my-awesome-post" />
+        <small>Only lowercase letters, numbers, and hyphens</small>
+      </div>
+      <div class="field">
+        <label>Published Date</label>
+        <input type="date" id="date" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="title" placeholder="My Awesome Post" />
+    </div>
+
+    <div class="field">
+      <label>Description / Excerpt</label>
+      <input type="text" id="description" placeholder="A brief description of the post" />
+    </div>
+
+    <div class="field">
+      <label>Tags (comma separated)</label>
+      <input type="text" id="tags" placeholder="Japan, Life, Tech" />
+    </div>
+
+    <div class="editor-wrap">
+      <label>Content (MDX)</label>
+      <div class="toolbar">
+        <button onclick="insertMd('## ', '')">H2</button>
+        <button onclick="insertMd('### ', '')">H3</button>
+        <button onclick="insertMd('**', '**')">Bold</button>
+        <button onclick="insertMd('`', '`')">Code</button>
+        <button onclick="insertMd('\n```\n', '\n```')">Block</button>
+        <button onclick="insertMd('- ', '')">List</button>
+        <button onclick="insertMd('\n> ', '')">Quote</button>
+        <label class="btn-upload">
+          <button id="imgBtn" type="button">Img</button>
+          <input type="file" id="imgInput" accept="image/*" />
+        </label>
+      </div>
+      <textarea id="content" placeholder="Write your post content in MDX format..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="saveBtn">Create Post</button>
+    </div>
+  </div>
+
+  <script>
+    var REPO = 'dingfeng901228-oss/frank-blog';
+    var BRANCH = 'master';
+    var CURRENT_TYPE = 'posts';
+
+    function checkAuth() {
+      if (sessionStorage.getItem('ad') !== '1') location.href = '/admin/login.html';
+    }
+    function apiUrl(path) { return '/api/github?path=' + REPO + '/' + path; }
+    function showMsg(html, type) {
+      document.getElementById('msgBox').innerHTML = '<div class="msg msg-' + type + '">' + html + '</div>';
+      window.scrollTo(0, 0);
+    }
+    function insertMd(before, after) {
+      var ta = document.getElementById('content');
+      var start = ta.selectionStart, end = ta.selectionEnd;
+      var text = ta.value;
+      var sel = text.substring(start, end);
+      ta.value = text.substring(0, start) + before + sel + after + text.substring(end);
+      ta.focus();
+    }
+    function insertImageMd(url, alt) {
+      var ta = document.getElementById('content');
+      var md = '\n![' + (alt || 'image') + '](' + url + ')\n';
+      var pos = ta.selectionStart;
+      ta.value = ta.value.substring(0, pos) + md + ta.value.substring(pos);
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = pos + md.length;
+    }
+    function uploadImage(file) {
+      var btn = document.getElementById('imgBtn');
+      btn.textContent = 'Uploading...';
+      btn.classList.add('uploading');
+      var fd = new FormData();
+      fd.append('image', file);
+      fetch('/api/upload-image', { method: 'POST', body: fd })
+        .then(function(r) { if (!r.ok) throw new Error('Upload failed (' + r.status + ')'); return r.json(); })
+        .then(function(data) {
+          btn.textContent = 'Inserted';
+          btn.classList.remove('uploading');
+          btn.classList.add('upload-done');
+          insertImageMd(data.url, file.name);
+          setTimeout(function() {
+            btn.textContent = 'Img';
+            btn.classList.remove('upload-done');
+          }, 2000);
+        })
+        .catch(function(err) {
+          btn.textContent = 'Img';
+          btn.classList.remove('uploading');
+          showMsg('Image upload failed: ' + err.message, 'error');
+        });
+    }
+    function buildFrontmatter(title, description, date, tags, content) {
+      // Strip any existing double quotes from tag values before re-wrapping,
+      // otherwise repeated saves produce nested quotes like [""Life""] which
+      // breaks YAML parsing on the next build.
+      var tagsArr = tags.split(',')
+        .map(function(t) { return t.trim().replace(/"/g, ''); })
+        .filter(function(t) { return t.length > 0; })
+        .map(function(t) { return '"' + t + '"'; });
+      return '---\ntitle: "' + title.replace(/"/g, '\\"') + '"\ndescription: "' + description.replace(/"/g, '\\"') + '"\npublishedAt: "' + date + '"\ntags: [' + tagsArr.join(', ') + ']\nfeatured: false\n---\n\n' + content;
+    }
+    function savePost() {
+      var lang = document.getElementById('lang').value;
+      var slug = document.getElementById('slug').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      var title = document.getElementById('title').value.trim();
+      var description = document.getElementById('description').value.trim();
+      var date = document.getElementById('date').value;
+      var tags = document.getElementById('tags').value.trim();
+      var content = document.getElementById('content').value;
+      if (!slug || !title || !date || !content) {
+        showMsg('Please fill in all required fields', 'error');
+        return;
+      }
+      var filePath = 'contents/src/content/' + lang + '/' + CURRENT_TYPE + '/' + slug + '.mdx';
+      var typeLabel = CURRENT_TYPE === 'notes' ? '随笔' : '文章';
+      document.getElementById('saveBtn').disabled = true;
+      document.getElementById('saveBtn').textContent = 'Creating...';
+      fetch(apiUrl(filePath), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Add ' + CURRENT_TYPE + ': ' + slug,
+          content: btoa(unescape(encodeURIComponent(buildFrontmatter(title, description, date, tags, content)))),
+          branch: BRANCH
+        })
+      })
+        .then(function(r) { if (!r.ok) throw new Error('Create failed (status ' + r.status + ')'); return r.json(); })
+        .then(function() {
+          document.getElementById('saveBtn').disabled = false;
+          document.getElementById('saveBtn').textContent = 'Create ' + typeLabel;
+          showMsg(typeLabel + ' created! <a href="/admin/">← Back to Admin</a>', 'success');
+        })
+        .catch(function(err) {
+          document.getElementById('saveBtn').disabled = false;
+          document.getElementById('saveBtn').textContent = 'Create ' + typeLabel;
+          showMsg('Failed: ' + err.message, 'error');
+        });
+    }
+
+    var params = {};
+    location.search.slice(1).split('&').forEach(function(p) {
+      var parts = p.split('=');
+      params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
+    });
+    if (params.lang) document.getElementById('lang').value = params.lang;
+    CURRENT_TYPE = params.type || 'posts';
+    var typeLabel = CURRENT_TYPE === 'notes' ? '随笔' : '文章';
+    var typeTag = CURRENT_TYPE === 'notes' ? '[随笔]' : '[文章]';
+    document.getElementById('pageTitle').innerHTML = 'New ' + typeLabel + ' <span>' + typeTag + '</span>';
+    document.getElementById('saveBtn').textContent = 'Create ' + typeLabel;
+
+    document.getElementById('saveBtn').addEventListener('click', savePost);
+    document.getElementById('imgInput').addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          showMsg('Image too large (max 5MB)', 'error');
+          e.target.value = '';
+          return;
+        }
+        uploadImage(file);
+        e.target.value = '';
+      }
+    });
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    checkAuth();
+  </script>
+</body>
+</html>

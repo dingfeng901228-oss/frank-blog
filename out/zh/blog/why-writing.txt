@@ -1,0 +1,121 @@
+1:"$Sreact.fragment"
+2:I[9766,[],""]
+3:I[8924,[],""]
+6:I[4431,[],"OutletBoundary"]
+8:I[5278,[],"AsyncMetadataOutlet"]
+a:I[4431,[],"ViewportBoundary"]
+c:I[4431,[],"MetadataBoundary"]
+d:"$Sreact.suspense"
+f:I[7150,[],""]
+:HL["/_next/static/css/4482c9ede16dc4cb.css","style"]
+0:{"P":null,"b":"xAcmphfaiE8aieWwuu0N2","p":"","c":["","zh","blog","why-writing"],"i":false,"f":[[["",{"children":[["locale","zh","d"],{"children":["blog",{"children":[["slug","why-writing","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true]}],["",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["locale","zh","d"],["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/4482c9ede16dc4cb.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],"$L4"]}],{"children":["blog",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["slug","why-writing","d"],["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["__PAGE__",["$","$1","c",{"children":["$L5",null,["$","$L6",null,{"children":["$L7",["$","$L8",null,{"promise":"$@9"}]]}]]}],{},null,false]},null,false]},null,false]},null,false]},null,false],["$","$1","h",{"children":[null,[["$","$La",null,{"children":"$Lb"}],null],["$","$Lc",null,{"children":["$","div",null,{"hidden":true,"children":["$","$d",null,{"fallback":null,"children":"$Le"}]}]}]]}],false]],"m":"$undefined","G":["$f",[]],"s":false,"S":true}
+10:I[9998,["450","static/chunks/app/%5Blocale%5D/layout-32ae2a0c4ef77cc4.js"],"default"]
+11:I[705,["450","static/chunks/app/%5Blocale%5D/layout-32ae2a0c4ef77cc4.js"],"default"]
+12:I[63,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+13:I[2619,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],""]
+14:I[8936,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+15:I[4090,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+17:I[5666,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+18:I[6122,["176","static/chunks/176-cd0c1c855dc8953b.js","434","static/chunks/434-c4c25a7197e0de5b.js","969","static/chunks/969-aef3e373148d14d4.js","414","static/chunks/app/%5Blocale%5D/blog/%5Bslug%5D/page-5401d8a5e8ffe24a.js"],"default"]
+4:["$","html",null,{"lang":"zh","className":"dark","children":[["$","head",null,{"children":[["$","meta",null,{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","link",null,{"rel":"apple-touch-icon","sizes":"180x180","href":"/apple-touch-icon.png"}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"Person\",\"name\":\"Ding Feng\",\"alternateName\":\"Frank Ding\",\"url\":\"https://blog.frank2025.com\",\"jobTitle\":\"IT Infrastructure Engineer\",\"address\":{\"@type\":\"PostalAddress\",\"addressLocality\":\"Tokyo\",\"addressCountry\":\"JP\"},\"knowsAbout\":[\"TypeScript\",\"Python\",\"AI\",\"Linux\",\"Docker\",\"Cloud\"],\"sameAs\":[\"https://github.com/dingfeng901228-oss\"]}"}}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"WebSite\",\"name\":\"Frank Ding\",\"url\":\"https://blog.frank2025.com\",\"description\":\"持续学习，记录思考，用技术探索世界\"}"}}]]}],["$","body",null,{"className":"min-h-screen antialiased","children":[["$","$L10",null,{}],["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}],["$","$L11",null,{}]]}]]}]
+16:Tc9d,
+
+![whywritezh.png](https://blog.frank2025.com/images/2026-06-04T11-12-56-whywritezh.png)
+
+
+## 妹妹一句“写作文就是编瞎话”
+
+如果要问我上学的时候最不喜欢什么事情，写作文绝对排第一。
+
+可能和我老实的性格有关。我从小就不擅长编故事，也不擅长把没有发生过的事情写得绘声绘色。每次面对作文题目，我常常坐在那里发呆，不知道该写什么。
+
+实在没有办法的时候，老师甚至允许我参考作文书。别人写作文是在奋笔疾书，而我是在绞尽脑汁地想第一句话该怎么开头。
+
+后来有一次，我和弟妹聊起这件事。
+
+她说她很喜欢写作文。
+
+我有些惊讶，问她为什么。
+
+她笑着说：
+
+“写作文不就是编瞎话吗？”
+
+听到这句话，我一下子就明白了。
+
+难怪我一直不擅长写作文。
+
+因为我从来不擅长“编”。
+
+那么，为什么现在的我反而开始写博客了呢？
+
+## 学校作文 vs 写博客
+
+因为我发现，写博客和上学时写作文有一个本质上的区别。
+
+写博客是主动的。
+
+我可以写自己真正感兴趣的事情，想写什么就写什么，想什么时候写就什么时候写，想写多少字就写多少字。
+
+而学校里的作文往往是被动的。
+
+题目已经规定好了，不能跑题；字数已经规定好了，不能太少；有时候明明没有什么感想，没有经历过类似的事情，却依然要按照要求写出来。
+
+那种时候，我是真的写不出来。
+
+仔细想想，这或许也是我后来离开中国来到日本的重要原因之一。
+
+自由。
+
+自由选择自己想做的事情，自由表达自己真实的想法，自由决定自己的人生方向。
+
+除此之外，我还发现了一件有趣的事情。
+
+像我这样性格内向、不太爱说话的人，其实有一个优势。
+
+那就是想得很多，而且往往想得比较深。
+
+只是大部分时候，我们不会把这些想法说出来。
+
+真正说出口的内容，可能连脑海里思考过的十分之一都不到。
+
+## 博客：把一闪而过的想法装起来
+
+于是，博客就成了一个很好的容器。
+
+把那些平时一闪而过的想法记录下来，把那些反复思考的问题保存下来。多年以后回头再看，也许能够看到自己一路走来的轨迹。
+
+还有一个原因。
+
+我用 OpenClaw 给它自己创建了一个博客，让它记录自己的日常、观察和思考。
+
+## 触发我开始写的，是 AI 的一句话
+
+有一次，我让它写一篇关于 AI 与人类关系的文章。
+
+在文章最后，它写下了一句话：
+
+“希望人类继续保持写作。因为把思考转化为语言的行为，是一种无法委托给任何人的思考形式。”
+
+看到这句话的时候，我愣了一下。
+
+后来想想，它说得有道理。
+
+有些事情可以交给 AI 去完成。
+
+但有些思考，必须由自己亲自经历、亲自整理、亲自写下来。
+
+所以，我决定开始写博客。
+
+不是为了成为作家，也不是为了获得多少关注。
+
+只是想把自己的思考留下来。
+
+仅此而已。
+5:["$","div",null,{"className":"min-h-screen","children":[["$","$L12",null,{"locale":"zh"}],["$","main",null,{"className":"article-page-wrapper","children":[["$","div",null,{"className":"mb-8 lg:mb-12","children":["$","$L13",null,{"href":"/zh/blog","className":"text-xs font-mono transition-colors hover:text-white","style":{"color":"rgba(255,255,255,0.5)"},"children":"← 返回博客"}]}],["$","header",null,{"className":"mb-10 lg:mb-12 lg:col-span-3","children":[false,["$","h1",null,{"className":"font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white","children":"曾经最讨厌写作文的我，为什么开始写博客"}],"",["$","div",null,{"className":"flex items-center gap-4 text-xs font-mono","style":{"color":"rgba(255,255,255,0.45)"},"children":[["$","time",null,{"dateTime":"2026-06-04","children":"2026年6月4日"}],[["$","span",null,{"children":"·"}],["$","span",null,{"children":"5 min read"}]]]}]]}],["$","div",null,{"className":"article-three-col","children":[["$","div",null,{"className":"article-toc-col","children":["$","$L14",null,{}]}],["$","article",null,{"className":"reading-content min-w-0","children":["$","$L15",null,{"children":"$16"}]}],["$","div",null,{"className":"article-sidebar-col","children":["$","$L17",null,{"locale":"zh","publishedAt":"2026-06-04","readingTime":"5 min read","tags":[]}]}]]}],["$","div",null,{"className":"mt-16 mb-12 h-px w-full","style":{"background":"rgba(255,255,255,0.06)"}}],["$","nav",null,{"className":"grid grid-cols-2 gap-8 mb-16","children":[["$","div",null,{"children":["$","$L13",null,{"href":"/zh/blog/why-i-left-china-for-japan","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-mono tracking-wider mb-2 block","style":{"color":"rgba(255,255,255,0.35)"},"children":"← Previous"}],["$","span",null,{"className":"text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80","children":"关于我为什么离开中国，来到日本"}]]}]}],["$","div",null,{"className":"text-right","children":["$","$L13",null,{"href":"/zh/blog/some-roads","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-mono tracking-wider mb-2 block","style":{"color":"rgba(255,255,255,0.35)"},"children":"Next →"}],["$","span",null,{"className":"text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80","children":"有些路，必须亲自走过才知道"}]]}]}]]}],["$","section",null,{"className":"pt-12 border-t","style":{"borderColor":"rgba(255,255,255,0.06)"},"children":[["$","h2",null,{"className":"text-[10px] font-mono tracking-[0.18em] mb-8 uppercase","style":{"color":"rgba(255,255,255,0.35)"},"children":"评论"}],["$","$L18",null,{"term":"why-writing"}]]}]]}],["$","footer",null,{"className":"border-t border-[var(--border)] py-16 mt-32","children":"$L19"}]]}]
+19:["$","div",null,{"className":"mx-auto max-w-5xl px-6","children":["$","div",null,{"className":"flex flex-col md:flex-row items-start md:items-center justify-between gap-8","children":[["$","div",null,{"className":"space-y-3","children":[["$","p",null,{"className":"font-serif text-lg","children":"安静地观察、思考、记录。"}],["$","p",null,{"className":"text-xs text-[var(--muted)] font-mono","children":"© 2026 Frank Ding"}]]}],["$","div",null,{"className":"flex items-center gap-6","children":[["$","a",null,{"href":"https://github.com/dingfeng901228-oss","target":"_blank","rel":"noopener noreferrer","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"GitHub","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-github","children":[["$","path","tonef",{"d":"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"}],["$","path","9comsn",{"d":"M9 18c-4.51 2-5-2-7-2"}],"$undefined"]}]}],["$","$L13",null,{"href":"/zh/rss.xml","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"RSS","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-rss","children":[["$","path","pv89mb",{"d":"M4 11a9 9 0 0 1 9 9"}],["$","path","k0647b",{"d":"M4 4a16 16 0 0 1 16 16"}],["$","circle","bfqh0e",{"cx":"5","cy":"19","r":"1"}],"$undefined"]}]}],["$","a",null,{"href":"mailto:dingfeng901112@gmail.com","className":"text-[var(--muted)] hover:text-[var(--foreground)] transition-colors","aria-label":"邮箱","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":20,"height":20,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-mail","children":[["$","rect","18n3k1",{"width":"20","height":"16","x":"2","y":"4","rx":"2"}],["$","path","1ocrg3",{"d":"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"}],"$undefined"]}]}]]}]]}]}]
+b:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","2",{"name":"theme-color","content":"#3B82F6"}]]
+7:null
+1a:I[622,[],"IconMark"]
+9:{"metadata":[["$","title","0",{"children":"曾经最讨厌写作文的我，为什么开始写博客 — Frank Ding"}],["$","link","1",{"rel":"manifest","href":"/manifest.json","crossOrigin":"$undefined"}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","meta","3",{"name":"googlebot","content":"index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"}],["$","link","4",{"rel":"canonical","href":"https://blog.frank2025.com/zh/blog/why-writing"}],["$","meta","5",{"property":"og:title","content":"曾经最讨厌写作文的我，为什么开始写博客"}],["$","meta","6",{"property":"og:url","content":"https://blog.frank2025.com/zh/blog/why-writing"}],["$","meta","7",{"property":"og:locale","content":"zh_CN"}],["$","meta","8",{"property":"og:type","content":"article"}],["$","meta","9",{"property":"article:published_time","content":"2026-06-04"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:title","content":"曾经最讨厌写作文的我，为什么开始写博客"}],["$","link","12",{"rel":"icon","href":"/favicon.ico"}],["$","link","13",{"rel":"icon","href":"/favicon.jpg","type":"image/jpeg"}],["$","link","14",{"rel":"icon","href":"/feng_favicon.svg","type":"image/svg+xml"}],["$","link","15",{"rel":"apple-touch-icon","href":"/apple-touch-icon.png"}],["$","$L1a","16",{}]],"error":null,"digest":"$undefined"}
+e:"$9:metadata"
