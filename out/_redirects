@@ -1,0 +1,18 @@
+# Cloudflare Pages redirects for blog.frank2025.com
+#
+# Root / has no static file (next-intl puts locale pages at /ja, /en, /zh
+# not at root). Redirect / to default Japanese locale.
+
+# PWA assets — must be served as-is so the SW can register
+/sw.js                   /sw.js                   200
+/manifest.json           /manifest.json           200
+/apple-touch-icon.png    /apple-touch-icon.png    200
+/icon-192.png            /icon-192.png            200
+/icon-512.png            /icon-512.png            200
+/feng_favicon.svg        /feng_favicon.svg        200
+/favicon.ico             /favicon.ico             200
+/offline-pwa             /offline-pwa             200
+
+# Root → default Japanese locale (browser will follow the meta refresh
+# or user can switch via the in-page locale picker)
+/                         /ja                     302
