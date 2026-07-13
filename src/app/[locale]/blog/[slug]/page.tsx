@@ -46,6 +46,12 @@ export async function generateMetadata({ params }: PageProps) {
     description: post.description,
     alternates: {
       canonical: `https://blog.frank2025.com/${locale}/blog/${slug}`,
+      languages: {
+        'ja': `https://blog.frank2025.com/ja/blog/${slug}`,
+        'zh': `https://blog.frank2025.com/zh/blog/${slug}`,
+        'en': `https://blog.frank2025.com/en/blog/${slug}`,
+        'x-default': `https://blog.frank2025.com/ja/blog/${slug}`,
+      },
     },
     openGraph: {
       title: post.title,
@@ -83,112 +89,178 @@ export default async function PostPage({ params }: PageProps) {
   const nav = navLabels[locale as keyof typeof navLabels]
   const renderedContent = <Markdown>{post.content}</Markdown>
 
+  // JSON-LD structured data for SEO (BlogPosting + BreadcrumbList)
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.description,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt ?? post.publishedAt,
+    inLanguage: locale,
+    url: `https://blog.frank2025.com/${locale}/blog/${slug}`,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://blog.frank2025.com/${locale}/blog/${slug}`,
+    },
+    image: post.coverImage
+      ? [`https://blog.frank2025.com${post.coverImage}`]
+      : ['https://blog.frank2025.com/og-image.jpg'],
+    author: {
+      '@type': 'Person',
+      name: 'Ding Feng',
+      alternateName: 'Frank Ding',
+      url: 'https://blog.frank2025.com',
+    },
+    publisher: {
+      '@type': 'Person',
+      name: 'Frank Ding',
+      url: 'https://blog.frank2025.com',
+    },
+    keywords: post.tags?.join(', '),
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: locale === 'ja' ? 'ホーム' : locale === 'zh' ? '首页' : 'Home',
+        item: `https://blog.frank2025.com/${locale}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Blog',
+        item: `https://blog.frank2025.com/${locale}/blog`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: post.title,
+        item: `https://blog.frank2025.com/${locale}/blog/${slug}`,
+      },
+    ],
+  }
+
   return (
-    <div className="min-h-screen">
-      <Navbar locale={locale as Locale} />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <div className="min-h-screen">
+        <Navbar locale={locale as Locale} />
 
-      <main className="article-page-wrapper">
-        {/* Back link */}
-        <div className="mb-8 lg:mb-12">
-          <Link
-            href={`/${locale}/blog`}
-            className="text-xs font-mono transition-colors hover:text-white"
-            style={{ color: 'rgba(255,255,255,0.5)' }}
-          >
-            {nav.back}
-          </Link>
-        </div>
+        <main className="article-page-wrapper">
+          {/* Back link */}
+          <div className="mb-8 lg:mb-12">
+            <Link
+              href={`/${locale}/blog`}
+              className="text-xs font-mono transition-colors hover:text-white"
+              style={{ color: 'rgba(255,255,255,0.5)' }}
+            >
+              {nav.back}
+            </Link>
+          </div>
 
-        {/* Header */}
-        <header className="mb-10 lg:mb-12 lg:col-span-3">
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex items-center gap-3 mb-5">
-              {post.tags.map((tag) => (
-                <span key={tag} className="text-[10px] font-mono px-2.5 py-0.5 rounded-full" style={{
-                  background: 'rgba(59,130,246,0.10)',
-                  border: '1px solid rgba(59,130,246,0.15)',
-                  color: 'rgba(147,197,253,0.9)',
-                }}>{tag}</span>
-              ))}
+          {/* Header */}
+          <header className="mb-10 lg:mb-12 lg:col-span-3">
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex items-center gap-3 mb-5">
+                {post.tags.map((tag) => (
+                  <span key={tag} className="text-[10px] font-mono px-2.5 py-0.5 rounded-full" style={{
+                    background: 'rgba(59,130,246,0.10)',
+                    border: '1px solid rgba(59,130,246,0.15)',
+                    color: 'rgba(147,197,253,0.9)',
+                  }}>{tag}</span>
+                ))}
+              </div>
+            )}
+            <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white">
+              {post.title}
+            </h1>
+            {post.description && (
+              <p className="text-base lg:text-lg leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                {post.description}
+              </p>
+            )}
+            <div className="flex items-center gap-4 text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
+              {post.readingTime && (
+                <>
+                  <span>·</span>
+                  <span>{post.readingTime}</span>
+                </>
+              )}
             </div>
+          </header>
+
+          {/* Three-column layout */}
+          <div className="article-three-col">
+            {/* Left: TOC */}
+            <div className="article-toc-col">
+              <ArticleTOC />
+            </div>
+
+            {/* Center: Content */}
+            <article className="reading-content min-w-0">
+              {renderedContent}
+            </article>
+
+            {/* Right: Sidebar */}
+            <div className="article-sidebar-col">
+              <ArticleSidebar
+                locale={locale}
+                publishedAt={post.publishedAt}
+                readingTime={post.readingTime}
+                tags={post.tags}
+              />
+            </div>
+          </div>
+
+          {/* Divider */}
+          {renderedContent && (
+            <div className="mt-16 mb-12 h-px w-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
           )}
-          <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white">
-            {post.title}
-          </h1>
-          {post.description && (
-            <p className="text-base lg:text-lg leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.65)' }}>
-              {post.description}
-            </p>
-          )}
-          <div className="flex items-center gap-4 text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
-            {post.readingTime && (
-              <>
-                <span>·</span>
-                <span>{post.readingTime}</span>
-              </>
-            )}
-          </div>
-        </header>
 
-        {/* Three-column layout */}
-        <div className="article-three-col">
-          {/* Left: TOC */}
-          <div className="article-toc-col">
-            <ArticleTOC />
-          </div>
+          {/* Prev / Next nav */}
+          <nav className="grid grid-cols-2 gap-8 mb-16">
+            <div>
+              {prevPost && (
+                <Link href={`/${locale}/blog/${prevPost.slug}`} className="block group">
+                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>← Previous</span>
+                  <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{prevPost.title}</span>
+                </Link>
+              )}
+            </div>
+            <div className="text-right">
+              {nextPost && (
+                <Link href={`/${locale}/blog/${nextPost.slug}`} className="block group">
+                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>Next →</span>
+                  <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{nextPost.title}</span>
+                </Link>
+              )}
+            </div>
+          </nav>
 
-          {/* Center: Content */}
-          <article className="reading-content min-w-0">
-            {renderedContent}
-          </article>
+          {/* Comments */}
+          <section className="pt-12 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+            <h2 className="text-[10px] font-mono tracking-[0.18em] mb-8 uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              {locale === 'ja' ? 'コメント' : locale === 'zh' ? '评论' : 'Comments'}
+            </h2>
+            <Giscus term={slug} />
+          </section>
+        </main>
 
-          {/* Right: Sidebar */}
-          <div className="article-sidebar-col">
-            <ArticleSidebar
-              locale={locale}
-              publishedAt={post.publishedAt}
-              readingTime={post.readingTime}
-              tags={post.tags}
-            />
-          </div>
-        </div>
-
-        {/* Divider */}
-        {renderedContent && (
-          <div className="mt-16 mb-12 h-px w-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
-        )}
-
-        {/* Prev / Next nav */}
-        <nav className="grid grid-cols-2 gap-8 mb-16">
-          <div>
-            {prevPost && (
-              <Link href={`/${locale}/blog/${prevPost.slug}`} className="block group">
-                <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>← Previous</span>
-                <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{prevPost.title}</span>
-              </Link>
-            )}
-          </div>
-          <div className="text-right">
-            {nextPost && (
-              <Link href={`/${locale}/blog/${nextPost.slug}`} className="block group">
-                <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>Next →</span>
-                <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{nextPost.title}</span>
-              </Link>
-            )}
-          </div>
-        </nav>
-
-        {/* Comments */}
-        <section className="pt-12 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-          <h2 className="text-[10px] font-mono tracking-[0.18em] mb-8 uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            {locale === 'ja' ? 'コメント' : locale === 'zh' ? '评论' : 'Comments'}
-          </h2>
-          <Giscus term={slug} />
-        </section>
-      </main>
-
-      <Footer locale={locale as Locale} />
-    </div>
+        <Footer locale={locale as Locale} />
+      </div>
+    </>
   )
 }
