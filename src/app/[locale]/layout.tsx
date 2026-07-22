@@ -1,6 +1,14 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import '../globals.css'
 import { locales } from '@/i18n/config'
+
+// Viewport (App Router separate export — themeColor belongs here, not in metadata)
+export const viewport: Viewport = {
+  themeColor: '#3B82F6',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }))
@@ -71,12 +79,27 @@ export async function generateMetadata({
       description: defaultDescription[locale] ?? defaultDescription.ja,
       images: ['/og-image.jpg'],
     },
+    // PWA: expose manifest link + apple touch icon (App Router source of truth)
+    manifest: '/manifest.json',
+    applicationName: 'Frank Ding',
+    appleWebApp: {
+      capable: true,
+      title: 'Frank Ding',
+      statusBarStyle: 'black-translucent',
+      startupImage: ['/feng_favicon.svg'],
+    },
     icons: {
       icon: [
         { url: '/favicon.ico' },
         { url: '/favicon.jpg', type: 'image/jpeg' },
         { url: '/feng_favicon.svg', type: 'image/svg+xml' },
       ],
+      apple: [
+        { url: '/feng_favicon.svg', sizes: 'any', type: 'image/svg+xml' },
+      ],
+    },
+    formatDetection: {
+      telephone: false,
     },
     robots: {
       index: true,
