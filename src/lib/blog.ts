@@ -28,7 +28,10 @@ export function getPostBySlug(locale: Locale, slug: string): Post | null {
   if (!fs.existsSync(filePath)) return null
 
   const fileContents = fs.readFileSync(filePath, 'utf8')
-  const { data, content } = matter(fileContents)
+  // Force `language: 'yaml'` to bypass gray-matter's first-line language detection
+  // (under Next 15 webpack bundling it can otherwise capture the YAML's first
+  // data line as a phantom engine name and throw "engine ... is not registered").
+  const { data, content } = matter(fileContents, { language: 'yaml' })
   const frontmatter = data as PostFrontmatter
   const rt = readingTime(content)
 
