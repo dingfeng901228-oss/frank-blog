@@ -27,7 +27,11 @@ export function getNoteBySlug(locale: Locale, slug: string): Post | null {
   if (!fs.existsSync(filePath)) return null
 
   const fileContents = fs.readFileSync(filePath, 'utf8')
-  const { data, content } = matter(fileContents)
+  // Force `language: 'yaml'` to bypass gray-matter's first-line language detection
+  // (same fix as src/lib/blog.ts: under Next 15 webpack bundling the detection can
+  // capture the YAML's first data line as a phantom engine name and throw
+  // "engine ... is not registered").
+  const { data, content } = matter(fileContents, { language: 'yaml' })
   const frontmatter = data as PostFrontmatter
 
   return {
