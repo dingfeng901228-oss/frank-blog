@@ -10,83 +10,73 @@ export async function GET() {
   const locales: Locale[] = ['ja', 'zh', 'en']
   const now = new Date().toISOString()
 
-  const urls: string[] = []
-
-  for (const locale of locales) {
-    // Homepage
-    urls.push(`
-  <url>
-    <loc>${BASE_URL}/${locale}</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>`)
-
-    // Blog index
-    urls.push(`
-  <url>
-    <loc>${BASE_URL}/${locale}/blog</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>`)
-
-    // Notes index
-    urls.push(`
-  <url>
-    <loc>${BASE_URL}/${locale}/notes</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>`)
-
-    // About
-    urls.push(`
-  <url>
-    <loc>${BASE_URL}/${locale}/about</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>`)
-
-    // Blog posts
-    const posts = getAllPosts(locale)
-    for (const post of posts) {
-      urls.push(`
-  <url>
-    <loc>${BASE_URL}/${locale}/blog/${post.slug}</loc>
-    <lastmod>${post.updatedAt ?? post.publishedAt}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>`)
-    }
-
-    // Notes
-    const notes = getAllNotes(locale)
-    for (const note of notes) {
-      urls.push(`
-  <url>
-    <loc>${BASE_URL}/${locale}/notes/${note.slug}</loc>
-    <lastmod>${note.publishedAt}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>`)
-    }
-
-    // RSS feed
-    urls.push(`
-  <url>
-    <loc>${BASE_URL}/${locale}/rss.xml</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.3</priority>
-  </url>`)
+  // Track latest lastmod per unique path across locales
+  const lastmodByPath = new Map<string, string>()
+  const recordLastmod = (path: string, lm: string) => {
+    const cur = lastmodByPath.get(path)
+    if (!cur || lm > cur) lastmodByPath.set(path, lm)
   }
+
+  // Static pages — single canonical entry per path with full hreflang set
+  const staticPages: { path: string; changefreq: string; priority: number }[] = [
+    { path: '', changefreq: 'weekly', priority: 1.0 },
+    { path: '/blog', changefreq: 'weekly', priority: 0.8 },
+    { path: '/notes', changefreq: 'weekly', priority: 0.8 },
+    { path: '/about', changefreq: 'monthly', priority: 0.5 },
+  ]
+  for (const p of staticPages) recordLastmod(p.path, now)
+
+  // Collect unique slug paths (de-duped across locales), record latest lastmod
+  const postPaths = new Set<string>()
+  for (const locale of locales) {
+    for (const post of getAllPosts(locale)) {
+      const path = `/blog/${post.slug}`
+      postPaths.add(path)
+      recordLastmod(path, post.updatedAt ?? post.publishedAt)
+    }
+  }
+  const notePaths = new Set<string>()
+  for (const locale of locales) {
+    for (const note of getAllNotes(locale)) {
+      const path = `/notes/${note.slug}`
+      notePaths.add(path)
+      recordLastmod(path, note.publishedAt)
+    }
+  }
+
+  // Build ordered unique path list (static → posts → notes → rss)
+  const allPaths: { path: string; changefreq: string; priority: number }[] = [
+    ...staticPages,
+    ...[...postPaths].map((path) => ({ path, changefreq: 'monthly', priority: 0.9 })),
+    ...[...notePaths].map((path) => ({ path, changefreq: 'monthly', priority: 0.7 })),
+    { path: '/rss.xml', changefreq: 'weekly', priority: 0.3 },
+  ]
+
+  // Build sitemap with hreflang annotations on every entry
+  const urls = allPaths
+    .map(({ path, changefreq, priority }) => {
+      const lastmod = lastmodByPath.get(path) ?? now
+      const hreflangLinks = [
+        ...locales.map(
+          (loc) => `    <xhtml:link rel="alternate" hreflang="${loc}" href="${BASE_URL}/${loc}${path}"/>`,
+        ),
+        `    <xhtml:link rel="alternate" hreflang="x-default" href="${BASE_URL}/ja${path}"/>`,
+      ].join('\n')
+
+      return `  <url>
+    <loc>${BASE_URL}/ja${path}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+${hreflangLinks}
+  </url>`
+    })
+    .join('\n')
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  ${urls.join('')}
+${urls}
 </urlset>`
 
   return new Response(xml, {

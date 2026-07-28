@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /rss.xml
 
 Sitemap: https://blog.frank2025.com/sitemap.xml
