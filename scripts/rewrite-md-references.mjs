@@ -84,6 +84,19 @@ function rewrite(content) {
     return `${pre}${newPath}${suf}`;
   });
 
+  // 4. Inline markdown image refs with RELATIVE path (no host, just /images/...)
+  //    E.g. ![alt](/images/foo.png) -> ![alt](https://images.frank2025.com/images/foo.webp)
+  //    Handles newly-written mdx without absolute URLs (most common pattern in fresh drafts).
+  const mdRelRe = new RegExp(
+    `(!\\[[^\\]]*\\]\\()(\\/images\\/[\\w\\-.\\/]+\\.(?:png|jpg|jpeg|jfif))(\\))`,
+    'g'
+  );
+  out = out.replace(mdRelRe, (m, pre, path, suf) => {
+    const newUrl = `${R2_BASE}${rewriteImageExt(path)}`;
+    changes.push({ kind: 'inline-relative', from: path, to: newUrl });
+    return `${pre}${newUrl}${suf}`;
+  });
+
   return { out, changes };
 }
 
