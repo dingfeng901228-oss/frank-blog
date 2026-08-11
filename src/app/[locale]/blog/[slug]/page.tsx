@@ -41,9 +41,16 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!post) return { title: 'Not Found' }
 
+  const ogImages = post.coverImage
+    ? [{ url: post.coverImage, width: 1200, height: 630, alt: post.title }]
+    : [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Frank Ding' }]
+
   return {
     title: post.title,
     description: post.description,
+    authors: [{ name: 'Ding Feng', url: 'https://blog.frank2025.com' }],
+    creator: 'Ding Feng',
+    publisher: 'Frank Ding',
     alternates: {
       canonical: `https://blog.frank2025.com/${locale}/blog/${slug}`,
       languages: {
@@ -56,20 +63,32 @@ export async function generateMetadata({ params }: PageProps) {
     openGraph: {
       title: post.title,
       description: post.description,
+      siteName: 'Frank Ding',
       locale: locale === 'ja' ? 'ja_JP' : locale === 'zh' ? 'zh_CN' : 'en_US',
       type: 'article',
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
+      authors: ['Ding Feng'],
       tags: post.tags,
       url: `https://blog.frank2025.com/${locale}/blog/${slug}`,
-      images: post.coverImage
-        ? [{ url: post.coverImage, width: 1200, height: 630, alt: post.title }]
-        : undefined,
+      images: ogImages,
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.description,
+      images: post.coverImage ? [post.coverImage] : ['/og-image.jpg'],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+        'max-video-preview': -1,
+      },
     },
   }
 }
