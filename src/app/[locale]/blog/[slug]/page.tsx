@@ -123,7 +123,7 @@ export default async function PostPage({ params }: PageProps) {
       '@id': `https://blog.frank2025.com/${locale}/blog/${slug}`,
     },
     image: post.coverImage
-      ? [`https://blog.frank2025.com${post.coverImage}`]
+      ? [post.coverImage]
       : ['https://blog.frank2025.com/og-image.jpg'],
     author: {
       '@type': 'Person',
@@ -132,11 +132,20 @@ export default async function PostPage({ params }: PageProps) {
       url: 'https://blog.frank2025.com',
     },
     publisher: {
-      '@type': 'Person',
+      '@type': 'Organization',
       name: 'Frank Ding',
       url: 'https://blog.frank2025.com',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://blog.frank2025.com/og-image.jpg',
+        width: 1200,
+        height: 630,
+      },
     },
     keywords: post.tags?.join(', '),
+    wordCount: post.content.length,
+    timeRequired: post.readingTime ? `PT${Math.max(1, parseInt(String(post.readingTime).replace(/\D/g, ''), 10) || 1)}M` : undefined,
+    isAccessibleForFree: true,
   }
 
   const breadcrumbJsonLd = {
