@@ -91,7 +91,7 @@ export default async function BlogPage({ params }: PageProps) {
                   </span>
                 </div>
 
-                {/* Right: title + description */}
+                {/* Right: title + description + tags */}
                 <div className="min-w-0">
                   <Link href={`/${locale}/blog/${post.slug}`}>
                     <h2 className="font-serif text-2xl md:text-3xl font-medium mb-4 leading-snug group-hover:text-[var(--accent)] transition-colors">
@@ -101,6 +101,19 @@ export default async function BlogPage({ params }: PageProps) {
                   <p className="text-[var(--muted)] leading-relaxed text-[15px]">
                     {post.description}
                   </p>
+                  {post.tags && post.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {post.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2 py-0.5 bg-[var(--card)] rounded text-xs"
+                          style={{ color: 'var(--muted)' }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </article>
             ))}
