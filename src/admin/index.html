@@ -146,15 +146,50 @@
               '<a href="' + newUrl + '" class="btn btn-new">+ New ' + typeLabel + '</a>' +
               '<div class="section-head"><span class="section-title">' + typeLabel + ' <span class="count-badge">0</span></span></div>' +
               '<div class="empty">No ' + CURRENT_TYPE + ' yet. Click "+ New" to create one.</div>';
-            return;
+            return null;
           }
-          var html = '<a href="' + newUrl + '" class="btn btn-new">+ New ' + typeLabel + '</a>';
-          html += '<div class="section-head"><span class="section-title">' + typeLabel + ' <span class="count-badge">' + posts.length + '</span></span></div>';
-          html += '<div class="post-list">';
-          posts.forEach(function(f) {
+          // Fetch each file's content in parallel to read publishedAt from frontmatter
+          return Promise.all(posts.map(function(f) {
             var slug = f.name.replace(/\.(mdx|md)$/, '');
+            return fetch(apiUrl('contents/src/content/' + CURRENT_LANG + '/' + CURRENT_TYPE + '/' + f.name + '?ref=' + BRANCH))
+              .then(function(r) { return r.ok ? r.json() : null; })
+              .then(function(file) {
+                var publishedAt = null;
+                if (file && file.content) {
+                  try {
+                    var decoded = decodeURIComponent(escape(atob(file.content.replace(/\n/g, ''))));
+                    var m = decoded.match(/publishedAt:\s*["']?([^"'\n]+)["']?/);
+                    if (m) publishedAt = m[1].trim();
+                  } catch(e) {}
+                }
+                return { file: f, slug: slug, publishedAt: publishedAt };
+              })
+              .catch(function() { return { file: f, slug: slug, publishedAt: null }; });
+          }));
+        })
+        .then(function(items) {
+          if (!items) return;
+          // Sort by publishedAt descending (newest first); items without publishedAt go last
+          items.sort(function(a, b) {
+            if (!a.publishedAt && !b.publishedAt) return 0;
+            if (!a.publishedAt) return 1;
+            if (!b.publishedAt) return -1;
+            return b.publishedAt.localeCompare(a.publishedAt);
+          });
+          var newUrl = '/admin/new.html?lang=' + CURRENT_LANG + '&type=' + CURRENT_TYPE;
+          var html = '<a href="' + newUrl + '" class="btn btn-new">+ New ' + typeLabel + '</a>';
+          html += '<div class="section-head"><span class="section-title">' + typeLabel + ' <span class="count-badge">' + items.length + '</span></span></div>';
+          html += '<div class="post-list">';
+          items.forEach(function(item) {
+            var f = item.file;
+            var slug = item.slug;
             var dateStr = '';
-            try { dateStr = new Date(f.updated_at).toLocaleDateString('ja-JP', {year:'numeric',month:'short',day:'numeric'}); } catch(e) {}
+            if (item.publishedAt) {
+              try { dateStr = new Date(item.publishedAt).toLocaleDateString('ja-JP', {year:'numeric',month:'short',day:'numeric'}); } catch(e) {}
+            }
+            if (!dateStr) {
+              try { dateStr = new Date(f.updated_at).toLocaleDateString('ja-JP', {year:'numeric',month:'short',day:'numeric'}); } catch(e) {}
+            }
             html += '<div class="post-item">';
             html += '<div class="post-info"><div class="post-title">' + slug + '</div>';
             html += '<div class="post-meta"><span>' + f.name + '</span><span>' + dateStr + '</span></div></div>';

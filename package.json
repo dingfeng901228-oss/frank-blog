@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/copy-admin-to-out.mjs",
     "start": "next start",
     "lint": "next lint",
     "preview": "next build && npx wrangler pages dev out --port 3456",
