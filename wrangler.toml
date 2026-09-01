@@ -1,5 +1,33 @@
-name = "frank-blog-api"
-main = "functions/api/github.js"
-compatibility_date = "2024-01-01"
+# frank-blog-cms — Cloudflare Pages project + Pages Functions
+# Per ADR-001 (Single Worker) + D-1 (项目名 = frank-blog-cms, 不独立 frank-blog-api)
+# wrangler.toml name 仅是配置标签，不代表独立 Worker
+
+name = "frank-blog-cms"
+main = "functions/api/github.js"   # Pages Functions entry — 旧 admin endpoint, Phase 11 弃用
+compatibility_date = "2024-09-01"  # bumped from 2024-01-01
+
+# ============================================================
+# D1 database binding (D-3: database_name="frank-blog-db", binding="DB")
+# ============================================================
+# database_id 必须先 `wrangler d1 create frank-blog-db` 创建后填入
+[[d1_databases]]
+binding       = "DB"
+database_name = "frank-blog-db"
+database_id   = "REPLACE_AFTER_wrangler_d1_create_frank-blog-db"
+
+# ============================================================
+# Secrets (D-2: NEVER commit actual values — use `wrangler pages secret put <NAME>`)
+# ============================================================
+# CLOUDFLARE_DEPLOY_HOOK_URL  — CF Pages Deploy Hook URL (Settings → Builds → Create hook)
+#                                用于 CMS 发布文章后触发 SSG rebuild (ADR-002)
+# SESSION_SECRET              — 64-char hex, 用于 cookie signing (Phase 3)
+#                                生成: openssl rand -hex 64
+# ADMIN_PASSWORD              — admin 登录密码 (≥12 chars), scripts/seed-admin.mjs 读取
+#                                仅放 .env.local (gitignored), 绝不入库
+[secrets]
+# CLOUDFLARE_DEPLOY_HOOK_URL
+# SESSION_SECRET
+# ADMIN_PASSWORD
 
 [vars]
+ENVIRONMENT = "production"
