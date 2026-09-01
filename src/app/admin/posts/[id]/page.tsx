@@ -1,12 +1,15 @@
 // src/app/admin/posts/[id]/page.tsx
 // Edit existing post — load, edit form, save (PUT), publish (POST), delete (DELETE)
+// Phase 6: Preview tab reusing src/components/Markdown.tsx (per ADR-005 same renderer)
+
 'use client';
 
 import { use, useEffect, useState, type FormEvent, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Markdown from '@/components/Markdown';
 import { apiGet, apiPut } from '@/lib/cms/api-client';
-import type { Locale, PostCollection, Post } from '@/lib/cms/types';
+import type { Locale, PostCollection } from '@/lib/cms/types';
 import { postFormStyles as s } from '../new/post-form-styles';
 
 interface PageProps {
@@ -28,18 +31,21 @@ interface FormState {
   updated_at: string;
 }
 
+type Mode = 'edit' | 'preview';
+
 export default function EditPostPage({ params }: PageProps) {
   const router = useRouter();
   const { id } = use(params);
   const postId = parseInt(id, 10);
 
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<any | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>('edit');
 
   useEffect(() => {
     fetchPost();
@@ -49,7 +55,7 @@ export default function EditPostPage({ params }: PageProps) {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet<Post>(`/api/admin/posts/${postId}`);
+      const data = await apiGet<any>(`/api/admin/posts/${postId}`);
       setPost(data);
       setForm({
         collection: data.collection,
@@ -113,11 +119,16 @@ export default function EditPostPage({ params }: PageProps) {
         cover_image: form.cover_image || null,
         tags,
       });
-      await fetch(`/api/admin/posts/${postId}/publish`, {
+      const res = await fetch(`/api/admin/posts/${postId}/publish`, {
         method: 'POST',
         credentials: 'include',
       });
-      setSavedAt(`Published at ${new Date().toLocaleTimeString()}`);
+      if (res.ok) {
+        setSavedAt(`Published at ${new Date().toLocaleTimeString()}`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(`Publish failed: ${data.error?.message || res.statusText}`);
+      }
       fetchPost();
     } catch (e: any) {
       setError(`Publish failed: ${e.message}`);
@@ -171,134 +182,190 @@ export default function EditPostPage({ params }: PageProps) {
           </div>
         </div>
 
+        {/* Tabs */}
+        <div style={tabBarStyle}>
+          <button onClick={() => setMode('edit')} style={mode === 'edit' ? tabActiveStyle : tabStyle}>
+            ✏️ Edit
+          </button>
+          <button onClick={() => setMode('preview')} style={mode === 'preview' ? tabActiveStyle : tabStyle}>
+            👁 Preview
+          </button>
+        </div>
+
         {error && <p style={s.error}>{error}</p>}
-        {savedAt && <p style={{ ...s.error, background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#10b981' }}>{savedAt}</p>}
+        {savedAt && (
+          <p style={{ ...s.error, background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#10b981' }}>
+            {savedAt}
+          </p>
+        )}
 
-        <form onSubmit={handleSave} style={s.form}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
-            <div>
-              <label style={s.label}>Collection</label>
-              <select value={form.collection} onChange={(e) => setForm({ ...form, collection: e.target.value as PostCollection })} style={s.input}>
-                <option value="posts">Posts</option>
-                <option value="notes">Notes</option>
-              </select>
+        {mode === 'preview' ? (
+          <PreviewPanel form={form} />
+        ) : (
+          <form onSubmit={handleSave} style={s.form}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
+              <div>
+                <label style={s.label}>Collection</label>
+                <select value={form.collection} onChange={(e) => setForm({ ...form, collection: e.target.value as PostCollection })} style={s.input}>
+                  <option value="posts">Posts</option>
+                  <option value="notes">Notes</option>
+                </select>
+              </div>
+              <div>
+                <label style={s.label}>Locale</label>
+                <select value={form.locale} onChange={(e) => setForm({ ...form, locale: e.target.value as Locale })} style={s.input}>
+                  <option value="ja">日本語</option>
+                  <option value="zh">中文</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+              <div>
+                <label style={s.label}>Status</label>
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as FormState['status'] })} style={s.input}>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label style={s.label}>Locale</label>
-              <select value={form.locale} onChange={(e) => setForm({ ...form, locale: e.target.value as Locale })} style={s.input}>
-                <option value="ja">日本語</option>
-                <option value="zh">中文</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-            <div>
-              <label style={s.label}>Status</label>
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as FormState['status'] })} style={s.input}>
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
-          </div>
 
-          <Field label="Title">
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              required
-              style={{ ...s.input, fontSize: 18, fontFamily: 'Georgia, serif' }}
-            />
-          </Field>
-
-          <Field label="Slug">
-            <input
-              type="text"
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              required
-              style={{ ...s.input, fontFamily: 'monospace' }}
-            />
-          </Field>
-
-          <Field label="Description" hint="multi-line OK (preserves as YAML block scalar)">
-            <textarea
-              value={form.description_text}
-              onChange={(e) => setForm({ ...form, description_text: e.target.value })}
-              rows={3}
-              style={{ ...s.input, fontFamily: 'inherit', resize: 'vertical' }}
-            />
-          </Field>
-
-          <Field label="Cover Image URL">
-            <input
-              type="text"
-              value={form.cover_image}
-              onChange={(e) => setForm({ ...form, cover_image: e.target.value })}
-              style={{ ...s.input, fontFamily: 'monospace' }}
-            />
-          </Field>
-
-          <Field label="Tags" hint="comma-separated">
-            <input
-              type="text"
-              value={form.tags}
-              onChange={(e) => setForm({ ...form, tags: e.target.value })}
-              style={s.input}
-            />
-          </Field>
-
-          <Field label="Featured">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <Field label="Title">
               <input
-                type="checkbox"
-                checked={form.is_featured}
-                onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
-                style={{ width: 16, height: 16 }}
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required
+                style={{ ...s.input, fontSize: 18, fontFamily: 'Georgia, serif' }}
               />
-              <span style={{ fontSize: 13 }}>Show on homepage featured section</span>
-            </label>
-          </Field>
+            </Field>
 
-          <Field label="Content (MDX)">
-            <textarea
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              rows={20}
-              required
-              style={{
-                ...s.input,
-                fontFamily: "'Fira Code', monospace",
-                fontSize: 13,
-                lineHeight: 1.6,
-                resize: 'vertical',
-              }}
-            />
-          </Field>
+            <Field label="Slug">
+              <input
+                type="text"
+                value={form.slug}
+                onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                required
+                style={{ ...s.input, fontFamily: 'monospace' }}
+              />
+            </Field>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 24, flexWrap: 'wrap' }}>
-            <button type="submit" disabled={saving} style={{ ...s.primaryButton, opacity: saving ? 0.7 : 1 }}>
-              {saving ? 'Saving…' : 'Save Draft'}
-            </button>
-            <button
-              type="button"
-              onClick={handlePublish}
-              disabled={publishing}
-              style={{ ...s.primaryButton, backgroundColor: '#10b981', opacity: publishing ? 0.7 : 1 }}
-            >
-              {publishing ? 'Publishing…' : 'Publish'}
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              style={{ ...s.secondaryButton, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-            >
-              Delete
-            </button>
-            <Link href="/admin/posts" style={s.secondaryButton}>Cancel</Link>
-          </div>
-        </form>
+            <Field label="Description" hint="multi-line OK (preserves as YAML block scalar)">
+              <textarea
+                value={form.description_text}
+                onChange={(e) => setForm({ ...form, description_text: e.target.value })}
+                rows={3}
+                style={{ ...s.input, fontFamily: 'inherit', resize: 'vertical' }}
+              />
+            </Field>
+
+            <Field label="Cover Image URL">
+              <input
+                type="text"
+                value={form.cover_image}
+                onChange={(e) => setForm({ ...form, cover_image: e.target.value })}
+                style={{ ...s.input, fontFamily: 'monospace' }}
+              />
+            </Field>
+
+            <Field label="Tags" hint="comma-separated">
+              <input
+                type="text"
+                value={form.tags}
+                onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                style={s.input}
+              />
+            </Field>
+
+            <Field label="Featured">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={form.is_featured}
+                  onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
+                  style={{ width: 16, height: 16 }}
+                />
+                <span style={{ fontSize: 13 }}>Show on homepage featured section</span>
+              </label>
+            </Field>
+
+            <Field label="Content (MDX)">
+              <textarea
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                rows={20}
+                required
+                style={{
+                  ...s.input,
+                  fontFamily: "'Fira Code', monospace",
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  resize: 'vertical',
+                }}
+              />
+            </Field>
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 24, flexWrap: 'wrap' }}>
+              <button type="submit" disabled={saving} style={{ ...s.primaryButton, opacity: saving ? 0.7 : 1 }}>
+                {saving ? 'Saving…' : 'Save Draft'}
+              </button>
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={publishing}
+                style={{ ...s.primaryButton, backgroundColor: '#10b981', opacity: publishing ? 0.7 : 1 }}
+              >
+                {publishing ? 'Publishing…' : 'Publish'}
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                style={{ ...s.secondaryButton, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+              >
+                Delete
+              </button>
+              <Link href="/admin/posts" style={s.secondaryButton}>Cancel</Link>
+            </div>
+          </form>
+        )}
       </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────
+// Preview Panel — renders same Markdown component as production frontend
+// Per ADR-005: same renderer for preview + production
+// ────────────────────────────────────────────────────
+
+function PreviewPanel({ form }: { form: FormState }) {
+  return (
+    <div style={{ backgroundColor: '#14141C', border: '1px solid #1E1E2E', padding: 32, borderRadius: 12 }}>
+      {/* Preview header */}
+      <div style={{ borderBottom: '1px solid #1E1E2E', paddingBottom: 16, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 11, color: '#707080', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: 8 }}>
+          Preview · live unsaved changes
+        </h2>
+        <h1 style={{ fontSize: 32, fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2, marginBottom: 12 }}>
+          {form.title || <span style={{ color: '#707080' }}>(Untitled)</span>}
+        </h1>
+        {form.description_text && (
+          <p style={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.65)', lineHeight: 1.5 }}>
+            {form.description_text}
+          </p>
+        )}
+        <p style={{ fontSize: 11, color: '#707080', marginTop: 12, fontFamily: 'monospace' }}>
+          /{form.collection}/{form.locale}/{form.slug || '(no-slug)'} · {form.status}
+        </p>
+      </div>
+
+      {/* Markdown content — same renderer as src/components/Markdown.tsx */}
+      <article style={{ lineHeight: 1.7 }}>
+        {form.content ? (
+          <Markdown>{form.content}</Markdown>
+        ) : (
+          <p style={{ color: '#707080', fontStyle: 'italic' }}>(No content yet)</p>
+        )}
+      </article>
     </div>
   );
 }
@@ -320,3 +387,31 @@ function safeParseTags(json: string): string[] {
     return [];
   }
 }
+
+const tabBarStyle: CSSProperties = {
+  display: 'flex',
+  gap: 4,
+  marginBottom: 16,
+  backgroundColor: '#14141C',
+  padding: 4,
+  borderRadius: 8,
+  border: '1px solid #1E1E2E',
+  width: 'fit-content',
+};
+
+const tabStyle: CSSProperties = {
+  padding: '8px 16px',
+  backgroundColor: 'transparent',
+  color: '#707080',
+  border: 'none',
+  borderRadius: 6,
+  fontSize: 13,
+  fontFamily: 'inherit',
+  cursor: 'pointer',
+};
+
+const tabActiveStyle: CSSProperties = {
+  ...tabStyle,
+  backgroundColor: '#0A0A0F',
+  color: '#E8E8EC',
+};

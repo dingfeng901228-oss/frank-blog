@@ -1,22 +1,31 @@
 // functions/api/admin/preview/[id].ts
-// GET /api/admin/preview/:id — render MDX post for preview
-// Phase 2 skeleton — Phase 6 implements
-// Per ADR-005: same MDX renderer as production frontend (src/components/Markdown.tsx)
-// Goal: MDX Source → Same Renderer → Preview / Production
+// GET /api/admin/preview/:id — fetch post for preview
+// Per ADR-005: frontend renders via same Markdown component (src/components/Markdown.tsx)
+//             Backend returns raw data; rendering happens in admin UI (Next.js client)
 
-export const onRequestGet = async (context: any): Promise<Response> => {
-  // TODO Phase 6:
-  //   1. SELECT content FROM posts WHERE id = ?
-  //   2. Extract frontmatter (gray-matter { language: 'yaml' })
-  //   3. Render MDX body to HTML using same react-markdown + remark-gfm + rehype-* as frontend
-  //   4. Return { success: true, data: { html, frontmatter } }
-  //
-  // Note: Cloudflare Workers/Pages Functions can run React server-side
-  //   using renderToStaticMarkup from react-dom/server.
-  return json(
-    { error: `Not implemented — preview post ${context.params.id} (Phase 6)` },
-    501
+import type { PagesContext } from '../../../../src/lib/cms/types';
+import { queryFirst } from '../../../src/lib/cms/db';
+
+export const onRequestGet = async (context: PagesContext): Promise<Response> => {
+  const id = parseInt(context.params.id, 10);
+  if (!Number.isFinite(id)) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
+  }
+
+  const post = await queryFirst<any>(
+    context.env,
+    `SELECT id, collection, locale, slug, title, description_text, description_raw,
+            content, excerpt, cover_image, status, is_featured, tags,
+            published_at, updated_at, reading_time, author_id
+     FROM posts WHERE id = ?`,
+    [id]
   );
+
+  if (!post) {
+    return json({ success: false, error: { code: 'NOT_FOUND', message: 'Post not found' } }, 404);
+  }
+
+  return json({ success: true, data: post });
 };
 
 function json(data: unknown, status = 200): Response {
