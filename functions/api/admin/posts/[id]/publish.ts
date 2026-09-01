@@ -16,7 +16,10 @@ import { triggerDeployHook } from '../../../src/lib/cms/deploy';
 export const onRequestPost = async (context: PagesContext): Promise<Response> => {
   const id = parseInt(context.params.id, 10);
   if (!Number.isFinite(id)) {
-    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
+    return json(
+      { success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } },
+      400
+    );
   }
 
   // Verify post exists
@@ -26,7 +29,10 @@ export const onRequestPost = async (context: PagesContext): Promise<Response> =>
     [id]
   );
   if (!post) {
-    return json({ success: false, error: { code: 'NOT_FOUND', message: 'Post not found' } }, 404);
+    return json(
+      { success: false, error: { code: 'NOT_FOUND', message: 'Post not found' } },
+      404
+    );
   }
 
   // Update status to published
@@ -46,26 +52,29 @@ export const onRequestPost = async (context: PagesContext): Promise<Response> =>
     `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, ?, ?, ?)`,
     [
       context.data?.user?.id ?? null,
-      deploy.triggered ? 'publish' : 'publish_failed',
+      deploy.triggered ? 'publish_post' : 'publish_post_failed',
       'post',
       id,
     ]
   );
 
-  return json({
-    success: deploy.triggered,
-    data: {
-      id,
-      status: 'published',
-      published_at: now,
-      deploy_triggered: deploy.triggered,
-      deploy_error: deploy.error,
-      deploy_ts: deploy.ts,
+  return json(
+    {
+      success: deploy.triggered,
+      data: {
+        id,
+        status: 'published',
+        published_at: now,
+        deploy_triggered: deploy.triggered,
+        deploy_error: deploy.error,
+        deploy_ts: deploy.ts,
+      },
+      ...(deploy.triggered
+        ? {}
+        : { error: { code: 'DEPLOY_HOOK_FAILED', message: deploy.error || 'Deploy hook failed' } }),
     },
-    ...(deploy.triggered
-      ? {}
-      : { error: { code: 'DEPLOY_HOOK_FAILED', message: deploy.error || 'Deploy hook failed' } }),
-  }, deploy.triggered ? 200 : 502);
+    deploy.triggered ? 200 : 502
+  );
 };
 
 function json(data: unknown, status = 200): Response {

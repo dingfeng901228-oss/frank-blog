@@ -25,7 +25,8 @@ export async function triggerDeployHook(env: Env): Promise<DeployResult> {
   if (!url) {
     return {
       triggered: false,
-      error: 'CLOUDFLARE_DEPLOY_HOOK_URL not configured (run `wrangler pages secret put CLOUDFLARE_DEPLOY_HOOK_URL`)',
+      error:
+        'CLOUDFLARE_DEPLOY_HOOK_URL not configured (run `wrangler pages secret put CLOUDFLARE_DEPLOY_HOOK_URL`)',
       ts,
     };
   }
