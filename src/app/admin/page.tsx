@@ -6,6 +6,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties } from 'react';
+import Link from 'next/link';
 import type { AuthUser } from '@/lib/cms/api-client';
 
 export default function DashboardPage() {
@@ -100,6 +101,15 @@ export default function DashboardPage() {
           <p style={{ fontSize: 12, color: '#707080', marginTop: 12 }}>
             Real numbers come online in Phase 5 (Posts CRUD).
           </p>
+        </div>
+
+        {/* Navigation */}
+        <div style={cardStyle}>
+          <h2 style={cardTitleStyle}>Manage</h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link href="/admin/posts" style={navLinkStyle}>📝 Posts</Link>
+            <Link href="/admin/posts/new" style={navLinkStyle}>+ New Post</Link>
+          </div>
         </div>
 
         {/* Roadmap */}
@@ -207,4 +217,14 @@ const cardTitleStyle: CSSProperties = {
   letterSpacing: '0.18em',
   marginBottom: 16,
   fontFamily: "'SF Mono', monospace",
+};
+
+const navLinkStyle: CSSProperties = {
+  padding: '10px 16px',
+  backgroundColor: '#0A0A0F',
+  border: '1px solid #1E1E2E',
+  borderRadius: 8,
+  color: '#E8E8EC',
+  textDecoration: 'none',
+  fontSize: 13,
 };
