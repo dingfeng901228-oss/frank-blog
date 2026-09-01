@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1106.0",
+    "@cloudflare/workers-types": "^4.20240925.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

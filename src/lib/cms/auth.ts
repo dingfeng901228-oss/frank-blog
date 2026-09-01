@@ -1,55 +1,148 @@
 // src/lib/cms/auth.ts
-// Authentication utilities — Phase 3 IMPLEMENTATION
-// Per D-4: admin@frank2025.com + PBKDF2-SHA256 hash + HttpOnly Cookie session
-//
-// Reference for hash format: scripts/seed-admin.mjs (already implements hash for seeding)
-// Format: pbkdf2_sha256$<iterations>$<salt_b64url>$<hash_b64url>
+// Authentication utilities — PBKDF2 verify + session CRUD
+// Per D-4: admin@frank2025.com + PBKDF2-SHA256 + HttpOnly Cookie session + admin_logs audit
 
 import type { Env, User } from './types';
+import { execute, queryFirst } from './db';
+import {
+  parsePasswordHash,
+  randomBytes,
+  toBase64Url,
+  sha256Hex,
+} from './crypto';
+
+const SESSION_TTL_DAYS_DEFAULT = 7;
+const FALLBACK_IP_SALT = 'frank-blog-cms-ip-salt';
 
 // ────────────────────────────────────────────────────
-// Phase 3 — Implement
+// Password verification (constant-time)
 // ────────────────────────────────────────────────────
 
 /** Verify plain password against stored PBKDF2 hash. Constant-time compare. */
 export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
-  // TODO Phase 3: parse hash → { iterations, salt, expected }; derive bits; constant-time compare
-  throw new Error('Not implemented — Phase 3');
+  let parsed;
+  try {
+    parsed = parsePasswordHash(hash);
+  } catch {
+    return false;
+  }
+
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(plain),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: parsed.salt,
+      iterations: parsed.iterations,
+      hash: 'SHA-256',
+    },
+    key,
+    parsed.hash.length * 8
+  );
+  const derivedHash = new Uint8Array(bits);
+  return constantTimeEqual(derivedHash, parsed.hash);
 }
+
+// ────────────────────────────────────────────────────
+// Session lifecycle
+// ────────────────────────────────────────────────────
 
 /**
  * Create new session for userId.
- * Generates random 32-byte token, returns:
- *   - token (raw, returned to client via Set-Cookie)
- *   - tokenHash (SHA-256 of token, stored in DB)
- *   - expiresAt (ISO timestamp, default 7 days)
+ * Returns raw token (for Set-Cookie) + expiresAt ISO timestamp.
+ * Stores SHA-256(token) in DB (NEVER plaintext).
  */
 export async function createSession(
   env: Env,
   userId: number,
-  ttlDays = 7
-): Promise<{ token: string; tokenHash: string; expiresAt: string }> {
-  // TODO Phase 3: crypto.getRandomValues(32 bytes) → token; SHA-256 → tokenHash; INSERT sessions
-  throw new Error('Not implemented — Phase 3');
+  ttlDays: number = SESSION_TTL_DAYS_DEFAULT
+): Promise<{ token: string; expiresAt: string }> {
+  const tokenBytes = randomBytes(32);
+  const token = toBase64Url(tokenBytes);
+  const tokenHash = await sha256Hex(token);
+
+  const expiresAt = new Date(
+    Date.now() + ttlDays * 24 * 60 * 60 * 1000
+  ).toISOString();
+
+  await execute(
+    env,
+    `INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)`,
+    [userId, tokenHash, expiresAt]
+  );
+
+  return { token, expiresAt };
 }
 
 /**
  * Lookup session by tokenHash; return User if session valid + not expired.
- * Auto-update last_used_at.
+ * Auto-updates last_used_at (fire-and-forget).
  */
 export async function getSessionUser(env: Env, tokenHash: string): Promise<User | null> {
-  // TODO Phase 3: JOIN sessions + users, check expires_at > now, return user
-  throw new Error('Not implemented — Phase 3');
+  const session = await queryFirst<{ user_id: number; expires_at: string }>(
+    env,
+    `SELECT user_id, expires_at FROM sessions WHERE token_hash = ?`,
+    [tokenHash]
+  );
+
+  if (!session) return null;
+
+  // Check expiry
+  if (new Date(session.expires_at).getTime() < Date.now()) {
+    await deleteSession(env, tokenHash);
+    return null;
+  }
+
+  // Update last_used_at (fire-and-forget — don't block auth response)
+  execute(
+    env,
+    `UPDATE sessions SET last_used_at = datetime('now') WHERE token_hash = ?`,
+    [tokenHash]
+  ).catch(() => {});
+
+  // Get user
+  const user = await queryFirst<User>(
+    env,
+    `SELECT * FROM users WHERE id = ? AND status = 'active'`,
+    [session.user_id]
+  );
+
+  return user;
 }
 
-/** Invalidate session (DELETE row, or set expires_at to past). */
+/** Invalidate session (DELETE row by token_hash). */
 export async function deleteSession(env: Env, tokenHash: string): Promise<void> {
-  // TODO Phase 3: DELETE FROM sessions WHERE token_hash = ?
-  throw new Error('Not implemented — Phase 3');
+  await execute(env, `DELETE FROM sessions WHERE token_hash = ?`, [tokenHash]);
 }
 
-/** Hash IP address for audit log (never store raw IP). */
-export async function hashIp(ip: string): Promise<string> {
-  // TODO Phase 3: SHA-256(ip + SESSION_SECRET salt) → hex
-  throw new Error('Not implemented — Phase 3');
+// ────────────────────────────────────────────────────
+// IP hashing (audit log)
+// ────────────────────────────────────────────────────
+
+/**
+ * Hash IP address for admin_logs.ip_hash (never store raw IP per D-2).
+ * Salted with SESSION_SECRET so hashes can't be reversed without secret.
+ */
+export async function hashIp(env: Env, ip: string): Promise<string> {
+  const salt = env.SESSION_SECRET || FALLBACK_IP_SALT;
+  return await sha256Hex(ip + salt);
+}
+
+// ────────────────────────────────────────────────────
+// Internal helpers
+// ────────────────────────────────────────────────────
+
+function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
 }
