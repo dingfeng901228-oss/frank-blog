@@ -246,21 +246,102 @@ ON CONFLICT(collection, locale, slug) DO UPDATE SET
 }
 
 function runImport(posts, target) {
-  const sql = buildUpsertSql(posts);
-  const tmpFile = join(process.cwd(), `.migration-${Date.now()}.sql`);
+  // D1 SQL statement limit is ~100 KB. Use 32 KB to leave headroom for escape
+  // expansion and INSERT/UPSERT boilerplate (ADR-008 §5: chunked import).
+  const MAX_SQL_BYTES = 32 * 1024;
+
+  console.log(`\n📥 Importing ${posts.length} posts to ${target} D1...`);
+  console.log(`   Strategy: chunked UPSERT, max ${MAX_SQL_BYTES / 1024} KB per statement (D1 limit ~100 KB)`);
+
+  let batch = [];
+  let batchBytes = 0;
+  let batchIndex = 0;
+  let totalImported = 0;
+
+  for (const post of posts) {
+    // Measure each post's SQL footprint individually — large posts (>~25 KB
+    // content) will be the first ones flushed to their own batch.
+    const sql = buildUpsertSql([post]);
+    const sqlBytes = Buffer.byteLength(sql, 'utf8');
+
+    if (batch.length > 0 && batchBytes + sqlBytes > MAX_SQL_BYTES) {
+      totalImported += flushBatch(batch, target, ++batchIndex);
+      batch = [];
+      batchBytes = 0;
+    }
+    batch.push(post);
+    batchBytes += sqlBytes;
+  }
+
+  if (batch.length > 0) {
+    totalImported += flushBatch(batch, target, ++batchIndex);
+  }
+
+  console.log(`\n✅ Imported ${totalImported}/${posts.length} posts across ${batchIndex} batch(es)`);
+}
+
+function flushBatch(batch, target, batchIndex) {
+  const sql = buildUpsertSql(batch);
+  const tmpFile = join(process.cwd(), `.migration-${Date.now()}-b${batchIndex}.sql`);
   writeFileSync(tmpFile, sql, 'utf8');
   try {
-    console.log(`\n📥 Importing ${posts.length} posts to ${target} D1...`);
-    execSync(`npx wrangler d1 execute ${DB_NAME} --${target} --file="${tmpFile}"`, {
-      stdio: 'inherit',
-    });
-    console.log(`✅ Import command completed`);
+    const result = withRetrySync((attempt) => {
+      if (attempt === 1) {
+        console.log(`  📦 Batch ${batchIndex}: ${batch.length} posts, ${(Buffer.byteLength(sql, 'utf8') / 1024).toFixed(1)} KB`);
+      } else {
+        console.log(`  🔄 Batch ${batchIndex}: retry attempt ${attempt}/${RETRY_OPTIONS.maxAttempts}`);
+      }
+      execSync(`npx wrangler d1 execute ${DB_NAME} --${target} --file="${tmpFile}"`, {
+        stdio: 'inherit',
+      });
+      return batch.length;
+    }, { label: `flushBatch #${batchIndex}` });
+    rmSync(tmpFile); // clean up on success
+    return result;
   } catch (e) {
-    console.error(`❌ wrangler d1 execute failed: ${e.message}`);
+    console.error(`❌ Batch ${batchIndex} failed after ${RETRY_OPTIONS.maxAttempts} attempts: ${e.message}`);
+    console.error(`   Failing SQL preserved at: ${tmpFile} (not removed for inspection)`);
     throw e;
-  } finally {
-    try { rmSync(tmpFile); } catch {}
   }
+}
+
+// ────────────────────────────────────────────────────
+// Retry helper (handles transient wrangler API hiccups)
+// ────────────────────────────────────────────────────
+
+const RETRY_OPTIONS = {
+  maxAttempts: 4,
+  baseDelayMs: 2000, // exponential: 2s, 4s, 8s, 16s
+};
+
+function sleepSync(ms) {
+  // Node has no native sync sleep; Atomics.wait on a SharedArrayBuffer works.
+  const sab = new SharedArrayBuffer(4);
+  const view = new Int32Array(sab);
+  Atomics.wait(view, 0, 0, ms);
+}
+
+function withRetrySync(fn, opts = {}) {
+  const {
+    maxAttempts = RETRY_OPTIONS.maxAttempts,
+    baseDelayMs = RETRY_OPTIONS.baseDelayMs,
+    label = 'op',
+  } = opts;
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return fn(attempt);
+    } catch (e) {
+      lastError = e;
+      if (attempt === maxAttempts) break;
+      const delay = baseDelayMs * Math.pow(2, attempt - 1);
+      const errMsg = String(e.message ?? e).split('\n')[0];
+      console.warn(`⚠️ ${label} attempt ${attempt}/${maxAttempts} failed: ${errMsg}`);
+      console.warn(`   Retrying in ${delay}ms...`);
+      sleepSync(delay);
+    }
+  }
+  throw lastError;
 }
 
 // ────────────────────────────────────────────────────
@@ -268,15 +349,15 @@ function runImport(posts, target) {
 // ────────────────────────────────────────────────────
 
 function d1Query(sql, target) {
-  const out = execSync(`npx wrangler d1 execute ${DB_NAME} --${target} --command="${sql.replace(/"/g, '\\"')}" --json`, {
-    encoding: 'utf8',
-  });
-  try {
-    const parsed = JSON.parse(out);
-    return parsed?.[0]?.results ?? [];
-  } catch {
-    return [];
-  }
+  return withRetrySync((attempt) => {
+    if (attempt > 1) {
+      console.log(`  🔄 d1Query retry attempt ${attempt}/${RETRY_OPTIONS.maxAttempts}`);
+    }
+    const out = execSync(`npx wrangler d1 execute ${DB_NAME} --${target} --command="${sql.replace(/"/g, '\\"')}" --json`, {
+      encoding: 'utf8',
+    });
+    return JSON.parse(out)?.[0]?.results ?? [];
+  }, { label: 'd1Query' });
 }
 
 function verifyRandomSample(posts, target) {

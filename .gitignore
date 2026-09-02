@@ -27,3 +27,10 @@ npm-debug.log*
 # Cloudflare Pages deploy secrets (local-only, never commit)
 .env.wrangler
 .env*.local
+
+# Migration artifacts (debug SQL + backup snapshots, local-only)
+.migration-*.sql
+backups/
+
+# Wrangler CLI cache (contains OAuth tokens + D1 metadata, local-only)
+.wrangler/
