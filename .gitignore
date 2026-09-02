@@ -34,3 +34,8 @@ backups/
 
 # Wrangler CLI cache (contains OAuth tokens + D1 metadata, local-only)
 .wrangler/
+
+# Admin SPA subproject (separate Next.js project, builds to admin/out/)
+admin/node_modules/
+admin/.next/
+admin/out/

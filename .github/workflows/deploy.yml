@@ -25,17 +25,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install admin dependencies
+        run: cd admin && npm ci
+
+      - name: Build admin SPA
+        run: cd admin && npm run build
+
       - name: Build
         run: npm run build
+
+      - name: Copy admin SPA output
+        run: cp -r admin/out out/admin
 
       - name: Copy index.html
         run: cp out/ja.html out/index.html
 
-      - name: Copy admin & functions
-        run: |
-          mkdir -p out/functions out/admin
-          cp -r functions out/
-          cp -r public/admin out/
+      - name: Copy functions
+        run: mkdir -p out/functions && cp -r functions out/
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1

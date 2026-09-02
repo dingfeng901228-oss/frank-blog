@@ -1,0 +1,11 @@
+# Build artifacts
+node_modules/
+.next/
+out/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Env
+.env.local
+.env*.local

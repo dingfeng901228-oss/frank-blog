@@ -1,20 +1,17 @@
-// src/app/admin/posts/[id]/page.tsx
-// Edit existing post — load, edit form, save (PUT), publish (POST), delete (DELETE)
+// admin/src/app/admin/posts/edit/page.tsx
+// Edit existing post — uses ?id= query param instead of [id] dynamic route
+// (Output: 'export' can't pre-generate dynamic routes with unknown IDs from D1)
 // Phase 6: Preview tab reusing src/components/Markdown.tsx (per ADR-005 same renderer)
 
 'use client';
 
-import { use, useEffect, useState, type FormEvent, type CSSProperties } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState, type FormEvent, type CSSProperties } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Markdown from '@/components/Markdown';
 import { apiGet, apiPut } from '@/lib/cms/api-client';
 import type { Locale, PostCollection } from '@/lib/cms/types';
 import { postFormStyles as s } from '../new/post-form-styles';
-
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
 
 interface FormState {
   collection: PostCollection;
@@ -33,10 +30,11 @@ interface FormState {
 
 type Mode = 'edit' | 'preview';
 
-export default function EditPostPage({ params }: PageProps) {
+function EditPostInner() {
   const router = useRouter();
-  const { id } = use(params);
-  const postId = parseInt(id, 10);
+  const searchParams = useSearchParams();
+  const idParam = searchParams.get('id');
+  const postId = idParam ? parseInt(idParam, 10) : NaN;
 
   const [post, setPost] = useState<any | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
@@ -48,6 +46,7 @@ export default function EditPostPage({ params }: PageProps) {
   const [mode, setMode] = useState<Mode>('edit');
 
   useEffect(() => {
+    if (!Number.isFinite(postId)) return;
     fetchPost();
   }, [postId]);
 
@@ -112,7 +111,6 @@ export default function EditPostPage({ params }: PageProps) {
     setPublishing(true);
     setError(null);
     try {
-      // Save first, then publish
       const tags = form.tags.split(',').map((t) => t.trim()).filter(Boolean);
       await apiPut(`/api/admin/posts/${postId}`, {
         ...form,
@@ -149,6 +147,15 @@ export default function EditPostPage({ params }: PageProps) {
     } catch (e: any) {
       setError(e.message);
     }
+  }
+
+  if (!Number.isFinite(postId)) {
+    return (
+      <div style={s.page}>
+        <p style={s.error}>Missing or invalid post id. Use ?id=123 in the URL.</p>
+        <Link href="/admin/posts" style={s.backLink}>← Posts</Link>
+      </div>
+    );
   }
 
   if (loading) {
@@ -380,11 +387,13 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 function safeParseTags(json: string): string[] {
-  try {
-    const arr = JSON.parse(json);
-    return Array.isArray(arr) ? arr.map(String) : [];
-  } catch {
-    return [];
+ {
+    try {
+      const arr = JSON.parse(json);
+      return Array.isArray(arr) ? arr.map(String) : [];
+    } catch {
+      return [];
+    }
   }
 }
 
@@ -415,3 +424,12 @@ const tabActiveStyle: CSSProperties = {
   backgroundColor: '#0A0A0F',
   color: '#E8E8EC',
 };
+
+// Wrap in Suspense for useSearchParams (Next.js 15 requirement)
+export default function EditPostPage() {
+  return (
+    <Suspense fallback={<div style={s.page}><p style={{ color: '#707080' }}>Loading…</p></div>}>
+      <EditPostInner />
+    </Suspense>
+  );
+}

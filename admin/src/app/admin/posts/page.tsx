@@ -167,7 +167,7 @@ export default function PostsListPage() {
                     <td style={tdStyle}>{post.collection}</td>
                     <td style={{ ...tdStyle, fontSize: 11, color: '#707080' }}>{post.updated_at}</td>
                     <td style={{ ...tdStyle, textAlign: 'right' }}>
-                      <Link href={`/admin/posts/${post.id}`} style={actionLinkStyle}>Edit</Link>
+                      <Link href={`/admin/posts/edit?id=${post.id}`} style={actionLinkStyle}>Edit</Link>
                       <a href={`/${post.locale}/${post.collection === 'notes' ? 'notes' : 'blog'}/${post.slug}`} target="_blank" rel="noreferrer" style={actionLinkStyle}>View</a>
                       <button onClick={() => handleDelete(post.id, post.title)} style={{ ...actionLinkStyle, background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}>
                         Delete
