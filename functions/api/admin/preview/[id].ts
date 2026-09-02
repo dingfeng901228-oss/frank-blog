@@ -4,9 +4,9 @@
 //             Backend returns raw data; rendering happens in admin UI (Next.js client)
 
 import type { PagesContext } from '../../../../src/lib/cms/types';
-import { queryFirst } from '../../../src/lib/cms/db';
+import { queryFirst } from '../../../../src/lib/cms/db';
 
-export const onRequestGet = async (context: PagesContext): Promise<Response> => {
+export const onRequestGet = async (context: PagesContext<{ id: string }>): Promise<Response> => {
   const id = parseInt(context.params.id, 10);
   if (!Number.isFinite(id)) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);

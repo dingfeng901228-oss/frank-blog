@@ -2,15 +2,15 @@
 // /api/admin/posts/:id — get (GET) / update (PUT) / delete (DELETE)
 // Per D-6: content field is byte-level SoT, never transformed
 
-import type { PagesContext } from '../../../src/lib/cms/types';
-import { execute, queryFirst } from '../../../src/lib/cms/db';
-import type { Post } from '../../../src/lib/cms/types';
+import type { PagesContext } from '../../../../src/lib/cms/types';
+import { execute, queryFirst } from '../../../../src/lib/cms/db';
+import type { Post } from '../../../../src/lib/cms/types';
 
 // ────────────────────────────────────────────────────
 // GET /api/admin/posts/:id
 // ────────────────────────────────────────────────────
 
-export const onRequestGet = async (context: PagesContext): Promise<Response> => {
+export const onRequestGet = async (context: PagesContext<{ id: string }>): Promise<Response> => {
   const id = parseInt(context.params.id, 10);
   if (!Number.isFinite(id)) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
@@ -33,7 +33,7 @@ export const onRequestGet = async (context: PagesContext): Promise<Response> => 
 // PUT /api/admin/posts/:id
 // ────────────────────────────────────────────────────
 
-export const onRequestPut = async (context: PagesContext): Promise<Response> => {
+export const onRequestPut = async (context: PagesContext<{ id: string }>): Promise<Response> => {
   const id = parseInt(context.params.id, 10);
   if (!Number.isFinite(id)) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
@@ -120,7 +120,7 @@ export const onRequestPut = async (context: PagesContext): Promise<Response> => 
 // DELETE /api/admin/posts/:id
 // ────────────────────────────────────────────────────
 
-export const onRequestDelete = async (context: PagesContext): Promise<Response> => {
+export const onRequestDelete = async (context: PagesContext<{ id: string }>): Promise<Response> => {
   const id = parseInt(context.params.id, 10);
   if (!Number.isFinite(id)) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);

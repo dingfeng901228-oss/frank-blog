@@ -11,6 +11,8 @@
 // Domain enums
 // ────────────────────────────────────────────────────
 
+import type { D1Database, R2Bucket, D1Result } from '@cloudflare/workers-types';
+
 export type Locale          = 'zh' | 'ja' | 'en';
 export type PostStatus      = 'draft' | 'published' | 'archived';
 export type PostCollection  = 'posts' | 'notes';
@@ -101,7 +103,7 @@ export interface PagesContext<P = unknown> {
   waitUntil:                (promise: Promise<unknown>) => void;
   passThroughOnException:   () => void;
   functionPath?:            string;
-  data?:                    unknown;
+  data?:                    { user?: User };
 }
 
 export type PagesHandler<P = unknown> =
@@ -111,4 +113,4 @@ export type PagesHandler<P = unknown> =
 // Re-export from D1 (for convenience in handlers)
 // ────────────────────────────────────────────────────
 
-export type { D1Database, D1Result } from '@cloudflare/workers-types';
+export type { D1Database, D1Result };

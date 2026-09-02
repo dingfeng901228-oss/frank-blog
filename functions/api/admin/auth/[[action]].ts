@@ -2,7 +2,7 @@
 // /api/admin/auth/{login,logout,me}
 // Per D-4: admin@frank2025.com + HttpOnly Cookie session + admin_logs audit
 
-import type { PagesHandler, Env, User } from '../../../../src/lib/cms/types';
+import type { PagesHandler, PagesContext, Env, User } from '../../../../src/lib/cms/types';
 import {
   verifyPassword,
   createSession,
