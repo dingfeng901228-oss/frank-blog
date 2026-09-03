@@ -3,8 +3,8 @@
 // Per ADR-005: frontend renders via same Markdown component (src/components/Markdown.tsx)
 //             Backend returns raw data; rendering happens in admin UI (Next.js client)
 
-import type { PagesContext } from '../../../../src/lib/cms/types';
-import { queryFirst } from '../../../../src/lib/cms/db';
+import type { PagesContext } from '../../../_cms/types';
+import { queryFirst } from '../../../_cms/db';
 
 export const onRequestGet = async (context: PagesContext<{ id: string }>): Promise<Response> => {
   const id = parseInt(context.params.id, 10);

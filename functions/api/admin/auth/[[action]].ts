@@ -2,15 +2,15 @@
 // /api/admin/auth/{login,logout,me}
 // Per D-4: admin@frank2025.com + HttpOnly Cookie session + admin_logs audit
 
-import type { PagesHandler, PagesContext, Env, User } from '../../../../src/lib/cms/types';
+import type { PagesHandler, PagesContext, Env, User } from '../../../_cms/types';
 import {
   verifyPassword,
   createSession,
   deleteSession,
   hashIp,
-} from '../../../../src/lib/cms/auth';
-import { sha256Hex } from '../../../../src/lib/cms/crypto';
-import { queryFirst, execute } from '../../../../src/lib/cms/db';
+} from '../../../_cms/auth';
+import { sha256Hex } from '../../../_cms/crypto';
+import { queryFirst, execute } from '../../../_cms/db';
 
 const SESSION_COOKIE_NAME = 'cms_session';
 const SESSION_TTL_DAYS = 7;

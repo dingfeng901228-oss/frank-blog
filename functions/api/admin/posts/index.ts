@@ -2,9 +2,9 @@
 // /api/admin/posts — list (GET) + create (POST)
 // Per D-3 + D-6: posts.content stores full MDX verbatim, byte-level SoT
 
-import type { PagesContext } from '../../../../src/lib/cms/types';
-import { execute, queryAll, queryFirst } from '../../../../src/lib/cms/db';
-import type { Locale, PostStatus, PostCollection, Post } from '../../../../src/lib/cms/types';
+import type { PagesContext } from '../../../_cms/types';
+import { execute, queryAll, queryFirst } from '../../../_cms/db';
+import type { Locale, PostStatus, PostCollection, Post } from '../../../_cms/types';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;

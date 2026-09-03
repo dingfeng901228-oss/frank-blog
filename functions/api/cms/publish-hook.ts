@@ -6,8 +6,8 @@
 // Note: this endpoint is internal-only. Production usage should add its own auth
 // OR rename to /api/admin/cms/publish-hook to inherit the admin session middleware.
 
-import type { PagesContext } from '../../../src/lib/cms/types';
-import { triggerDeployHook } from '../../../src/lib/cms/deploy';
+import type { PagesContext } from '../../_cms/types';
+import { triggerDeployHook } from '../../_cms/deploy';
 
 export const onRequestPost = async (context: PagesContext): Promise<Response> => {
   const result = await triggerDeployHook(context.env);
