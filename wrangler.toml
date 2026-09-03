@@ -3,7 +3,9 @@
 # wrangler.toml name 仅是配置标签，不代表独立 Worker
 
 name = "frank-blog-cms"
-main = "functions/api/github.js"   # Pages Functions entry — 旧 admin endpoint, Phase 11 弃用
+# main intentionally removed: Pages wrangler.toml forbids `main` (Worker-only).
+#   The old main = "functions/api/github.js" pointed at the deprecated Phase 11
+#   admin endpoint; Pages Functions auto-route from functions/ tree instead.
 compatibility_date = "2024-09-01"  # bumped from 2024-01-01
 pages_build_output_dir = "out-admin"  # match cms Pages deploy dir so [[d1_databases]] binding applies (wrangler ignores wrangler.toml unless this field matches the deploy dir)
 
@@ -25,10 +27,9 @@ database_id   = "a1dcda23-2b33-4c3b-9eaa-2c0429d35cb1"
 #                                生成: openssl rand -hex 64
 # ADMIN_PASSWORD              — admin 登录密码 (≥12 chars), scripts/seed-admin.mjs 读取
 #                                仅放 .env.local (gitignored), 绝不入库
-[secrets]
-# CLOUDFLARE_DEPLOY_HOOK_URL
-# SESSION_SECRET
-# ADMIN_PASSWORD
+# [secrets] section intentionally removed: it's a Worker-only construct and
+#   Pages rejects it as "Unexpected fields found in top-level field: secrets".
+#   Configure secrets via: wrangler pages secret put <NAME> --project-name=frank-blog-cms
 
 [vars]
 ENVIRONMENT = "production"
