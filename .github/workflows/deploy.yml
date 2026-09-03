@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Pages (split projects)
 
 on:
   push:
@@ -6,12 +6,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       deployments: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,31 +21,55 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install root deps
         run: npm ci
 
-      - name: Install admin dependencies
+      - name: Install admin deps
         run: cd admin && npm ci
 
       - name: Build admin SPA
         run: cd admin && npm run build
 
-      - name: Build
+      - name: Build main site (blog)
         run: npm run build
 
-      - name: Copy admin SPA output
-        run: cp -r admin/out/. out/
-
-      - name: Copy index.html
+      - name: Copy ja.html → out/index.html (blog fallback)
         run: cp out/ja.html out/index.html
 
-      - name: Copy functions
-        run: mkdir -p out/functions && cp -r functions out/
+      # ────── ADMIN deploy (frank-blog-cms project) ──────
+      - name: Prepare admin-only dir
+        run: |
+          rm -rf out-admin
+          mkdir -p out-admin
+          cp -r admin/out/. out-admin/
+          mkdir -p out-admin/functions
+          cp -r functions out-admin/
+        # public/_redirects intentionally NOT copied — admin project doesn't need
+        # the blog's `/ → /ja` rule (root serves admin SPA via admin/out/index.html)
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy admin to frank-blog-cms
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: frank-blog-cms
-          directory: out
+          directory: out-admin
+          wranglerVersion: '3'
+
+      # ────── BLOG deploy (frank-blog project) ──────
+      - name: Prepare blog-only dir
+        run: |
+          rm -rf out-blog
+          mkdir -p out-blog
+          cp -r out/. out-blog/
+        # out-blog/ contains: blog pages + ja.html-as-index.html + public/_redirects
+        # NO functions/, NO admin SPA, NO D1 binding wrangler.toml would try to add
+
+      - name: Deploy blog to frank-blog
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: frank-blog
+          directory: out-blog
+          wranglerVersion: '3'
