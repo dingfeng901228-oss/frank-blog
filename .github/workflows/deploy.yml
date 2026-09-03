@@ -44,8 +44,15 @@ jobs:
           cp -r admin/out/. out-admin/
           mkdir -p out-admin/functions
           cp -r functions out-admin/
-        # public/_redirects intentionally NOT copied — admin project doesn't need
-        # the blog's `/ → /ja` rule (root serves admin SPA via admin/out/index.html)
+          # Fix (2026-09-03): Pages Functions runtime reads [[d1_databases]] only
+          # when wrangler.toml is in the deploy directory. Without it env.DB is
+          # undefined → db.ts throws → /api/admin/auth/me returns 500.
+          cp wrangler.toml out-admin/
+          # Fix (2026-09-03): admin SPA is Next.js export rooted at /admin/, no
+          # index.html at the project root. Route CMS root to the SPA mount point.
+          printf '/  /admin/  302\n' > out-admin/_redirects
+        # public/_redirects (blog's `/ → /ja`) NOT copied — that rule would break
+        # CMS root. CMS root is now served by out-admin/_redirects above.
 
       - name: Deploy admin to frank-blog-cms
         uses: cloudflare/pages-action@v1
