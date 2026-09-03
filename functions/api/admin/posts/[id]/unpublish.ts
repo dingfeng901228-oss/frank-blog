@@ -2,9 +2,9 @@
 // POST /api/admin/posts/:id/unpublish — revert to draft + trigger Deploy Hook
 // Per ADR-002: Unpublish also triggers SSG rebuild (removes page from production)
 
-import type { PagesContext } from '../../../../_cms/types';
-import { execute, queryFirst } from '../../../../_cms/db';
-import { triggerDeployHook } from '../../../../_cms/deploy';
+import type { PagesContext } from '../../../../cms/types';
+import { execute, queryFirst } from '../../../../cms/db';
+import { triggerDeployHook } from '../../../../cms/deploy';
 
 export const onRequestPost = async (context: PagesContext<{ id: string }>): Promise<Response> => {
   const id = parseInt(context.params.id, 10);

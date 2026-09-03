@@ -2,9 +2,9 @@
 // /api/admin/posts/:id — get (GET) / update (PUT) / delete (DELETE)
 // Per D-6: content field is byte-level SoT, never transformed
 
-import type { PagesContext } from '../../../_cms/types';
-import { execute, queryFirst } from '../../../_cms/db';
-import type { Post } from '../../../_cms/types';
+import type { PagesContext } from '../../../cms/types';
+import { execute, queryFirst } from '../../../cms/db';
+import type { Post } from '../../../cms/types';
 
 // ────────────────────────────────────────────────────
 // GET /api/admin/posts/:id

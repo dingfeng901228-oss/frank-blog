@@ -3,9 +3,9 @@
 // Validates session cookie + attaches User to context.data
 // Per D-4: HttpOnly Cookie session + SHA-256 token hash
 
-import type { PagesContext } from '../../_cms/types';
-import { getSessionUser } from '../../_cms/auth';
-import { sha256Hex } from '../../_cms/crypto';
+import type { PagesContext } from '../../cms/types';
+import { getSessionUser } from '../../cms/auth';
+import { sha256Hex } from '../../cms/crypto';
 
 const SESSION_COOKIE_NAME = 'cms_session';
 
