@@ -44,12 +44,11 @@ jobs:
           cp -r admin/out/. out-admin/
           mkdir -p out-admin/functions
           cp -r functions out-admin/
-          # Fix (2026-09-03): Pages Functions runtime reads [[d1_databases]] only
-          # when wrangler.toml is in the deploy directory. Without it env.DB is
-          # undefined → db.ts throws → /api/admin/auth/me returns 500.
-          cp wrangler.toml out-admin/
           # Fix (2026-09-03): admin SPA is Next.js export rooted at /admin/, no
           # index.html at the project root. Route CMS root to the SPA mount point.
+          # (D1 binding is handled via pages_build_output_dir in wrangler.toml —
+          #  wrangler rejects wrangler.toml for Pages unless that field matches
+          #  the deploy directory. out-admin/ matches → D1 binding applied.)
           printf '/  /admin/  302\n' > out-admin/_redirects
         # public/_redirects (blog's `/ → /ja`) NOT copied — that rule would break
         # CMS root. CMS root is now served by out-admin/_redirects above.

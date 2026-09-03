@@ -5,6 +5,7 @@
 name = "frank-blog-cms"
 main = "functions/api/github.js"   # Pages Functions entry — 旧 admin endpoint, Phase 11 弃用
 compatibility_date = "2024-09-01"  # bumped from 2024-01-01
+pages_build_output_dir = "out-admin"  # match cms Pages deploy dir so [[d1_databases]] binding applies (wrangler ignores wrangler.toml unless this field matches the deploy dir)
 
 # ============================================================
 # D1 database binding (D-3: database_name="frank-blog-db", binding="DB")
