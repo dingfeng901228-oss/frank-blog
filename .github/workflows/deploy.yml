@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
       - name: Copy admin SPA output
-        run: cp -r admin/out out/admin
+        run: cp -r admin/out/. out/
 
       - name: Copy index.html
         run: cp out/ja.html out/index.html
