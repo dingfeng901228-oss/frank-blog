@@ -285,6 +285,24 @@ export async function hashIp(env: Env, ip: string): Promise<string> {
   return await sha256Hex(ip + salt);
 }
 
+/**
+ * Log a failed login attempt to admin_logs (audit trail per D-4).
+ * userId is null if the email doesn't exist; reason distinguishes
+ * USER_NOT_FOUND vs BAD_PASSWORD for analytics.
+ */
+export async function logFailedLogin(
+  env: Env,
+  userId: number | null,
+  reason: string,
+  ipHash: string
+): Promise<void> {
+  await execute(
+    env,
+    `INSERT INTO admin_logs (user_id, action, ip_hash, resource_type) VALUES (?, ?, ?, ?)`,
+    [userId, 'login_failed', ipHash, reason]
+  );
+}
+
 // ────────────────────────────────────────────────────
 // Deploy hook
 // ────────────────────────────────────────────────────
