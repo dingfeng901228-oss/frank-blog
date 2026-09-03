@@ -62,7 +62,7 @@ jobs:
       # Worker DOES apply [[d1_databases]] from wrangler.toml at deploy time.
       # So env.DB is populated at runtime → /api/admin/auth/* works.
       - name: Install worker-api deps
-        run: cd worker-api && npm install --no-audit --prefer-offline
+        run: cd worker-api && npm install --no-audit --prefer-offline --legacy-peer-deps
 
       - name: Deploy worker-api to Cloudflare Workers
         run: cd worker-api && npx wrangler@4 deploy --minify
