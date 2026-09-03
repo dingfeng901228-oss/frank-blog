@@ -66,25 +66,29 @@ jobs:
       # to the deployment. env.DB stays undefined at Pages Functions runtime →
       # /api/admin/auth/* returns 500. Apply binding to deployment post-deploy.
       # Project-level binding (Dashboard or wrangler.toml) is NOT inherited.
+      # First attempt used PUT /deployments/{id}/bindings/d1/DB → 405.
+      # Try PATCH /deployments/{id} with deployment_configs body instead.
       - name: Apply D1 binding to latest frank-blog-cms deployment
         if: success()
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          set -e
           DEPLOY_ID=$(curl -sS \
             "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/frank-blog-cms" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
             | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).result.latest_deployment.id)}catch(e){console.error('PARSE_ERR:',s.slice(0,200));process.exit(1)}})")
           echo "Latest deployment id: $DEPLOY_ID"
 
-          echo "--- PUT d1/DB ---"
-          curl -sS -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/frank-blog-cms/deployments/${DEPLOY_ID}/bindings/d1/DB" \
+          echo "--- PATCH deployment deployment_configs ---"
+          HTTP=$(curl -sS -o /tmp/patch.json -w "%{http_code}" -X PATCH \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/frank-blog-cms/deployments/${DEPLOY_ID}" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"id":"a1dcda23-2b33-4c3b-9eaa-2c0429d35cb1"}' \
-            -w "\nHTTP %{http_code}\n" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(s.slice(0,600)))"
+            --data '{"deployment_configs":{"production":{"d1_databases":{"DB":{"id":"a1dcda23-2b33-4c3b-9eaa-2c0429d35cb1"}}}}}')
+          echo "HTTP $HTTP"
+          cat /tmp/patch.json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(s.slice(0,600)))"
 
       # ────── BLOG deploy (frank-blog project) ──────
       - name: Prepare blog-only dir
