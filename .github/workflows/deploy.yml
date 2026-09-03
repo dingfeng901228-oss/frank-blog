@@ -60,7 +60,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: frank-blog-cms
           directory: out-admin
-          wranglerVersion: '3'
+          wranglerVersion: '4'
 
       # Fix (2026-09-03): wrangler 3.x pages deploy doesn't apply [[d1_databases]]
       # to the deployment. env.DB stays undefined at Pages Functions runtime →
