@@ -33,7 +33,7 @@ const SESSION_TTL_DAYS = 7;
 // ────────────────────────────────────────────────────
 
 export default {
-  async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env, _ctx: any): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
