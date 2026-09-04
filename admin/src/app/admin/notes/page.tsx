@@ -1,12 +1,14 @@
-// src/app/admin/notes/page.tsx — Phase 2 placeholder (Phase 1c routing)
-import { PlaceholderPage } from '@/components/PlaceholderPage';
+// src/app/admin/notes/page.tsx — Phase 2 (real data)
+// /admin/notes — list of notes (posts.collection='notes')
+import { PostsList } from '@/components/admin/PostsList';
 
 export default function NotesPage() {
   return (
-    <PlaceholderPage
+    <PostsList
       title="Notes"
-      phase="Phase 2 — Content Architecture"
-      description="Notes list view — separate from Blog via posts.collection='notes'. Short-form: life insights, learning notes, quick thoughts. List with filters (locale, status), search, pagination, per-row actions."
+      defaultCollection="notes"
+      newHref="/admin/posts/new"
+      newLabel="+ New Note"
     />
   );
 }

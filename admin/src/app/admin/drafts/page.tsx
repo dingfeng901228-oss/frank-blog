@@ -1,12 +1,14 @@
-// src/app/admin/drafts/page.tsx — Phase 2 placeholder (Phase 1c routing)
-import { PlaceholderPage } from '@/components/PlaceholderPage';
+// src/app/admin/drafts/page.tsx — Phase 2 (real data)
+// /admin/drafts — all drafts (posts.status='draft', any collection)
+import { PostsList } from '@/components/admin/PostsList';
 
 export default function DraftsPage() {
   return (
-    <PlaceholderPage
+    <PostsList
       title="Drafts"
-      phase="Phase 2 — Content Architecture"
-      description="All drafts across Blog + Notes (posts.status='draft'). Quick access to unfinished content. Sortable by updated_at, filterable by collection."
+      defaultStatus="draft"
+      newHref="/admin/posts/new"
+      newLabel="+ New"
     />
   );
 }

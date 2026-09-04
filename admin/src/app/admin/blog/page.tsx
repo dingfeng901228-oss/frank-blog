@@ -1,12 +1,14 @@
-// src/app/admin/blog/page.tsx — Phase 2 placeholder (Phase 1c routing)
-import { PlaceholderPage } from '@/components/PlaceholderPage';
+// src/app/admin/blog/page.tsx — Phase 2 (real data)
+// /admin/blog — list of blog posts (posts.collection='blog')
+import { PostsList } from '@/components/admin/PostsList';
 
 export default function BlogPage() {
   return (
-    <PlaceholderPage
+    <PostsList
       title="Blog"
-      phase="Phase 2 — Content Architecture"
-      description="Blog list view — separate from Notes via posts.collection='blog'. Will list all blog posts with filters (locale, status, category), search, pagination, and per-row actions (Edit / Preview / Publish / Unpublish / Delete)."
+      defaultCollection="blog"
+      newHref="/admin/posts/new"
+      newLabel="+ New Article"
     />
   );
 }
