@@ -665,3 +665,90 @@ export async function deleteTag(env: Env, id: number): Promise<void> {
   }
   await execute(env, `DELETE FROM tags WHERE id = ?`, [id]);
 }
+
+// ────────────────────────────────────────────────────
+// Phase 6 — Activity log + Revisions + Optimistic Lock
+// Per docs/CMS V2.md §二十五 (Activity) + §二十六 (Revisions) + §二十七 (Optimistic Lock)
+// ────────────────────────────────────────────────────
+
+export interface ActivityEntry {
+  id: number;
+  user_id: number | null;
+  username: string | null;
+  action: string;
+  resource_type: string | null;
+  resource_id: number | null;
+  ip_hash: string | null;
+  created_at: string;
+}
+
+export interface PostRevision {
+  id: number;
+  post_id: number;
+  title: string;
+  slug: string;
+  content: string;
+  description_text: string | null;
+  locale: string | null;
+  status: string | null;
+  changed_by: number | null;
+  changed_at: string;
+}
+
+export async function listRecentActivity(env: Env, limit: number = 20): Promise<ActivityEntry[]> {
+  const n = Math.min(100, Math.max(1, limit));
+  return queryAll<ActivityEntry>(
+    env,
+    `SELECT al.id, al.user_id, u.username, al.action, al.resource_type, al.resource_id, al.ip_hash, al.created_at
+     FROM admin_logs al
+     LEFT JOIN users u ON u.id = al.user_id
+     ORDER BY al.id DESC
+     LIMIT ?`,
+    [n]
+  );
+}
+
+export async function createRevision(
+  env: Env,
+  post: { id: number; title: string; slug: string; content: string; description_text: string | null; locale: Locale | null; status: PostStatus | null },
+  changedBy: number | null
+): Promise<void> {
+  await execute(
+    env,
+    `INSERT INTO post_revisions (post_id, title, slug, content, description_text, locale, status, changed_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [post.id, post.title, post.slug, post.content, post.description_text, post.locale, post.status, changedBy]
+  );
+}
+
+export async function listRevisions(env: Env, postId: number): Promise<PostRevision[]> {
+  return queryAll<PostRevision>(
+    env,
+    `SELECT id, post_id, title, slug, content, description_text, locale, status, changed_by, changed_at
+     FROM post_revisions WHERE post_id = ?
+     ORDER BY changed_at DESC
+     LIMIT 50`,
+    [postId]
+  );
+}
+
+export async function getRevision(env: Env, revisionId: number): Promise<PostRevision | null> {
+  return queryFirst<PostRevision>(
+    env,
+    `SELECT id, post_id, title, slug, content, description_text, locale, status, changed_by, changed_at
+     FROM post_revisions WHERE id = ?`,
+    [revisionId]
+  );
+}
+
+export async function restoreRevision(env: Env, revisionId: number): Promise<void> {
+  const rev = await getRevision(env, revisionId);
+  if (!rev) throw new Error('Revision not found');
+  await execute(
+    env,
+    `UPDATE posts
+     SET title = ?, slug = ?, content = ?, description_text = ?, locale = ?, status = ?, updated_at = datetime('now')
+     WHERE id = ?`,
+    [rev.title, rev.slug, rev.content, rev.description_text, rev.locale, rev.status, rev.post_id]
+  );
+}

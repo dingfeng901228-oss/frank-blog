@@ -3,7 +3,7 @@
 // Handles all /api/admin/* routes that used to live in functions/api/admin/
 // (Pages Functions couldn't apply [[d1_databases]] to deployment; Worker can.)
 
-import type { Env, User, Post, MediaRecord, CategoryRecord, TagRecord, PostCollection } from './cms';
+import type { Env, User, Post, MediaRecord, CategoryRecord, TagRecord, PostCollection, ActivityEntry, PostRevision } from './cms';
 import {
   queryFirst,
   queryAll,
@@ -36,6 +36,9 @@ import {
   createTag,
   updateTag,
   deleteTag,
+  listRecentActivity,
+  listRevisions,
+  restoreRevision,
 } from './cms';
 
 const SESSION_TTL_DAYS = 7;
@@ -123,6 +126,15 @@ export default {
       if (method === 'PUT') return updateTagHandler(request, env, id);
       if (method === 'DELETE') return deleteTagHandler(request, env, id);
     }
+
+    // /api/admin/activity/recent (Phase 6)
+    if (path === '/api/admin/activity/recent' && method === 'GET') return listRecentActivityHandler(request, env);
+
+    // /api/admin/posts/:id/revisions + restore (Phase 6)
+    m = path.match(/^\/api\/admin\/posts\/(\d+)\/revisions$/);
+    if (m && method === 'GET') return listRevisionsHandler(request, env, parseInt(m[1], 10));
+    m = path.match(/^\/api\/admin\/posts\/(\d+)\/revisions\/(\d+)\/restore$/);
+    if (m && method === 'POST') return restoreRevisionHandler(request, env, parseInt(m[2], 10));
 
     return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
   },
@@ -450,6 +462,43 @@ async function deleteTagHandler(request: Request, env: Env, id: number): Promise
     const msg = e?.message || 'Delete failed';
     const status = msg.includes('still use') ? 409 : 404;
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: msg } }, status);
+  }
+}
+
+// ────────────────────────────────────────────────────
+// /api/admin/activity + /api/admin/posts/:id/revisions handlers (Phase 6)
+// ────────────────────────────────────────────────────
+
+async function listRecentActivityHandler(request: Request, env: Env): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  const url = new URL(request.url);
+  const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
+  const items = await listRecentActivity(env, limit);
+  return json({ success: true, data: { items } });
+}
+
+async function listRevisionsHandler(request: Request, env: Env, postId: number): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  const items = await listRevisions(env, postId);
+  return json({ success: true, data: { items } });
+}
+
+async function restoreRevisionHandler(request: Request, env: Env, revisionId: number): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    await restoreRevision(env, revisionId);
+    return json({ success: true });
+  } catch (e: any) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Restore failed' } }, 404);
   }
 }
 
