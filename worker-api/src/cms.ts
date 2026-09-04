@@ -17,6 +17,22 @@ export type ContentFormat = 'mdx' | 'md';
 export type UserRole = 'admin' | 'editor';
 export type UserStatus = 'active' | 'disabled';
 
+// Phase 4 — Media
+export interface MediaRecord {
+  id: number;
+  filename: string;
+  mime_type: string;
+  size: number;
+  r2_key: string;
+  url: string;
+  alt: string;
+  width: number | null;
+  height: number | null;
+  uploaded_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Env {
   DB: D1Database;
   SESSION_SECRET?: string;
@@ -407,4 +423,133 @@ export function buildDescriptionRaw(text: string): string {
   }
   const lines = text.split('\n').map((l) => '  ' + l).join('\n');
   return `description: >\n${lines}`;
+}
+
+// ────────────────────────────────────────────────────
+// Phase 4 — Media (R2 storage + D1 metadata)
+// Per docs/CMS V2.md §十四 (R2 blobs + D1 metadata) + §十五 (upload flow) + §十六 (alt text)
+// ────────────────────────────────────────────────────
+
+export const MEDIA_ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const;
+export const MEDIA_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+
+export function mediaPublicUrl(r2Key: string, env: Env): string {
+  // Use R2 public dev URL or custom domain when configured.
+  // For now we expose /cdn/<key> route which Worker can serve from R2.
+  // (In production, configure R2 custom domain and use that here.)
+  return `/cdn/${r2Key}`;
+}
+
+export async function listMedia(
+  env: Env,
+  options: { limit?: number; offset?: number; search?: string } = {}
+): Promise<{ items: MediaRecord[]; total: number }> {
+  const limit = Math.min(100, Math.max(1, options.limit ?? 20));
+  const offset = Math.max(0, options.offset ?? 0);
+  const search = options.search?.trim() ?? '';
+
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (search) {
+    where.push('(filename LIKE ? OR alt LIKE ?)');
+    params.push(`%${search}%`, `%${search}%`);
+  }
+  const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+
+  const totalRow = await queryFirst<{ n: number }>(
+    env,
+    `SELECT COUNT(*) as n FROM media ${whereClause}`,
+    params
+  );
+  const items = await queryAll<MediaRecord>(
+    env,
+    `SELECT id, filename, mime_type, size, r2_key, url, alt, width, height, uploaded_by, created_at, updated_at
+     FROM media ${whereClause}
+     ORDER BY id DESC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
+  );
+
+  return { items, total: totalRow?.n ?? 0 };
+}
+
+export async function getMedia(env: Env, id: number): Promise<MediaRecord | null> {
+  return queryFirst<MediaRecord>(
+    env,
+    `SELECT id, filename, mime_type, size, r2_key, url, alt, width, height, uploaded_by, created_at, updated_at
+     FROM media WHERE id = ?`,
+    [id]
+  );
+}
+
+/**
+ * Upload a media file to R2 and save metadata to D1.
+ * Returns the new media record.
+ * Throws if R2 binding is missing, MIME invalid, or size exceeds limit.
+ */
+export async function uploadMedia(
+  env: Env,
+  file: { name: string; type: string; size: number; data: ArrayBuffer },
+  alt: string,
+  uploadedBy: number | null
+): Promise<MediaRecord> {
+  if (!env.R2) {
+    throw new Error('R2 binding not configured — Worker needs R2 bucket binding');
+  }
+  if (!MEDIA_ALLOWED_MIME.includes(file.type as any)) {
+    throw new Error(`Unsupported MIME type: ${file.type}. Allowed: ${MEDIA_ALLOWED_MIME.join(', ')}`);
+  }
+  if (file.size > MEDIA_MAX_SIZE) {
+    throw new Error(`File too large: ${file.size} bytes (max ${MEDIA_MAX_SIZE})`);
+  }
+
+  const ext = file.name.split('.').pop() || 'bin';
+  const r2Key = `media/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+  await env.R2.put(r2Key, file.data, {
+    httpMetadata: { contentType: file.type },
+    customMetadata: { alt: alt.slice(0, 256), originalName: file.name },
+  });
+
+  const url = mediaPublicUrl(r2Key, env);
+
+  const result = await queryFirst<MediaRecord>(
+    env,
+    `INSERT INTO media (filename, mime_type, size, r2_key, url, alt, uploaded_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     RETURNING id, filename, mime_type, size, r2_key, url, alt, width, height, uploaded_by, created_at, updated_at`,
+    [file.name, file.type, file.size, r2Key, url, alt, uploadedBy]
+  );
+  if (!result) throw new Error('Failed to insert media record');
+  return result;
+}
+
+/**
+ * Delete a media file from R2 and D1.
+ * Checks post_media join table for references — throws if any posts still use it.
+ */
+export async function deleteMedia(env: Env, id: number): Promise<void> {
+  const record = await getMedia(env, id);
+  if (!record) throw new Error('Media not found');
+
+  // Reference check (per §三十一)
+  const usage = await queryFirst<{ n: number }>(
+    env,
+    `SELECT COUNT(*) as n FROM post_media WHERE media_id = ?`,
+    [id]
+  );
+  if (usage && usage.n > 0) {
+    throw new Error(`This image is currently used by ${usage.n} article(s). Remove references first.`);
+  }
+
+  if (env.R2) {
+    try {
+      await env.R2.delete(record.r2_key);
+    } catch (e) {
+      // R2 delete is best-effort — continue even if R2 fails
+      console.warn(`Failed to delete R2 object ${record.r2_key}:`, e);
+    }
+  }
+
+  await execute(env, `DELETE FROM media WHERE id = ?`, [id]);
 }

@@ -3,7 +3,7 @@
 // Handles all /api/admin/* routes that used to live in functions/api/admin/
 // (Pages Functions couldn't apply [[d1_databases]] to deployment; Worker can.)
 
-import type { Env, User, Post } from './cms';
+import type { Env, User, Post, MediaRecord } from './cms';
 import {
   queryFirst,
   queryAll,
@@ -24,6 +24,10 @@ import {
   getRequestIp,
   SESSION_COOKIE_NAME,
   logFailedLogin,
+  listMedia,
+  getMedia,
+  uploadMedia,
+  deleteMedia,
 } from './cms';
 
 const SESSION_TTL_DAYS = 7;
@@ -79,6 +83,14 @@ export default {
     // /api/admin/preview/:id
     m = path.match(/^\/api\/admin\/preview\/(\d+)$/);
     if (m && method === 'GET') return previewPost(request, env, parseInt(m[1], 10));
+
+    // /api/admin/media (Phase 4 — Media Library)
+    if (path === '/api/admin/media' && method === 'GET') return listMediaHandler(request, env);
+    if (path === '/api/admin/media/upload' && method === 'POST') return uploadMediaHandler(request, env);
+
+    // /api/admin/media/:id
+    m = path.match(/^\/api\/admin\/media\/(\d+)$/);
+    if (m && method === 'DELETE') return deleteMediaHandler(request, env, parseInt(m[1], 10));
 
     return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
   },
@@ -211,8 +223,73 @@ async function me(request: Request, env: Env): Promise<Response> {
 }
 
 // ────────────────────────────────────────────────────
-// /api/admin/posts handlers
+// /api/admin/media handlers (Phase 4 — Media Library)
 // ────────────────────────────────────────────────────
+
+async function getCurrentUser(request: Request, env: Env): Promise<User | null> {
+  const cookies = parseCookies(request.headers.get('Cookie') || '');
+  const sessionToken = cookies[SESSION_COOKIE_NAME];
+  if (!sessionToken) return null;
+  const tokenHash = await sha256Hex(sessionToken);
+  return getSessionUser(env, tokenHash);
+}
+
+async function listMediaHandler(request: Request, env: Env): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  const url = new URL(request.url);
+  const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
+  const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+  const search = url.searchParams.get('search') ?? undefined;
+  const result = await listMedia(env, { limit, offset, search });
+  return json({ success: true, data: result });
+}
+
+async function uploadMediaHandler(request: Request, env: Env): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    const formData = await request.formData();
+    const fileEntry = formData.get('file');
+    if (!fileEntry || typeof fileEntry === 'string') {
+      return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'No file uploaded (use multipart field "file")' } }, 400);
+    }
+    const file = fileEntry as File;
+    const alt = (formData.get('alt') as string) || '';
+    const arrayBuffer = await file.arrayBuffer();
+    const record = await uploadMedia(
+      env,
+      { name: file.name, type: file.type, size: file.size, data: arrayBuffer },
+      alt,
+      user.id
+    );
+    return json({ success: true, data: record }, 201);
+  } catch (e: any) {
+    return json(
+      { success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Upload failed' } },
+      e?.message?.includes('binding') ? 503 : 400
+    );
+  }
+}
+
+async function deleteMediaHandler(request: Request, env: Env, id: number): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    await deleteMedia(env, id);
+    return new Response(null, { status: 204 });
+  } catch (e: any) {
+    const msg = e?.message || 'Delete failed';
+    const status = msg.includes('used by') ? 409 : 404;
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: msg } }, status);
+  }
+}
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
