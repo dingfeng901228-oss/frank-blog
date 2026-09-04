@@ -1,9 +1,10 @@
 // src/app/admin/layout.tsx
-// Admin section layout — Phase 1a: added Inter font + globals.css
+// Admin section layout — Phase 1b: wrapped in ToastProvider
 // (No locale prefix, no site navbar — admin is intentionally separate)
 
 import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
+import { ToastProvider } from '@/components/ui/Toast';
 import './globals.css';
 
 const inter = Inter({
@@ -15,9 +16,11 @@ const inter = Inter({
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className={inter.variable} style={{ fontFamily: 'var(--font-inter)' }}>
-      {children}
-    </div>
+    <ToastProvider>
+      <div className={inter.variable} style={{ fontFamily: 'var(--font-inter)' }}>
+        {children}
+      </div>
+    </ToastProvider>
   );
 }
 
