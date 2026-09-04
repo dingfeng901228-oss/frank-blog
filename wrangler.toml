@@ -1,11 +1,12 @@
-# frank-blog-cms — Cloudflare Pages project + Pages Functions
+# frank-blog-cms — Cloudflare Pages project (admin SPA only)
+# /api/admin/* moved to frank-blog-cms-api Worker (worker-api/, wrangler@4 deploy).
+# This wrangler.toml is Pages-only config; main field forbidden; functions/ tree removed.
 # Per ADR-001 (Single Worker) + D-1 (项目名 = frank-blog-cms, 不独立 frank-blog-api)
 # wrangler.toml name 仅是配置标签，不代表独立 Worker
 
 name = "frank-blog-cms"
 # main intentionally removed: Pages wrangler.toml forbids `main` (Worker-only).
-#   The old main = "functions/api/github.js" pointed at the deprecated Phase 11
-#   admin endpoint; Pages Functions auto-route from functions/ tree instead.
+#   Worker-only code lives in worker-api/ (deployed via wrangler@4 from CI).
 compatibility_date = "2024-09-01"  # bumped from 2024-01-01
 pages_build_output_dir = "out-admin"  # match cms Pages deploy dir so [[d1_databases]] binding applies (wrangler ignores wrangler.toml unless this field matches the deploy dir)
 
