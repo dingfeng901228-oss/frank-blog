@@ -9,7 +9,7 @@ interface CardProps {
   children: ReactNode;
   style?: CSSProperties;
   elevated?: boolean;
-  padding?: 'sm' | 'md' | 'lg';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
 const baseStyle: CSSProperties = {
@@ -19,6 +19,7 @@ const baseStyle: CSSProperties = {
 };
 
 const paddingStyles = {
+  none: { padding: 0 },
   sm: { padding: 'var(--space-sm)' },
   md: { padding: 'var(--space-md)' },
   lg: { padding: 'var(--space-lg)' },
