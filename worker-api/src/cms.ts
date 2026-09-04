@@ -33,6 +33,22 @@ export interface MediaRecord {
   updated_at: string;
 }
 
+// Phase 5 — Categories + Tags
+export interface CategoryRecord {
+  id: number;
+  name: string;
+  slug: string;
+  collection: PostCollection;
+  created_at: string;
+}
+
+export interface TagRecord {
+  id: number;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
 export interface Env {
   DB: D1Database;
   SESSION_SECRET?: string;
@@ -552,4 +568,100 @@ export async function deleteMedia(env: Env, id: number): Promise<void> {
   }
 
   await execute(env, `DELETE FROM media WHERE id = ?`, [id]);
+}
+
+// ────────────────────────────────────────────────────
+// Phase 5 — Categories + Tags
+// Per docs/CMS V2.md §二十三 (Categories) + §二十四 (Tags)
+// ────────────────────────────────────────────────────
+
+export async function listCategories(
+  env: Env,
+  collection?: PostCollection
+): Promise<CategoryRecord[]> {
+  const where = collection ? 'WHERE collection = ?' : '';
+  const params = collection ? [collection] : [];
+  return queryAll<CategoryRecord>(
+    env,
+    `SELECT id, name, slug, collection, created_at
+     FROM categories ${where}
+     ORDER BY collection, name`,
+    params
+  );
+}
+
+export async function createCategory(
+  env: Env,
+  name: string,
+  slug: string,
+  collection: PostCollection
+): Promise<CategoryRecord> {
+  if (!['posts', 'notes'].includes(collection)) {
+    throw new Error('collection must be "posts" or "notes"');
+  }
+  const result = await queryFirst<CategoryRecord>(
+    env,
+    `INSERT INTO categories (name, slug, collection) VALUES (?, ?, ?)
+     RETURNING id, name, slug, collection, created_at`,
+    [name, slug, collection]
+  );
+  if (!result) throw new Error('Failed to create category');
+  return result;
+}
+
+export async function updateCategory(
+  env: Env,
+  id: number,
+  name: string,
+  slug: string
+): Promise<void> {
+  await execute(env, `UPDATE categories SET name = ?, slug = ? WHERE id = ?`, [name, slug, id]);
+}
+
+export async function deleteCategory(env: Env, id: number): Promise<void> {
+  // Check if any posts reference this category
+  const usage = await queryFirst<{ n: number }>(
+    env,
+    `SELECT COUNT(*) as n FROM posts WHERE category_id = ?`,
+    [id]
+  );
+  if (usage && usage.n > 0) {
+    throw new Error(`Cannot delete: ${usage.n} article(s) still use this category`);
+  }
+  await execute(env, `DELETE FROM categories WHERE id = ?`, [id]);
+}
+
+export async function listTags(env: Env): Promise<TagRecord[]> {
+  return queryAll<TagRecord>(
+    env,
+    `SELECT id, name, slug, created_at FROM tags ORDER BY name`
+  );
+}
+
+export async function createTag(env: Env, name: string, slug: string): Promise<TagRecord> {
+  const result = await queryFirst<TagRecord>(
+    env,
+    `INSERT INTO tags (name, slug) VALUES (?, ?)
+     RETURNING id, name, slug, created_at`,
+    [name, slug]
+  );
+  if (!result) throw new Error('Failed to create tag');
+  return result;
+}
+
+export async function updateTag(env: Env, id: number, name: string, slug: string): Promise<void> {
+  await execute(env, `UPDATE tags SET name = ?, slug = ? WHERE id = ?`, [name, slug, id]);
+}
+
+export async function deleteTag(env: Env, id: number): Promise<void> {
+  // Check usage in post_tags
+  const usage = await queryFirst<{ n: number }>(
+    env,
+    `SELECT COUNT(*) as n FROM post_tags WHERE tag_id = ?`,
+    [id]
+  );
+  if (usage && usage.n > 0) {
+    throw new Error(`Cannot delete: ${usage.n} article(s) still use this tag`);
+  }
+  await execute(env, `DELETE FROM tags WHERE id = ?`, [id]);
 }

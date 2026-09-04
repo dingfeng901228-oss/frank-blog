@@ -3,7 +3,7 @@
 // Handles all /api/admin/* routes that used to live in functions/api/admin/
 // (Pages Functions couldn't apply [[d1_databases]] to deployment; Worker can.)
 
-import type { Env, User, Post, MediaRecord } from './cms';
+import type { Env, User, Post, MediaRecord, CategoryRecord, TagRecord, PostCollection } from './cms';
 import {
   queryFirst,
   queryAll,
@@ -28,6 +28,14 @@ import {
   getMedia,
   uploadMedia,
   deleteMedia,
+  listCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  listTags,
+  createTag,
+  updateTag,
+  deleteTag,
 } from './cms';
 
 const SESSION_TTL_DAYS = 7;
@@ -91,6 +99,30 @@ export default {
     // /api/admin/media/:id
     m = path.match(/^\/api\/admin\/media\/(\d+)$/);
     if (m && method === 'DELETE') return deleteMediaHandler(request, env, parseInt(m[1], 10));
+
+    // /api/admin/categories (Phase 5)
+    if (path === '/api/admin/categories') {
+      if (method === 'GET') return listCategoriesHandler(request, env);
+      if (method === 'POST') return createCategoryHandler(request, env);
+    }
+    m = path.match(/^\/api\/admin\/categories\/(\d+)$/);
+    if (m) {
+      const id = parseInt(m[1], 10);
+      if (method === 'PUT') return updateCategoryHandler(request, env, id);
+      if (method === 'DELETE') return deleteCategoryHandler(request, env, id);
+    }
+
+    // /api/admin/tags (Phase 5)
+    if (path === '/api/admin/tags') {
+      if (method === 'GET') return listTagsHandler(request, env);
+      if (method === 'POST') return createTagHandler(request, env);
+    }
+    m = path.match(/^\/api\/admin\/tags\/(\d+)$/);
+    if (m) {
+      const id = parseInt(m[1], 10);
+      if (method === 'PUT') return updateTagHandler(request, env, id);
+      if (method === 'DELETE') return deleteTagHandler(request, env, id);
+    }
 
     return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
   },
@@ -287,6 +319,136 @@ async function deleteMediaHandler(request: Request, env: Env, id: number): Promi
   } catch (e: any) {
     const msg = e?.message || 'Delete failed';
     const status = msg.includes('used by') ? 409 : 404;
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: msg } }, status);
+  }
+}
+
+// ────────────────────────────────────────────────────
+// /api/admin/categories handlers (Phase 5)
+// ────────────────────────────────────────────────────
+
+async function listCategoriesHandler(request: Request, env: Env): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  const url = new URL(request.url);
+  const collectionParam = url.searchParams.get('collection');
+  const collection = (collectionParam === 'posts' || collectionParam === 'notes') ? collectionParam : undefined;
+  const items = await listCategories(env, collection);
+  return json({ success: true, data: { items } });
+}
+
+async function createCategoryHandler(request: Request, env: Env): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    const body = await request.json() as { name?: string; slug?: string; collection?: string };
+    if (!body.name || !body.slug || !body.collection) {
+      return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug, collection required' } }, 400);
+    }
+    if (body.collection !== 'posts' && body.collection !== 'notes') {
+      return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'collection must be "posts" or "notes"' } }, 400);
+    }
+    const cat = await createCategory(env, body.name, body.slug, body.collection);
+    return json({ success: true, data: cat }, 201);
+  } catch (e: any) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Create failed' } }, 400);
+  }
+}
+
+async function updateCategoryHandler(request: Request, env: Env, id: number): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    const body = await request.json() as { name?: string; slug?: string };
+    if (!body.name || !body.slug) {
+      return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug required' } }, 400);
+    }
+    await updateCategory(env, id, body.name, body.slug);
+    return json({ success: true });
+  } catch (e: any) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Update failed' } }, 400);
+  }
+}
+
+async function deleteCategoryHandler(request: Request, env: Env, id: number): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    await deleteCategory(env, id);
+    return new Response(null, { status: 204 });
+  } catch (e: any) {
+    const msg = e?.message || 'Delete failed';
+    const status = msg.includes('still use') ? 409 : 404;
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: msg } }, status);
+  }
+}
+
+// ────────────────────────────────────────────────────
+// /api/admin/tags handlers (Phase 5)
+// ────────────────────────────────────────────────────
+
+async function listTagsHandler(request: Request, env: Env): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  const items = await listTags(env);
+  return json({ success: true, data: { items } });
+}
+
+async function createTagHandler(request: Request, env: Env): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    const body = await request.json() as { name?: string; slug?: string };
+    if (!body.name || !body.slug) {
+      return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug required' } }, 400);
+    }
+    const tag = await createTag(env, body.name, body.slug);
+    return json({ success: true, data: tag }, 201);
+  } catch (e: any) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Create failed' } }, 400);
+  }
+}
+
+async function updateTagHandler(request: Request, env: Env, id: number): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    const body = await request.json() as { name?: string; slug?: string };
+    if (!body.name || !body.slug) {
+      return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug required' } }, 400);
+    }
+    await updateTag(env, id, body.name, body.slug);
+    return json({ success: true });
+  } catch (e: any) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Update failed' } }, 400);
+  }
+}
+
+async function deleteTagHandler(request: Request, env: Env, id: number): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  try {
+    await deleteTag(env, id);
+    return new Response(null, { status: 204 });
+  } catch (e: any) {
+    const msg = e?.message || 'Delete failed';
+    const status = msg.includes('still use') ? 409 : 404;
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: msg } }, status);
   }
 }
