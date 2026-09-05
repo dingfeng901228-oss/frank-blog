@@ -5,11 +5,11 @@
 
 'use client';
 
-import { Suspense, useEffect, useState, type FormEvent, type CSSProperties } from 'react';
+import { Suspense, useEffect, useRef, useState, type FormEvent, type CSSProperties } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Markdown from '@/components/Markdown';
-import { apiGet, apiPut } from '@/lib/cms/api-client';
+import { apiGet, apiPatch, apiPut } from '@/lib/cms/api-client';
 import type { Locale, PostCollection } from '@/lib/cms/types';
 import { postFormStyles as s } from '../new/post-form-styles';
 
@@ -45,10 +45,69 @@ function EditPostInner() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('edit');
 
+  // ── Phase A §19 — Auto-save state ──
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAutoSavedSnapshot = useRef<string>('');
+
+  // ── Phase A §26 — Revision drawer state ──
+  const [revisions, setRevisions] = useState<any[]>([]);
+  const [revisionsLoading, setRevisionsLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [restoringId, setRestoringId] = useState<number | null>(null);
+
   useEffect(() => {
     if (!Number.isFinite(postId)) return;
     fetchPost();
+    fetchRevisions();
   }, [postId]);
+
+  // ── Phase A §19 — Auto-save debounce (saves content/title/slug/description_text every 2s) ──
+  useEffect(() => {
+    if (!form) return;
+    const snapshot = JSON.stringify({
+      title: form.title,
+      slug: form.slug,
+      content: form.content,
+      description_text: form.description_text,
+    });
+    if (snapshot === lastAutoSavedSnapshot.current) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      try {
+        setAutoSaving(true);
+        await apiPatch(`/api/admin/posts/${postId}`, {
+          title: form.title,
+          slug: form.slug,
+          content: form.content,
+          description_text: form.description_text,
+        });
+        lastAutoSavedSnapshot.current = snapshot;
+        setAutoSavedAt(new Date().toLocaleTimeString());
+      } catch {
+        // Silent fail — user is still typing
+      } finally {
+        setAutoSaving(false);
+      }
+    }, 2000);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form?.title, form?.slug, form?.content, form?.description_text]);
+
+  async function fetchRevisions() {
+    setRevisionsLoading(true);
+    try {
+      const data = await apiGet<{ items?: any[] }>(`/api/admin/posts/${postId}/revisions`);
+      setRevisions(data?.items || []);
+    } catch {
+      setRevisions([]);
+    } finally {
+      setRevisionsLoading(false);
+    }
+  }
 
   async function fetchPost() {
     setLoading(true);
@@ -149,6 +208,29 @@ function EditPostInner() {
     }
   }
 
+  // ── Phase A §26 — Restore revision handler ──
+  async function handleRestoreRevision(revisionId: number) {
+    if (!confirm('Restore this revision? Current content will be overwritten with the revision snapshot.')) return;
+    setRestoringId(revisionId);
+    try {
+      const res = await fetch(`/api/admin/posts/${postId}/revisions/${revisionId}/restore`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error?.message || 'Restore failed');
+      }
+      await fetchPost();
+      await fetchRevisions();
+      setDrawerOpen(false);
+    } catch (e: any) {
+      setError(`Restore failed: ${e.message}`);
+    } finally {
+      setRestoringId(null);
+    }
+  }
+
   if (!Number.isFinite(postId)) {
     return (
       <div style={s.page}>
@@ -183,9 +265,28 @@ function EditPostInner() {
         <Link href="/admin/posts" style={s.backLink}>← Posts</Link>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 8 }}>
           <h1 style={s.h1}>Edit Post #{postId}</h1>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: 'transparent',
+              color: '#A6ADBB',
+              border: '1px solid #272B36',
+              borderRadius: 6,
+              fontSize: 12,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              marginLeft: 12,
+            }}
+            type="button"
+          >
+            📜 History ({revisions.length})
+          </button>
           <div style={{ fontSize: 11, color: '#707080', textAlign: 'right' }}>
             <div>Updated {form.updated_at}</div>
             {form.published_at && <div>Published {form.published_at}</div>}
+            {autoSaving && <div style={{ color: '#F59E0B' }}>Saving…</div>}
+            {!autoSaving && autoSavedAt && <div style={{ color: '#10B981' }}>Saved at {autoSavedAt}</div>}
           </div>
         </div>
 
@@ -334,6 +435,15 @@ function EditPostInner() {
             </div>
           </form>
         )}
+
+        <RevisionDrawer
+          open={drawerOpen}
+          revisions={revisions}
+          loading={revisionsLoading}
+          restoringId={restoringId}
+          onRestore={handleRestoreRevision}
+          onClose={() => setDrawerOpen(false)}
+        />
       </div>
     </div>
   );
@@ -383,6 +493,98 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <label style={s.label}>{label}{hint && <span style={s.labelHint}> · {hint}</span>}</label>
       {children}
     </div>
+  );
+}
+
+// ────────────────────────────────────────────────────
+// Revision Drawer — Phase A §26
+// Side panel listing all revisions of the current post, with Restore buttons.
+// ────────────────────────────────────────────────────
+
+interface RevisionDrawerProps {
+  open: boolean;
+  revisions: any[];
+  loading: boolean;
+  restoringId: number | null;
+  onRestore: (id: number) => void;
+  onClose: () => void;
+}
+
+function RevisionDrawer({ open, revisions, loading, restoringId, onRestore, onClose }: RevisionDrawerProps) {
+  if (!open) return null;
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)', zIndex: 99,
+        }}
+      />
+      {/* Drawer */}
+      <div
+        style={{
+          position: 'fixed', top: 0, right: 0, bottom: 0, width: 400,
+          background: '#0A0A0F', borderLeft: '1px solid #1E1E2E',
+          padding: 24, overflowY: 'auto', zIndex: 100,
+          boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.4)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, color: '#F5F7FA', margin: 0 }}>Revision History</h2>
+          <button
+            onClick={onClose}
+            style={{ background: 'transparent', border: 'none', color: '#A6ADBB', fontSize: 20, cursor: 'pointer' }}
+            type="button"
+          >
+            ×
+          </button>
+        </div>
+        {loading && <p style={{ color: '#707887', fontSize: 13 }}>Loading revisions…</p>}
+        {!loading && revisions.length === 0 && (
+          <p style={{ color: '#707887', fontSize: 13 }}>No revisions yet. Save the post to create one.</p>
+        )}
+        {!loading && revisions.map((rev) => (
+          <div
+            key={rev.id}
+            style={{
+              padding: 12,
+              marginBottom: 8,
+              background: '#14141C',
+              border: '1px solid #1E1E2E',
+              borderRadius: 8,
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#707887', fontFamily: 'monospace', marginBottom: 4 }}>
+              {rev.changed_at}
+              {rev.locale && ` · ${rev.locale}`}
+              {rev.status && ` · ${rev.status}`}
+            </div>
+            <div style={{ fontSize: 13, color: '#F5F7FA', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {rev.title || '(untitled)'}
+            </div>
+            <button
+              onClick={() => onRestore(rev.id)}
+              disabled={restoringId === rev.id}
+              type="button"
+              style={{
+                padding: '4px 10px',
+                background: restoringId === rev.id ? '#272B36' : 'transparent',
+                color: restoringId === rev.id ? '#707887' : '#10B981',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: 4,
+                fontSize: 11,
+                cursor: restoringId === rev.id ? 'default' : 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {restoringId === rev.id ? 'Restoring…' : 'Restore'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

@@ -39,6 +39,7 @@ import {
   listRecentActivity,
   listRevisions,
   restoreRevision,
+  saveDraft,
 } from './cms';
 
 const SESSION_TTL_DAYS = 7;
@@ -80,6 +81,7 @@ export default {
       const id = parseInt(m[1], 10);
       if (method === 'GET') return getPost(request, env, id);
       if (method === 'PUT') return updatePost(request, env, id);
+      if (method === 'PATCH') return saveDraftHandler(request, env, id);
       if (method === 'DELETE') return deletePost(request, env, id);
     }
 
@@ -500,6 +502,29 @@ async function restoreRevisionHandler(request: Request, env: Env, revisionId: nu
   } catch (e: any) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Restore failed' } }, 404);
   }
+}
+
+// Phase A §19 — auto-save handler. PATCH /api/admin/posts/:id
+// Updates only title/slug/content/description_text (NOT status, NOT other fields).
+// Returns 200 success; client triggers refetch via fetchPost().
+async function saveDraftHandler(request: Request, env: Env, id: number): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Body must be JSON' } }, 400);
+  }
+  await saveDraft(env, id, {
+    title: String(body.title ?? ''),
+    slug: String(body.slug ?? ''),
+    content: String(body.content ?? ''),
+    description_text: String(body.description_text ?? ''),
+  });
+  return json({ success: true });
 }
 
 const DEFAULT_LIMIT = 20;

@@ -752,3 +752,23 @@ export async function restoreRevision(env: Env, revisionId: number): Promise<voi
     [rev.title, rev.slug, rev.content, rev.description_text, rev.locale, rev.status, rev.post_id]
   );
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Auto-save (Phase A §19 — saves content/title/slug/description_text without
+// touching status. Used by editor's debounced auto-save effect. Does NOT write
+// to post_revisions — that's reserved for explicit Save Draft / Publish actions.
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function saveDraft(
+  env: Env,
+  id: number,
+  fields: { title: string; slug: string; content: string; description_text: string }
+): Promise<void> {
+  await execute(
+    env,
+    `UPDATE posts
+     SET title = ?, slug = ?, content = ?, description_text = ?, updated_at = datetime('now')
+     WHERE id = ?`,
+    [fields.title, fields.slug, fields.content, fields.description_text, id]
+  );
+}

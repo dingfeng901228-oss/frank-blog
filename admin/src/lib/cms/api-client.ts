@@ -84,6 +84,11 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
   return parseResponse<T>(res);
 }
 
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await apiFetch(path, { method: 'PATCH', body: JSON.stringify(body) });
+  return parseResponse<T>(res);
+}
+
 export async function apiDelete<T>(path: string): Promise<T> {
   const res = await apiFetch(path, { method: 'DELETE' });
   return parseResponse<T>(res);
