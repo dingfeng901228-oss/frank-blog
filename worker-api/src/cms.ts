@@ -572,6 +572,32 @@ export async function getMedia(env: Env, id: number): Promise<MediaRecord | null
  * Returns the new media record.
  * Throws if R2 binding is missing, MIME invalid, or size exceeds limit.
  */
+// Phase C2c §37 — Magic byte verification for image MIME types. Prevents type
+// confusion attacks where a client claims e.g. image/png but uploads a script
+// or executable. First 12 bytes is enough for all formats we accept.
+export function validateMagicBytes(data: ArrayBuffer, mime: string): boolean {
+  const bytes = new Uint8Array(data.slice(0, 12));
+  switch (mime) {
+    case 'image/png':
+      return bytes.length >= 8 &&
+        bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 &&
+        bytes[4] === 0x0D && bytes[5] === 0x0A && bytes[6] === 0x1A && bytes[7] === 0x0A;
+    case 'image/jpeg':
+      return bytes.length >= 3 &&
+        bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
+    case 'image/gif':
+      return bytes.length >= 6 &&
+        bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38 &&
+        (bytes[4] === 0x37 || bytes[4] === 0x39) && bytes[5] === 0x61;
+    case 'image/webp':
+      return bytes.length >= 12 &&
+        bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+        bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+    default:
+      return false;
+  }
+}
+
 export async function uploadMedia(
   env: Env,
   file: { name: string; type: string; size: number; data: ArrayBuffer },
@@ -586,6 +612,11 @@ export async function uploadMedia(
   }
   if (file.size > MEDIA_MAX_SIZE) {
     throw new Error(`File too large: ${file.size} bytes (max ${MEDIA_MAX_SIZE})`);
+  }
+  // Phase C2c §37 — Verify file content actually matches claimed MIME type
+  // (defends against type confusion: client says image/png but uploads a script)
+  if (!validateMagicBytes(file.data, file.type)) {
+    throw new Error(`File content does not match claimed MIME type: ${file.type}`);
   }
 
   const ext = file.name.split('.').pop() || 'bin';
