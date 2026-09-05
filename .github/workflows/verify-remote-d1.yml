@@ -4,7 +4,7 @@ name: Verify Remote D1
 # Trigger manually via: gh workflow run verify-remote-d1.yml
 # Or GitHub UI → Actions → Verify Remote D1 → Run workflow.
 
-on:
+"on":
   workflow_dispatch:
 
 jobs:
