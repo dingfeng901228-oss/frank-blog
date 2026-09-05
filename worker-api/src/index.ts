@@ -20,7 +20,11 @@ import {
   publicUser,
   buildSessionCookie,
   buildClearCookie,
+  buildCsrfCookie,
+  buildClearCsrfCookie,
+  CSRF_COOKIE_NAME,
   buildDescriptionRaw,
+  randomBytes,
   getRequestIp,
   SESSION_COOKIE_NAME,
   logFailedLogin,
@@ -44,6 +48,31 @@ import {
 
 const SESSION_TTL_DAYS = 7;
 
+// Phase C2 §37 — CSRF double-submit cookie enforcement
+// Skips: GET + OPTIONS + /api/admin/auth/login (user not authenticated yet).
+// All other state-changing endpoints (POST/PUT/DELETE under /api/admin/*) must
+// carry the same token in the X-CSRF-Token header as in the cms_csrf cookie.
+function checkCsrfIfNeeded(request: Request, path: string, method: string): Response | null {
+  if (method === 'GET' || method === 'OPTIONS') return null;
+  if (path === '/api/admin/auth/login') return null;
+  if (!path.startsWith('/api/admin/')) return null;
+
+  const cookies = parseCookies(request.headers.get('Cookie') || '');
+  const cookieToken = cookies[CSRF_COOKIE_NAME];
+  const headerToken = request.headers.get('X-CSRF-Token');
+
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    return json(
+      {
+        success: false,
+        error: { code: 'CSRF_INVALID', message: 'CSRF token missing or invalid' },
+      },
+      403
+    );
+  }
+  return null;
+}
+
 // ────────────────────────────────────────────────────
 // Default export — Worker entry point
 // ────────────────────────────────────────────────────
@@ -62,6 +91,10 @@ export default {
         headers: corsHeaders(request),
       });
     }
+
+    // Phase C2 §37 — enforce double-submit CSRF cookie on state-changing /api/admin/* requests
+    const csrfCheck = checkCsrfIfNeeded(request, path, method);
+    if (csrfCheck) return csrfCheck;
 
     // /api/admin/auth/*
     if (path === '/api/admin/auth/login' && method === 'POST') return login(request, env);
@@ -190,6 +223,12 @@ async function login(request: Request, env: Env): Promise<Response> {
 
   const { token, expiresAt } = await createSession(env, user.id, SESSION_TTL_DAYS);
 
+  // Phase C2 §37 — CSRF token (double-submit cookie pattern).
+  // Random 32 bytes hex; same value mirrored to client via Set-Cookie AND
+  // echoed in JSON body. Browser JS reads cookie to set X-CSRF-Token header.
+  const csrfToken = randomBytes(32)
+    .reduce((hex, b) => hex + b.toString(16).padStart(2, '0'), '');
+
   await execute(env, `UPDATE users SET last_login_at = datetime('now') WHERE id = ?`, [user.id]);
   await execute(
     env,
@@ -197,18 +236,17 @@ async function login(request: Request, env: Env): Promise<Response> {
     [user.id, ipHash]
   );
 
+  const responseHeaders = new Headers();
+  responseHeaders.set('Content-Type', 'application/json');
+  responseHeaders.append('Set-Cookie', buildSessionCookie(token, expiresAt));
+  responseHeaders.append('Set-Cookie', buildCsrfCookie(csrfToken, expiresAt));
+
   return new Response(
     JSON.stringify({
       success: true,
-      data: { user: publicUser(user), expires_at: expiresAt },
+      data: { user: publicUser(user), expires_at: expiresAt, csrf_token: csrfToken },
     }),
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Set-Cookie': buildSessionCookie(token, expiresAt),
-      },
-    }
+    { status: 200, headers: responseHeaders }
   );
 }
 
@@ -234,15 +272,15 @@ async function logout(request: Request, env: Env): Promise<Response> {
     );
   }
 
+  // Phase C2 §37 — also clear CSRF cookie on logout
+  const logoutHeaders = new Headers();
+  logoutHeaders.set('Content-Type', 'application/json');
+  logoutHeaders.append('Set-Cookie', buildClearCookie());
+  logoutHeaders.append('Set-Cookie', buildClearCsrfCookie());
+
   return new Response(
     JSON.stringify({ success: true, data: { logged_out: true } }),
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Set-Cookie': buildClearCookie(),
-      },
-    }
+    { status: 200, headers: logoutHeaders }
   );
 }
 

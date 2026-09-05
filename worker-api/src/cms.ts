@@ -414,6 +414,36 @@ export function buildClearCookie(): string {
   return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Phase C2 §37 — CSRF double-submit cookie helpers
+// Sets a non-HttpOnly cookie with a random token. Browser echoes it as the
+// X-CSRF-Token header on state-changing requests (POST/PUT/DELETE). GET
+// requests skip the check. Login endpoint also skips (user not authenticated
+// yet). See checkCsrfIfNeeded() in index.ts for the enforcement point.
+// ────────────────────────────────────────────────────────────────────────────
+
+export const CSRF_COOKIE_NAME = 'cms_csrf';
+
+export function buildCsrfCookie(token: string, expiresAt: string): string {
+  const maxAge = Math.max(
+    0,
+    Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)
+  );
+  return [
+    `${CSRF_COOKIE_NAME}=${token}`,
+    // Intentionally NOT HttpOnly: frontend JS reads via document.cookie
+    // and mirrors into X-CSRF-Token header on non-GET requests.
+    'Secure',
+    'SameSite=Lax',
+    'Path=/',
+    `Max-Age=${maxAge}`,
+  ].join('; ');
+}
+
+export function buildClearCsrfCookie(): string {
+  return `${CSRF_COOKIE_NAME}=; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+}
+
 export function publicUser(user: User): {
   id: number;
   email: string;

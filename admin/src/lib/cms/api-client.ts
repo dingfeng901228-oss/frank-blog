@@ -36,14 +36,23 @@ export async function apiFetch(
   path: string,
   init: RequestInit = {}
 ): Promise<Response> {
+  const method = (init.method || 'GET').toUpperCase();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(init.headers as Record<string, string> || {}),
+  };
+
+  // Phase C2 §37 — auto-attach CSRF token for state-changing requests
+  if (method !== 'GET') {
+    const csrfToken = getCookie('cms_csrf');
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  }
+
   const response = await fetch(path, {
     ...init,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...(init.headers || {}),
-    },
+    headers,
   });
 
   // Auto-redirect on 401 (unless we're calling login or already on login page)
@@ -63,6 +72,16 @@ function isLoginPath(path: string): boolean {
 function isOnLoginPage(): boolean {
   if (typeof window === 'undefined') return false;
   return window.location.pathname.startsWith('/admin/login');
+}
+
+// Phase C2 §37 — read non-HttpOnly cookie value to mirror into X-CSRF-Token header.
+// The server sets a non-HttpOnly cookie (cms_csrf) on login. For state-changing
+// requests, the browser JS reads the cookie and echoes it as the
+// X-CSRF-Token header (double-submit cookie pattern).
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 // ────────────────────────────────────────────────────
