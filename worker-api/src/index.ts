@@ -719,8 +719,41 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
   updates.push('updated_at = datetime(\'now\')');
   params.push(id);
 
-  await execute(env, `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`, params);
+  // Phase C1 §27 — Optimistic Lock: if client sent loaded_updated_at, require
+  // current row.updated_at to match. If 0 rows changed, another session wrote
+  // first → return 409 Conflict so client can warn the user.
+  let loadedUpdatedAt: string | null = null;
+  if (typeof body.loaded_updated_at === 'string' && body.loaded_updated_at.length > 0) {
+    loadedUpdatedAt = body.loaded_updated_at;
+    // WHERE id = ? AND updated_at = ?  (current row's updated_at must match)
+    const result = await execute(
+      env,
+      `UPDATE posts SET ${updates.join(', ')} WHERE id = ? AND updated_at = ?`,
+      [...params, loadedUpdatedAt]
+    );
+    if (!result.meta || result.meta.changes === 0) {
+      // Fetch fresh updated_at so client can decide whether to reload.
+      const fresh = await queryFirst<{ updated_at: string }>(
+        env,
+        `SELECT updated_at FROM posts WHERE id = ?`,
+        [id]
+      );
+      return json(
+        {
+          success: false,
+          error: {
+            code: 'CONFLICT',
+            message: 'This post was modified in another session. Your version may overwrite newer changes.',
+            current_updated_at: fresh?.updated_at ?? null,
+          },
+        },
+        409
+      );
+    }
+    return json({ success: true, data: { id, updated: true, updated_at: loadedUpdatedAt } });
+  }
 
+  await execute(env, `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`, params);
   return json({ success: true, data: { id, updated: true } });
 }
 

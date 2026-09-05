@@ -58,6 +58,10 @@ function EditPostInner() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [restoringId, setRestoringId] = useState<number | null>(null);
 
+  // ── Phase C1 §27 — Optimistic Lock conflict modal state ──
+  const [conflictOpen, setConflictOpen] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState<string>('');
+
   // ── Phase B §13 ②③ — paste + drag/drop image upload ──
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -209,11 +213,17 @@ function EditPostInner() {
         tags,
         is_featured: form.is_featured,
         status: form.status,
+        loaded_updated_at: form.updated_at,
       });
       setSavedAt(new Date().toLocaleTimeString());
       fetchPost();
     } catch (e: any) {
-      setError(e.message);
+      if (e?.code === 'CONFLICT') {
+        setConflictMessage(e.message);
+        setConflictOpen(true);
+      } else {
+        setError(e.message);
+      }
     } finally {
       setSaving(false);
     }
@@ -229,6 +239,7 @@ function EditPostInner() {
         ...form,
         cover_image: form.cover_image || null,
         tags,
+        loaded_updated_at: form.updated_at,
       });
       const res = await fetch(`/api/admin/posts/${postId}/publish`, {
         method: 'POST',
@@ -242,7 +253,12 @@ function EditPostInner() {
       }
       fetchPost();
     } catch (e: any) {
-      setError(`Publish failed: ${e.message}`);
+      if (e?.code === 'CONFLICT') {
+        setConflictMessage(e.message);
+        setConflictOpen(true);
+      } else {
+        setError(`Publish failed: ${e.message}`);
+      }
     } finally {
       setPublishing(false);
     }
@@ -531,6 +547,13 @@ function EditPostInner() {
           onRestore={handleRestoreRevision}
           onClose={() => setDrawerOpen(false)}
         />
+
+        <ConflictModal
+          open={conflictOpen}
+          message={conflictMessage}
+          onReload={() => { setConflictOpen(false); fetchPost(); }}
+          onKeepEditing={() => setConflictOpen(false)}
+        />
       </div>
     </div>
   );
@@ -670,6 +693,81 @@ function RevisionDrawer({ open, revisions, loading, restoringId, onRestore, onCl
             </button>
           </div>
         ))}
+      </div>
+    </>
+  );
+}
+
+// ────────────────────────────────────────────────────
+// Conflict Modal — Phase C1 §27 Optimistic Lock
+// Shown when PUT returns 409 (post.updated_at on server no longer matches
+// the loaded_updated_at client sent). User must choose: reload server version
+// (discard local edits) or keep editing (overwrite with current form state).
+// ────────────────────────────────────────────────────
+
+interface ConflictModalProps {
+  open: boolean;
+  message: string;
+  onReload: () => void;
+  onKeepEditing: () => void;
+}
+
+function ConflictModal({ open, message, onReload, onKeepEditing }: ConflictModalProps) {
+  if (!open) return null;
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onKeepEditing}
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.6)', zIndex: 110,
+        }}
+      />
+      {/* Centered modal */}
+      <div
+        style={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          width: 440, maxWidth: '92vw',
+          background: '#0A0A0F', border: '1px solid #F59E0B',
+          borderRadius: 12, padding: 24, zIndex: 120,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        <h2 style={{ fontSize: 16, color: '#F59E0B', margin: '0 0 12px 0', fontWeight: 600 }}>
+          ⚠ Conflict — Post modified elsewhere
+        </h2>
+        <p style={{ fontSize: 13, color: '#A6ADBB', lineHeight: 1.6, margin: '0 0 20px 0' }}>
+          {message}
+        </p>
+        <p style={{ fontSize: 12, color: '#707887', margin: '0 0 24px 0', fontFamily: 'monospace' }}>
+          Reloading will discard your unsaved local edits.
+          Keep editing will overwrite the server version with what you have now.
+        </p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button
+            onClick={onKeepEditing}
+            type="button"
+            style={{
+              padding: '8px 16px', background: 'transparent', color: '#A6ADBB',
+              border: '1px solid #272B36', borderRadius: 6, fontSize: 13, cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Keep editing
+          </button>
+          <button
+            onClick={onReload}
+            type="button"
+            style={{
+              padding: '8px 16px', background: '#F59E0B', color: '#0A0A0F',
+              border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 600,
+            }}
+          >
+            Reload latest
+          </button>
+        </div>
       </div>
     </>
   );
