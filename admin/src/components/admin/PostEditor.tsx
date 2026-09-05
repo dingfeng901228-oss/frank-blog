@@ -5,7 +5,7 @@
 // Used by /admin/blog/new, /admin/notes/new, /admin/blog/[id]/edit, /admin/notes/[id]/edit
 // Per docs/CMS V2.md §十 (Editor UX) + §二十二 (Collection auto-determined by route) + §二十 (Preview uses Markdown.tsx)
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ClipboardEvent, type DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card';
 import { ErrorState } from '@/components/ui/ErrorState';
 import Markdown from '@/components/Markdown';
 import { useToast } from '@/components/ui/Toast';
+import { extractImageFile, uploadImageFile, buildImageMarkdown, insertAtCursor } from '@/lib/image-upload';
 
 type Tab = 'write' | 'preview';
 type Status = 'draft' | 'published' | 'archived';
@@ -59,6 +60,59 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(isEdit);
+
+  // ── Phase B §13 ②③ — paste + drag/drop image upload ──
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+
+  async function handleImageFile(file: File) {
+    setUploadingImage(true);
+    try {
+      const image = await uploadImageFile(file, '');
+      const md = buildImageMarkdown(image) + '\n';
+      if (contentRef.current) {
+        insertAtCursor(contentRef.current, md);
+        // insertAtCursor dispatches 'input' event which React may not pick up — sync state directly
+        setContent(contentRef.current.value);
+      } else {
+        setContent((c) => c + md);
+      }
+      toast.show('Image uploaded', 'success');
+    } catch (e: any) {
+      toast.show(e.message || 'Upload failed', 'error');
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handlePaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const file = extractImageFile(e.clipboardData);
+    if (file) {
+      e.preventDefault();
+      await handleImageFile(file);
+    }
+  }
+
+  function handleDragOver(e: DragEvent) {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      setIsDraggingImage(true);
+    }
+  }
+
+  function handleDragLeave() {
+    setIsDraggingImage(false);
+  }
+
+  async function handleDrop(e: DragEvent) {
+    const file = extractImageFile(e.dataTransfer);
+    if (file) {
+      e.preventDefault();
+      setIsDraggingImage(false);
+      await handleImageFile(file);
+    }
+  }
 
   // Auto-generate slug from title (only if user hasn't manually edited it)
   useEffect(() => {
@@ -202,21 +256,54 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
 
           {/* Content editor / preview */}
           {tab === 'write' ? (
-            <textarea
-              placeholder="Write your content in Markdown..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               style={{
-                ...inputStyle,
-                minHeight: 500,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 'var(--font-size-sm)',
-                lineHeight: 1.6,
-                padding: 'var(--space-md)',
-                borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
-                borderBottom: tab === 'write' ? '1px solid var(--color-primary)' : undefined,
+                position: 'relative',
+                border: isDraggingImage ? '2px dashed var(--color-primary)' : '2px dashed transparent',
+                borderRadius: 'var(--radius-sm)',
+                transition: 'border-color 0.15s',
               }}
-            />
+            >
+              {isDraggingImage && (
+                <div style={{
+                  position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'rgba(11, 12, 16, 0.85)', borderRadius: 'var(--radius-sm)', pointerEvents: 'none',
+                  color: 'var(--color-primary)', fontSize: 'var(--font-size-md)', fontWeight: 500,
+                }}>
+                  Drop image to upload
+                </div>
+              )}
+              {uploadingImage && (
+                <div style={{
+                  position: 'absolute', top: 8, right: 8, zIndex: 10,
+                  padding: '4px 10px', background: 'var(--color-surface-elevated)',
+                  border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)',
+                  fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)',
+                }}>
+                  Uploading…
+                </div>
+              )}
+              <textarea
+                ref={contentRef}
+                placeholder="Write your content in Markdown… (Ctrl+V to paste image, or drop image)"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onPaste={handlePaste}
+                style={{
+                  ...inputStyle,
+                  minHeight: 500,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 'var(--font-size-sm)',
+                  lineHeight: 1.6,
+                  padding: 'var(--space-md)',
+                  borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+                  borderBottom: tab === 'write' ? '1px solid var(--color-primary)' : undefined,
+                }}
+              />
+            </div>
           ) : (
             <Card padding="md" style={{ minHeight: 500, borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
               {content.trim() ? <Markdown>{content}</Markdown> : <p style={{ color: 'var(--color-text-muted)' }}>Nothing to preview yet.</p>}

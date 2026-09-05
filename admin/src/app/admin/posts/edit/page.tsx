@@ -5,11 +5,12 @@
 
 'use client';
 
-import { Suspense, useEffect, useRef, useState, type FormEvent, type CSSProperties } from 'react';
+import { Suspense, useEffect, useRef, useState, type FormEvent, type CSSProperties, type ClipboardEvent, type DragEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Markdown from '@/components/Markdown';
 import { apiGet, apiPatch, apiPut } from '@/lib/cms/api-client';
+import { extractImageFile, uploadImageFile, buildImageMarkdown, insertAtCursor } from '@/lib/image-upload';
 import type { Locale, PostCollection } from '@/lib/cms/types';
 import { postFormStyles as s } from '../new/post-form-styles';
 
@@ -56,6 +57,59 @@ function EditPostInner() {
   const [revisionsLoading, setRevisionsLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [restoringId, setRestoringId] = useState<number | null>(null);
+
+  // ── Phase B §13 ②③ — paste + drag/drop image upload ──
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+
+  async function handleImageFile(file: File) {
+    const currentForm = form;
+    if (!currentForm) return;
+    setUploadingImage(true);
+    try {
+      const image = await uploadImageFile(file, '');
+      const md = buildImageMarkdown(image) + '\n';
+      if (contentRef.current) {
+        insertAtCursor(contentRef.current, md);
+        setForm({ ...currentForm, content: contentRef.current.value });
+      } else {
+        setForm({ ...currentForm, content: currentForm.content + md });
+      }
+    } catch (e: any) {
+      setError(e.message || 'Upload failed');
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleContentPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const file = extractImageFile(e.clipboardData);
+    if (file) {
+      e.preventDefault();
+      await handleImageFile(file);
+    }
+  }
+
+  function handleContentDragOver(e: DragEvent) {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      setIsDraggingImage(true);
+    }
+  }
+
+  function handleContentDragLeave() {
+    setIsDraggingImage(false);
+  }
+
+  async function handleContentDrop(e: DragEvent) {
+    const file = extractImageFile(e.dataTransfer);
+    if (file) {
+      e.preventDefault();
+      setIsDraggingImage(false);
+      await handleImageFile(file);
+    }
+  }
 
   useEffect(() => {
     if (!Number.isFinite(postId)) return;
@@ -396,20 +450,53 @@ function EditPostInner() {
               </label>
             </Field>
 
-            <Field label="Content (MDX)">
-              <textarea
-                value={form.content}
-                onChange={(e) => setForm({ ...form, content: e.target.value })}
-                rows={20}
-                required
+            <Field label="Content (MDX)" hint="Ctrl+V paste image, or drag image in">
+              <div
+                onDragOver={handleContentDragOver}
+                onDragLeave={handleContentDragLeave}
+                onDrop={handleContentDrop}
                 style={{
-                  ...s.input,
-                  fontFamily: "'Fira Code', monospace",
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  resize: 'vertical',
+                  position: 'relative',
+                  border: isDraggingImage ? '2px dashed #10b981' : '2px dashed transparent',
+                  borderRadius: 8,
+                  transition: 'border-color 0.15s',
                 }}
-              />
+              >
+                {isDraggingImage && (
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0, 0, 0, 0.8)', borderRadius: 8, pointerEvents: 'none',
+                    color: '#10b981', fontSize: 14, fontWeight: 500,
+                  }}>
+                    Drop image to upload
+                  </div>
+                )}
+                {uploadingImage && (
+                  <div style={{
+                    position: 'absolute', top: 8, right: 8, zIndex: 10,
+                    padding: '4px 10px', background: '#14141C',
+                    border: '1px solid #1E1E2E', borderRadius: 6,
+                    fontSize: 11, color: '#707887',
+                  }}>
+                    Uploading…
+                  </div>
+                )}
+                <textarea
+                  ref={contentRef}
+                  value={form.content}
+                  onChange={(e) => setForm({ ...form, content: e.target.value })}
+                  onPaste={handleContentPaste}
+                  rows={20}
+                  required
+                  style={{
+                    ...s.input,
+                    fontFamily: "'Fira Code', monospace",
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
             </Field>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 24, flexWrap: 'wrap' }}>
