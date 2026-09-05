@@ -9,6 +9,14 @@ binding       = "DB"
 database_name = "frank-blog-db"
 database_id   = "a1dcda23-2b33-4c3b-9eaa-2c0429d35cb1"
 
+# Phase C2b §37 — Rate limit (per-IP 60 req/min + per-user 300 req/min).
+# Frank must run once locally to create the KV namespace:
+#   wrangler kv namespace create RATE_LIMIT
+# Then update `id` below with the returned namespace ID.
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "REPLACE_AFTER_KV_NAMESPACE_CREATE"
+
 # Routes — Worker handles /api/admin/* on cms.blog.frank2025.com
 # These are appended to any existing custom-domain routes on the Worker.
 # Frank sets up the custom domain in CF Dashboard → Workers → frank-blog-cms-api

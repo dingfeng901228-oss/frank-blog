@@ -59,6 +59,7 @@ export interface Env {
   R2_ACCOUNT_ID?: string;
   R2_ACCESS_KEY_ID?: string;
   R2_SECRET_ACCESS_KEY?: string;
+  RATE_LIMIT?: KVNamespace;
 }
 
 export interface User {
@@ -374,10 +375,13 @@ export async function triggerDeployHook(env: Env): Promise<DeployResult> {
 // HTTP helpers
 // ────────────────────────────────────────────────────
 
-export function json(data: unknown, status = 200): Response {
+export function json(data: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(extraHeaders || {}),
+    },
   });
 }
 
@@ -442,6 +446,41 @@ export function buildCsrfCookie(token: string, expiresAt: string): string {
 
 export function buildClearCsrfCookie(): string {
   return `${CSRF_COOKIE_NAME}=; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Phase C2b §37 — Per-IP rate limit (60 req/min, fixed-minute bucket).
+// Uses CF KV as a counter store. Key format: `ip:<ip>:<unix-minute>`. Old
+// buckets auto-expire via expirationTtl=120 (covers boundary minute safely).
+// Skip if KV binding is missing (dev without KV namespace).
+// Per-user (300 req/min) can be added by reading session cookie before this
+// check; not implemented yet to keep the call site simple (IP-only for now).
+// ────────────────────────────────────────────────────────────────────────────
+
+export const RATE_LIMIT_PER_MIN = 60;
+export const RATE_LIMIT_KV_TTL_SECONDS = 120;
+
+export async function checkRateLimit(
+  kv: KVNamespace | undefined,
+  request: Request
+): Promise<Response | null> {
+  if (!kv) return null;
+  const ip = getRequestIp(request);
+  const minute = Math.floor(Date.now() / 60000);
+  const key = `ip:${ip}:${minute}`;
+  const current = parseInt((await kv.get(key)) || '0', 10);
+  if (current >= RATE_LIMIT_PER_MIN) {
+    return json(
+      {
+        success: false,
+        error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+      },
+      429,
+      { 'Retry-After': '60' }
+    );
+  }
+  await kv.put(key, String(current + 1), { expirationTtl: RATE_LIMIT_KV_TTL_SECONDS });
+  return null;
 }
 
 export function publicUser(user: User): {

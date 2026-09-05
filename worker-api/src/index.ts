@@ -23,6 +23,7 @@ import {
   buildCsrfCookie,
   buildClearCsrfCookie,
   CSRF_COOKIE_NAME,
+  checkRateLimit,
   buildDescriptionRaw,
   randomBytes,
   getRequestIp,
@@ -91,6 +92,10 @@ export default {
         headers: corsHeaders(request),
       });
     }
+
+    // Phase C2b §37 — per-IP rate limit (60 req/min) before CSRF check
+    const rateLimitCheck = await checkRateLimit(env.RATE_LIMIT, request);
+    if (rateLimitCheck) return rateLimitCheck;
 
     // Phase C2 §37 — enforce double-submit CSRF cookie on state-changing /api/admin/* requests
     const csrfCheck = checkCsrfIfNeeded(request, path, method);
