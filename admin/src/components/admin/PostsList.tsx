@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useToast } from '@/components/ui/Toast';
+import { apiDelete, apiGet } from '@/lib/cms/api-client';
 
 interface PostSummary {
   id: number;
@@ -100,12 +101,8 @@ export function PostsList({
       if (collection) params.set('collection', collection);
       if (search) params.set('search', search);
       params.set('page', String(page));
-      const res = await fetch(`/api/admin/posts?${params}`, { credentials: 'include' });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Failed to fetch');
-      }
-      const list = data.data as PostsListResponse;
+      const res = await apiGet<PostsListResponse>(`/api/admin/posts?${params}`);
+      const list = res;
       setPosts(list.posts);
       setTotal(list.total);
     } catch (e: any) {
@@ -123,14 +120,10 @@ export function PostsList({
   async function handleDelete(id: number, postTitle: string) {
     if (!confirm(`Delete "${postTitle}"? This cannot be undone.`)) return;
     try {
-      const res = await fetch(`/api/admin/posts/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error?.message || 'Delete failed');
-      }
+      // apiDelete auto-attaches X-CSRF-Token from the cms_csrf cookie and
+      // refreshes + retries on 403 CSRF_INVALID (Phase C2d §37). Bare fetch
+      // here was hitting the CSRF check without the token.
+      await apiDelete(`/api/admin/posts/${id}`);
       toast.show('Post deleted', 'success');
       fetchPosts();
     } catch (e: any) {

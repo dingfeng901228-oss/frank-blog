@@ -343,17 +343,24 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     if (!confirm('确认恢复此版本？当前内容将被覆盖。')) return;
     setRestoringId(revisionId);
     try {
-      await fetch(`/api/admin/posts/${postId}/revisions/${revisionId}/restore`, {
+      // Bare fetch: this endpoint isn't covered by api-client because the
+      // version inside PostEditor predates the api-client refactor. Inline
+      // X-CSRF-Token from the cms_csrf cookie (api-client does the same
+      // thing internally via apiFetch).
+      const csrfMatch = document.cookie.match(/(?:^|; )cms_csrf=([^;]*)/);
+      const csrf = csrfMatch ? decodeURIComponent(csrfMatch[1]) : '';
+      const res = await fetch(`/api/admin/posts/${postId}/revisions/${revisionId}/restore`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': (() => {
-            const m = document.cookie.match(/(?:^|; )cms_csrf=([^;]*)/);
-            return m ? decodeURIComponent(m[1]) : '';
-          })(),
+          'X-CSRF-Token': csrf,
         },
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error?.message || `Restore failed (HTTP ${res.status})`);
+      }
       await refetchPost();
       await fetchRevisions();
       setDrawerOpen(false);

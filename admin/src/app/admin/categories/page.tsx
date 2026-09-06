@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useToast } from '@/components/ui/Toast';
+import { apiDelete, apiGet, apiPost } from '@/lib/cms/api-client';
 
 interface Category {
   id: number;
@@ -43,12 +44,8 @@ export default function CategoriesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/categories', { credentials: 'include' });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Failed to fetch');
-      }
-      setItems(data.data.items);
+      const data = await apiGet<{ items: Category[] }>('/api/admin/categories');
+      setItems(data.items);
     } catch (e: any) {
       setError(e.message || 'Unknown error');
     } finally {
@@ -67,20 +64,11 @@ export default function CategoriesPage() {
       return;
     }
     try {
-      const res = await fetch('/api/admin/categories', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formName.trim(),
-          slug: formSlug.trim(),
-          collection: formCollection,
-        }),
+      await apiPost('/api/admin/categories', {
+        name: formName.trim(),
+        slug: formSlug.trim(),
+        collection: formCollection,
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || '创建失败');
-      }
       toast.show('分类已创建', 'success');
       setShowForm(false);
       setFormName('');
@@ -94,14 +82,7 @@ export default function CategoriesPage() {
   async function handleDelete(id: number, name: string) {
     if (!confirm(`确认删除分类「${name}」？此操作不可撤销。`)) return;
     try {
-      const res = await fetch(`/api/admin/categories/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error?.message || '删除失败');
-      }
+      await apiDelete(`/api/admin/categories/${id}`);
       toast.show('分类已删除', 'success');
       fetchCategories();
     } catch (e: any) {

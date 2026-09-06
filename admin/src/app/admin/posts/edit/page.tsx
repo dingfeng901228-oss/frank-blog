@@ -268,10 +268,18 @@ function EditPostInner() {
     if (!post) return;
     if (!confirm(`确认删除文章「${post.title}」？此操作不可撤销。`)) return;
     try {
-      await fetch(`/api/admin/posts/${postId}`, {
+      // Inline X-CSRF-Token: this page predates the api-client migration
+      // and uses bare fetch. Same cookie-parse pattern as image-upload.ts.
+      const csrf = document.cookie.match(/(?:^|;\s*)cms_csrf=([^;]*)/)?.[1] ?? '';
+      const res = await fetch(`/api/admin/posts/${postId}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: csrf ? { 'X-CSRF-Token': csrf } : undefined,
       });
+      if (!res.ok && res.status !== 204) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error?.message || 'Delete failed');
+      }
       router.push('/admin/posts');
     } catch (e: any) {
       setError(e.message);
@@ -283,9 +291,11 @@ function EditPostInner() {
     if (!confirm('确认恢复此版本？当前内容将被覆盖。')) return;
     setRestoringId(revisionId);
     try {
+      const csrf = document.cookie.match(/(?:^|;\s*)cms_csrf=([^;]*)/)?.[1] ?? '';
       const res = await fetch(`/api/admin/posts/${postId}/revisions/${revisionId}/restore`, {
         method: 'POST',
         credentials: 'include',
+        headers: csrf ? { 'X-CSRF-Token': csrf } : undefined,
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

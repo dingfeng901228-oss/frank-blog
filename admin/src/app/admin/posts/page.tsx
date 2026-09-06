@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useToast } from '@/components/ui/Toast';
+import { apiDelete } from '@/lib/cms/api-client';
 
 interface PostSummary {
   id: number;
@@ -81,14 +82,7 @@ export default function PostsListPage() {
   async function handleDelete(id: number, title: string) {
     if (!confirm(`Delete post "${title}"? This cannot be undone.`)) return;
     try {
-      const res = await fetch(`/api/admin/posts/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error?.message || 'Delete failed');
-      }
+      await apiDelete(`/api/admin/posts/${id}`);
       toast.show('Post deleted', 'success');
       fetchPosts();
     } catch (e: any) {

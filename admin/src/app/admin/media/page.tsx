@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useToast } from '@/components/ui/Toast';
+import { apiDelete, apiGet } from '@/lib/cms/api-client';
 
 interface MediaItem {
   id: number;
@@ -58,13 +59,9 @@ export default function MediaPage() {
       params.set('limit', String(PAGE_SIZE));
       params.set('offset', String((page - 1) * PAGE_SIZE));
       if (search) params.set('search', search);
-      const res = await fetch(`/api/admin/media?${params}`, { credentials: 'include' });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Failed to fetch');
-      }
-      setItems(data.data.items);
-      setTotal(data.data.total);
+      const data = await apiGet<{ items: MediaItem[]; total: number }>(`/api/admin/media?${params}`);
+      setItems(data.items);
+      setTotal(data.total);
     } catch (e: any) {
       setError(e.message || 'Unknown error');
     } finally {
@@ -83,10 +80,15 @@ export default function MediaPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('alt', alt);
+      // Upload must use bare fetch + FormData (api-client forces JSON
+      // Content-Type). Inline X-CSRF-Token from the cms_csrf cookie — same
+      // pattern as image-upload.ts and PostEditor.handleRestoreRevision.
+      const csrf = document.cookie.match(/(?:^|;\s*)cms_csrf=([^;]*)/)?.[1] ?? '';
       const res = await fetch('/api/admin/media/upload', {
         method: 'POST',
         credentials: 'include',
         body: formData,
+        headers: csrf ? { 'X-CSRF-Token': csrf } : undefined,
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -104,14 +106,7 @@ export default function MediaPage() {
   async function handleDelete(id: number, filename: string) {
     if (!confirm(`确认删除「${filename}」？此操作不可撤销。`)) return;
     try {
-      const res = await fetch(`/api/admin/media/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error?.message || 'Delete failed');
-      }
+      await apiDelete(`/api/admin/media/${id}`);
       toast.show('媒体已删除', 'success');
       fetchMedia();
     } catch (e: any) {

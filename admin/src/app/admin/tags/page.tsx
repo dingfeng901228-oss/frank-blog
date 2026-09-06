@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useToast } from '@/components/ui/Toast';
+import { apiDelete, apiGet, apiPost } from '@/lib/cms/api-client';
 
 interface Tag {
   id: number;
@@ -40,12 +41,8 @@ export default function TagsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/tags', { credentials: 'include' });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Failed to fetch');
-      }
-      setItems(data.data.items);
+      const data = await apiGet<{ items: Tag[] }>('/api/admin/tags');
+      setItems(data.items);
     } catch (e: any) {
       setError(e.message || 'Unknown error');
     } finally {
@@ -65,16 +62,7 @@ export default function TagsPage() {
     }
     const slug = formName.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
     try {
-      const res = await fetch('/api/admin/tags', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: formName.trim(), slug }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || '创建失败');
-      }
+      await apiPost('/api/admin/tags', { name: formName.trim(), slug });
       toast.show('标签已创建', 'success');
       setShowForm(false);
       setFormSlug('');
@@ -87,14 +75,7 @@ export default function TagsPage() {
   async function handleDelete(id: number, name: string) {
     if (!confirm(`确认删除标签「${name}」？此操作不可撤销。`)) return;
     try {
-      const res = await fetch(`/api/admin/tags/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error?.message || '删除失败');
-      }
+      await apiDelete(`/api/admin/tags/${id}`);
       toast.show('标签已删除', 'success');
       fetchTags();
     } catch (e: any) {
