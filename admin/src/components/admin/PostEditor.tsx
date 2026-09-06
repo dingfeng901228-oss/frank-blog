@@ -19,6 +19,7 @@ import Markdown from '@/components/Markdown';
 import { useToast } from '@/components/ui/Toast';
 import { extractImageFile, uploadImageFile, buildImageMarkdown, insertAtCursor } from '@/lib/image-upload';
 import { apiGet, apiPatch, apiPost, apiPut, apiDelete } from '@/lib/cms/api-client';
+import { CoverImagePicker } from '@/components/admin/CoverImagePicker';
 
 type Tab = 'write' | 'preview';
 type Status = 'draft' | 'published' | 'archived';
@@ -93,6 +94,8 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(isEdit);
+  // Phase 11b — toggle for the CoverImagePicker modal
+  const [coverPickerOpen, setCoverPickerOpen] = useState(false);
 
   // ── Phase A §19 — Auto-save state (edit mode only) ──
   const [autoSaving, setAutoSaving] = useState(false);
@@ -657,12 +660,29 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
               />
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>封面图 URL</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>封面图</label>
+                <button
+                  type="button"
+                  onClick={() => setCoverPickerOpen(true)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--color-primary)',
+                    fontSize: 12,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  从媒体库选择…
+                </button>
+              </div>
               <input
                 type="text"
                 value={coverImage}
                 onChange={(e) => setCoverImage(e.target.value)}
-                placeholder="https://…"
+                placeholder="https://… 或点击上方「从媒体库选择」"
                 style={{ ...inputStyle, fontFamily: 'var(--font-mono)', fontSize: 'var(--font-size-sm)' }}
               />
               {coverImage && (
@@ -673,6 +693,24 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
                     alt="封面预览"
                     style={{ width: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
                   />
+                  {coverImage && (
+                    <button
+                      type="button"
+                      onClick={() => setCoverImage('')}
+                      style={{
+                        marginTop: 4,
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--color-text-muted)',
+                        fontSize: 11,
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                    >
+                      清除封面图
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -744,6 +782,13 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
           onKeepEditing={() => setConflictOpen(false)}
         />
       )}
+
+      <CoverImagePicker
+        open={coverPickerOpen}
+        onClose={() => setCoverPickerOpen(false)}
+        onSelect={(url) => setCoverImage(url)}
+        currentValue={coverImage}
+      />
     </div>
   );
 }
