@@ -549,8 +549,11 @@ export function validateContent(content: unknown): string {
 }
 
 export function validateDescriptionText(text: unknown): string {
-  if (typeof text !== 'string' || text.length === 0) {
-    throw new Error('description_text must be a non-empty string');
+  // description is optional — empty string is acceptable (the public site
+  // falls back to an excerpt derived from `content`). Only enforce the length
+  // cap when there is something to cap.
+  if (typeof text !== 'string') {
+    throw new Error('description_text must be a string');
   }
   if (text.length > MAX_DESCRIPTION_LENGTH) {
     throw new Error(`description_text must be at most ${MAX_DESCRIPTION_LENGTH} characters`);
