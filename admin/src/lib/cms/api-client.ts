@@ -55,10 +55,25 @@ export async function apiFetch(
     headers,
   });
 
-  // Auto-redirect on 401 (unless we're calling login or already on login page)
+  // Auto-redirect on 401 (unless we're calling login or already on login page).
+  // Also redirect on 403 CSRF_INVALID — typically means the cms_csrf cookie
+  // was lost (user logged in before CSRF was enabled, or browser session
+  // pre-dates the CSRF change). Re-login refreshes both cookies.
   if (response.status === 401 && !isLoginPath(path) && !isOnLoginPage()) {
     if (typeof window !== 'undefined') {
       window.location.href = '/admin/login';
+    }
+  } else if (response.status === 403 && !isLoginPath(path) && !isOnLoginPage()) {
+    const cloned = response.clone();
+    try {
+      const data = await cloned.json().catch(() => null);
+      if (data?.error?.code === 'CSRF_INVALID' && typeof window !== 'undefined') {
+        // Session is likely valid but cms_csrf cookie is missing/stale —
+        // reloading to /admin/login lets the user log in fresh.
+        window.location.href = '/admin/login';
+      }
+    } catch {
+      /* ignore */
     }
   }
 
