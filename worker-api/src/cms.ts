@@ -399,6 +399,8 @@ export function parseCookies(cookieHeader: string): Record<string, string> {
 }
 
 export const SESSION_COOKIE_NAME = 'cms_session';
+export const AUTH_COOKIE_DOMAIN = '.blog.frank2025.com';
+
 export function buildSessionCookie(token: string, expiresAt: string): string {
   const maxAge = Math.max(
     0,
@@ -406,6 +408,13 @@ export function buildSessionCookie(token: string, expiresAt: string): string {
   );
   return [
     `${SESSION_COOKIE_NAME}=${token}`,
+    // Phase 11 — Domain is set explicitly so the session cookie is shared
+    // across both cms.blog.frank2025.com and blog.frank2025.com. Without
+    // this, a user who logged in on the cms subdomain would have a
+    // host-bound cookie that the browser refuses to send to blog. (and
+    // vice versa). Path=/ + Domain=parent means /admin and /api/admin
+    // everywhere under .blog.frank2025.com see the same session.
+    `Domain=${AUTH_COOKIE_DOMAIN}`,
     'HttpOnly',
     'Secure',
     'SameSite=Lax',
@@ -415,7 +424,7 @@ export function buildSessionCookie(token: string, expiresAt: string): string {
 }
 
 export function buildClearCookie(): string {
-  return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+  return `${SESSION_COOKIE_NAME}=; Domain=${AUTH_COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -435,6 +444,10 @@ export function buildCsrfCookie(token: string, expiresAt: string): string {
   );
   return [
     `${CSRF_COOKIE_NAME}=${token}`,
+    // Phase 11 — match the session cookie's Domain so the X-CSRF-Token
+    // header (which the SPA reads from this cookie) is consistent across
+    // both cms and blog subdomains. See buildSessionCookie for rationale.
+    `Domain=${AUTH_COOKIE_DOMAIN}`,
     // Intentionally NOT HttpOnly: frontend JS reads via document.cookie
     // and mirrors into X-CSRF-Token header on non-GET requests.
     'Secure',
@@ -445,7 +458,7 @@ export function buildCsrfCookie(token: string, expiresAt: string): string {
 }
 
 export function buildClearCsrfCookie(): string {
-  return `${CSRF_COOKIE_NAME}=; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+  return `${CSRF_COOKIE_NAME}=; Domain=${AUTH_COOKIE_DOMAIN}; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
