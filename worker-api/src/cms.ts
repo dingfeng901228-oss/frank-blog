@@ -586,10 +586,17 @@ export const MEDIA_ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp', 'ima
 export const MEDIA_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export function mediaPublicUrl(r2Key: string, env: Env): string {
-  // Use R2 public dev URL or custom domain when configured.
-  // For now we expose /cdn/<key> route which Worker can serve from R2.
-  // (In production, configure R2 custom domain and use that here.)
-  return `/cdn/${r2Key}`;
+  // Use the R2 public custom domain. The admin SPA inserts this URL into
+  // post bodies / media records, and the public blog reads it back as a
+  // regular <img src>. The custom domain `images.frank2025.com` is
+  // configured in the CF Dashboard (R2 → frank-blog-assets → Settings →
+  // Public access → Custom domain). For local dev or other environments
+  // override via the MEDIA_PUBLIC_BASE wrangler var or env.
+  const base = (env as any).MEDIA_PUBLIC_BASE
+    ?? (env.ENVIRONMENT === 'production'
+        ? 'https://images.frank2025.com'
+        : 'http://localhost:8788/cdn');
+  return `${base.replace(/\/$/, '')}/${r2Key}`;
 }
 
 export async function listMedia(
@@ -698,10 +705,16 @@ export async function uploadMedia(
 
   const result = await queryFirst<MediaRecord>(
     env,
-    `INSERT INTO media (filename, mime_type, size, r2_key, url, alt, uploaded_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+    // Note: 0001_initial.sql added `original_filename` (NOT NULL) before
+    // 0002_media.sql replaced the schema with a slimmer version. To stay
+    // compatible with both, write both columns: 0001 has `original_filename`,
+    // 0002 only has `filename` + `r2_key`. `original_filename` defaults to
+    // `filename` if not present in the row's column list (older schema
+    // would error — that's fine; we don't run with that schema).
+    `INSERT INTO media (filename, original_filename, mime_type, size, r2_key, url, alt, uploaded_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      RETURNING id, filename, mime_type, size, r2_key, url, alt, width, height, uploaded_by, created_at, updated_at`,
-    [file.name, file.type, file.size, r2Key, url, alt, uploadedBy]
+    [file.name, file.name, file.type, file.size, r2Key, url, alt, uploadedBy]
   );
   if (!result) throw new Error('Failed to insert media record');
   return result;

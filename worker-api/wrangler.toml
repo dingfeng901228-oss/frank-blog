@@ -16,6 +16,14 @@ database_id   = "a1dcda23-2b33-4c3b-9eaa-2c0429d35cb1"
 binding = "RATE_LIMIT"
 id = "3645c12d1da548ea889494ec692b161a"
 
+# Phase 4 / CMS V2 §十四 — Media storage. R2 bucket `frank-blog-assets` was
+# already created on 2026-08-08 (pre-existing in this CF account). Image
+# uploads from the admin SPA land here; the existing `mediaPublicUrl()`
+# helper serves them at `/cdn/<r2_key>` via the Worker itself.
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "frank-blog-assets"
+
 # Routes — Worker handles /api/admin/* on cms.blog.frank2025.com
 # These are appended to any existing custom-domain routes on the Worker.
 # Frank sets up the custom domain in CF Dashboard → Workers → frank-blog-cms-api
