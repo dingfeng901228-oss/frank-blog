@@ -36,11 +36,29 @@
 
 import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, cpSync, existsSync, statSync, rmSync } from 'node:fs';
-import { join, relative, basename } from 'node:path';
+import { join, relative, basename, dirname } from 'node:path';
 import matter from 'gray-matter';
 
-const CONTENT_ROOT = join(process.cwd(), 'src', 'content');
-const BACKUP_ROOT = join(process.cwd(), 'backups');
+// Compute CONTENT_ROOT and BACKUP_ROOT by walking up from cwd until we find
+// the project root (which has src/content/ and backups/). Mirrors the
+// pattern in seed-admin.mjs — the script may be invoked from anywhere
+// (worker-api/, scripts/, repo root, etc.).
+
+function findProjectRoot() {
+  let dir = process.cwd();
+  for (let i = 0; i < 6; i++) {
+    if (existsSync(join(dir, 'src', 'content'))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  // Fall back to cwd for backwards compat.
+  return process.cwd();
+}
+
+const PROJECT_ROOT = findProjectRoot();
+const CONTENT_ROOT = join(PROJECT_ROOT, 'src', 'content');
+const BACKUP_ROOT = join(PROJECT_ROOT, 'backups');
 const LOCALES = ['zh', 'ja', 'en'];
 const COLLECTIONS = ['posts', 'notes'];
 const DB_NAME = 'frank-blog-db';
