@@ -41,9 +41,23 @@
 
 import { execSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync, statSync, rmSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, dirname } from 'node:path';
 
-const CONTENT_ROOT = join(process.cwd(), 'src', 'content');
+// Walk up from cwd to find the project root (same pattern as
+// migrate-md-to-d1.mjs / seed-admin.mjs / smoke-test.mjs).
+function findProjectRoot() {
+  let dir = process.cwd();
+  for (let i = 0; i < 6; i++) {
+    if (existsSync(join(dir, 'src', 'content'))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return process.cwd();
+}
+
+const PROJECT_ROOT = findProjectRoot();
+const CONTENT_ROOT = join(PROJECT_ROOT, 'src', 'content');
 const LOCALES = ['zh', 'ja', 'en'];
 const COLLECTIONS = ['posts', 'notes'];
 const DB_NAME = 'frank-blog-db';
@@ -74,16 +88,25 @@ if (!isDryRun && !target) {
 
 function queryAllPosts(target) {
   const statusFilter = includeDrafts ? '' : "WHERE status = 'published'";
-  const sql = `SELECT id, collection, locale, slug, title, description_raw, description_text,
-                       content, cover_image, published_at, is_featured, tags
-                FROM posts
-                ${statusFilter}
-                ORDER BY locale, collection, slug`;
+  // Single-line SQL — wrangler 4.x has a bug where `--file=` + `--remote`
+  // misinterprets the SQL file as an R2 upload ("├ Checking if file needs
+  // uploading"). Using --command="..." with single-line SQL works.
+  // Use explicit column list so we control the JSON shape.
+  const sql = `SELECT id, collection, locale, slug, title, description_raw, description_text, content, cover_image, published_at, is_featured, tags FROM posts ${statusFilter} ORDER BY locale, collection, slug`;
 
-  const cmd = `npx wrangler d1 execute ${DB_NAME} --${target} --json --command="${sql.replace(/"/g, '\\"')}"`;
+  // wrangler d1 needs wrangler.toml next to where it runs; spawn from
+  // worker-api/ subproject which has its own wrangler.toml + DB binding.
+  const workerApiDir = join(PROJECT_ROOT, 'worker-api');
+  // Escape single quotes for the shell wrapping (double-quoted --command="...").
+  const escapedSql = sql.replace(/"/g, '\\"');
+  const cmd = `npx wrangler d1 execute ${DB_NAME} --${target} --json --command="${escapedSql}"`;
   let stdout;
   try {
-    stdout = execSync(cmd, { encoding: 'utf8', maxBuffer: 50 * 1024 * 1024 });
+    stdout = execSync(cmd, {
+      encoding: 'utf8',
+      maxBuffer: 50 * 1024 * 1024,
+      cwd: workerApiDir,
+    });
   } catch (e) {
     console.error(`❌ wrangler d1 execute failed: ${e.message}`);
     if (e.stdout) console.error(`   stdout: ${e.stdout.toString().slice(0, 500)}`);
@@ -94,6 +117,22 @@ function queryAllPosts(target) {
     const parsed = JSON.parse(stdout);
     return parsed?.[0]?.results ?? [];
   } catch (e) {
+    // wrangler 4.x in --remote mode prepends R2 migration check output
+    // (e.g. "├ Checking if file needs uploading") and other non-JSON
+    // lines before the actual JSON payload. Strip everything before the
+    // first '[' or '{' to recover the JSON.
+    const jsonStart = Math.min(
+      stdout.indexOf('[') >= 0 ? stdout.indexOf('[') : Infinity,
+      stdout.indexOf('{') >= 0 ? stdout.indexOf('{') : Infinity
+    );
+    if (jsonStart !== Infinity) {
+      try {
+        const parsed = JSON.parse(stdout.slice(jsonStart));
+        return parsed?.[0]?.results ?? parsed;
+      } catch {
+        // fall through to original error
+      }
+    }
     console.error(`❌ Failed to parse D1 response: ${e.message}`);
     console.error(`   stdout: ${stdout.slice(0, 500)}`);
     process.exit(2);
@@ -113,29 +152,25 @@ function escapeYamlString(s) {
 }
 
 function buildMdx(post) {
+  // Per D-6 byte-level preservation: write frontmatter in the original
+  // canonical order (title, description, publishedAt, tags, coverImage,
+  // featured) and always emit `featured: false` so the round-trip matches
+  // the git-tracked MDX exactly. description_raw stores the entire YAML
+  // line(s) for `description:` exactly as captured by migrate's
+  // extractDescriptionYaml (including the leading "description:" prefix
+  // and any inline quoting / block scalar indicator), so we emit it
+  // verbatim.
   const lines = ['---'];
-  let descRawUsed = false;
 
-  // Description: prefer description_raw (preserves block scalar per D-6),
-  // fallback to single-line quoted description_text
+  // Title (always emit)
+  lines.push(`title: "${escapeYamlString(post.title)}"`);
+
+  // Description: emit description_raw verbatim if it exists (this is
+  // the full YAML line captured by extractDescriptionYaml in migrate).
   if (post.description_raw && post.description_raw.trim().length > 0) {
-    // description_raw is the YAML lines for description (extracted from original frontmatter).
-    // If it already starts with 'description:', write verbatim.
-    if (post.description_raw.startsWith('description:')) {
-      lines.push(post.description_raw);
-      descRawUsed = true;
-    } else {
-      // Defensive: prefix with 'description:'
-      lines.push(`description: ${post.description_raw}`);
-      descRawUsed = true;
-    }
+    lines.push(post.description_raw);
   } else if (post.description_text) {
     lines.push(`description: "${escapeYamlString(post.description_text)}"`);
-  }
-
-  // Title (only add if not already in description_raw block)
-  if (!descRawUsed || !post.description_raw.includes('title:')) {
-    lines.push(`title: "${escapeYamlString(post.title)}"`);
   }
 
   // Published date (YYYY-MM-DD from ISO timestamp)
@@ -162,13 +197,35 @@ function buildMdx(post) {
     lines.push(`coverImage: "${escapeYamlString(post.cover_image)}"`);
   }
 
-  // Featured
-  if (post.is_featured === 1 || post.is_featured === true) {
-    lines.push('featured: true');
-  }
+  // Featured — always emit (true OR false) so the round-trip matches
+  // git-tracked MDX which has `featured: false`.
+  const isFeatured = post.is_featured === 1 || post.is_featured === true;
+  lines.push(`featured: ${isFeatured ? 'true' : 'false'}`);
 
-  lines.push('---', '');
-  lines.push(post.content ?? '');
+  lines.push('---');
+  // Body separator: always emit a blank line between frontmatter and
+  // body. The original MDX files in the corpus are inconsistent here —
+  // some have a blank line after `---`, some don't (see
+  // src/content/en/posts/ai-era.mdx vs
+  // src/content/zh/notes/july-jlpt-n2.mdx). gray-matter's parsed.content
+  // starts with a leading newline IFF the source had a blank line. We
+  // normalize to always-have-blank-line for output. Strip the leading
+  // newline if present so we don't produce a double blank line.
+  //
+  // Note: this is NOT byte-identical to all source MDX (D-6 is
+  // violated for files that lacked the blank line). next-intl's gray-matter
+  // parses both formats identically, so this is functionally safe but
+  // D-6 byte-level round-trip is best-effort. To achieve true byte-level
+  // preservation we'd need a new `posts.original_mdx` TEXT column that
+  // stores the entire source file verbatim (including frontmatter);
+  // that requires a new migration.
+  //
+  // Normalize CRLF → LF so the byte stream matches git-tracked files on
+  // Windows (where git autocrlf rewrites CRLF → LF on checkout).
+  let body = (post.content ?? '').replace(/\r\n/g, '\n');
+  if (body.startsWith('\n')) body = body.slice(1);
+  lines.push('');
+  lines.push(body);
 
   return lines.join('\n');
 }

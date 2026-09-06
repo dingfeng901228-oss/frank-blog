@@ -30,6 +30,34 @@ jobs:
       - name: Build admin SPA
         run: cd admin && npm run build
 
+      # ────── Install worker-api deps + sync D1 → src/content/ MDX ──────
+      # Per ADR-002: D1 is the source of truth for posts; SSG rebuilds
+      # generate MDX from D1, then next build renders to static HTML.
+      # The sync must happen BEFORE 'Build main site' so the rendered
+      # blog reflects whatever was last published/unpublished in admin.
+      - name: Install worker-api deps
+        # --legacy-peer-deps bridges the wrangler@4 / workers-types@5 peer
+        # dep gap. wrangler@4.129 ships an esbuild package.json @ 0.28.1 but
+        # the platform-specific binary (linux-x64 / win32-x64) is still
+        # 0.27.3; the install.js validation kills the postinstall on Linux
+        # with "Expected 0.28.1 but got 0.27.3". We pin wrangler to a version
+        # (4.128) where esbuild binary and package.json match.
+        run: |
+          cd worker-api
+          npm install wrangler@4.128.0 --save-dev --no-audit --no-fund --prefer-offline --legacy-peer-deps
+
+      - name: Sync D1 → src/content/ (D-6 byte-level preservation)
+        # Reads published posts from REMOTE D1 and writes MDX files
+        # to src/content/{locale}/{posts,notes}/. next build then reads
+        # these MDX files via the existing src/lib/blog.ts (unchanged).
+        # Auth via OAuth (Cloudflare API token) for wrangler d1 execute
+        # must be set as wrangler secret / .dev.vars OR rely on the same
+        # CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID env vars below.
+        run: node scripts/sync-d1-to-mdx.mjs --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Build main site (blog)
         run: npm run build
 
@@ -61,17 +89,8 @@ jobs:
       # ────── worker-api deploy (Cloudflare Workers) ──────
       # Worker DOES apply [[d1_databases]] from wrangler.toml at deploy time.
       # So env.DB is populated at runtime → /api/admin/auth/* works.
-      - name: Install worker-api deps
-        # --legacy-peer-deps bridges the wrangler@4 / workers-types@5 peer
-        # dep gap. wrangler@4.129 ships an esbuild package.json @ 0.28.1 but
-        # the platform-specific binary (linux-x64 / win32-x64) is still
-        # 0.27.3; the install.js validation kills the postinstall on Linux
-        # with "Expected 0.28.1 but got 0.27.3". We pin wrangler to a version
-        # (4.128) where esbuild binary and package.json match.
-        run: |
-          cd worker-api
-          npm install wrangler@4.128.0 --save-dev --no-audit --no-fund --prefer-offline --legacy-peer-deps
-
+      # (deps were installed earlier — same wrangler package is reused for
+      # the deploy command below.)
       - name: Deploy worker-api to Cloudflare Workers
         run: cd worker-api && npx wrangler@4 deploy --minify
         env:
