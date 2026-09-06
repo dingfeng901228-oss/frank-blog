@@ -34,10 +34,25 @@ export function validateImageFile(file: File): string | null {
  * Upload an image file to /api/admin/media/upload.
  * Returns the uploaded image record (URL + metadata).
  * Throws on validation failure or network/server error.
+ *
+ * SECURITY (Phase C2 §37): the worker enforces double-submit CSRF on every
+ * non-GET /api/admin/* endpoint. We read the cms_csrf cookie directly so
+ * callers don't need to pre-create a wrapped `apiFetch` for FormData —
+ * the cookie is set by /api/admin/auth/login alongside cms_session.
  */
 export async function uploadImageFile(file: File, alt = ''): Promise<UploadedImage> {
   const validationError = validateImageFile(file);
   if (validationError) throw new Error(validationError);
+
+  // CSRF token: read the non-HttpOnly cms_csrf cookie (set on login) and
+  // mirror it into the X-CSRF-Token header. Must be done on the client
+  // (document.cookie); works in all browsers without a library.
+  const csrf = typeof document !== 'undefined'
+    ? (document.cookie.match(/(?:^|;\s*)cms_csrf=([^;]*)/)?.[1] ?? '')
+    : '';
+  // decodeURIComponent handles percent-encoded token values; empty string
+  // if cookie missing (the worker will then reject with 403 CSRF_INVALID).
+  const csrfToken = csrf ? decodeURIComponent(csrf) : '';
 
   const formData = new FormData();
   formData.append('file', file);
@@ -46,6 +61,7 @@ export async function uploadImageFile(file: File, alt = ''): Promise<UploadedIma
   const res = await fetch('/api/admin/media/upload', {
     method: 'POST',
     credentials: 'include',
+    headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
     body: formData,
   });
 
