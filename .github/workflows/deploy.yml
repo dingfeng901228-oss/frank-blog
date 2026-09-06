@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages (split projects)
+name: Deploy to Cloudflare Pages (single project + Worker)
 
 on:
   push:
@@ -28,6 +28,9 @@ jobs:
         run: cd admin && npm ci
 
       - name: Build admin SPA
+        # `next build` writes admin SPA into admin/out/. The root postbuild
+        # script (copy-admin-spa.mjs) then merges it into out/admin/ so the
+        # main frank-blog Pages project serves /admin/* alongside the blog.
         run: cd admin && npm run build
 
       # ────── Install worker-api deps + sync D1 → src/content/ MDX ──────
@@ -59,58 +62,46 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Build main site (blog)
+        # Triggers postbuild which runs:
+        #   1. copy-admin-to-out.mjs — copies src/_admin/ (30-day rollback
+        #      per ADR-003) into out/_admin/.
+        #   2. copy-admin-spa.mjs    — copies admin/out/ into out/admin/ and
+        #      merges _next/ chunks into out/_next/.
         run: npm run build
 
       - name: Copy ja.html → out/index.html (blog fallback)
         run: cp out/ja.html out/index.html
-
-      # ────── ADMIN deploy (frank-blog-cms project) ──────
-      # Pages now ONLY hosts the admin SPA static files.
-      # /api/admin/* moved to worker-api (independent Worker).
-      - name: Prepare admin-only dir
-        run: |
-          rm -rf out-admin
-          mkdir -p out-admin
-          cp -r admin/out/. out-admin/
-          # /api/admin/* moved to worker-api (independent Worker).
-          # Pages no longer hosts any /api/* endpoints (avoids the
-          # wrangler 3.x pages-deploy [[d1_databases]] bug entirely).
-          printf '/  /admin/  302\n' > out-admin/_redirects
-
-      - name: Deploy admin to frank-blog-cms
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: frank-blog-cms
-          directory: out-admin
-          wranglerVersion: '3'
 
       # ────── worker-api deploy (Cloudflare Workers) ──────
       # Worker DOES apply [[d1_databases]] from wrangler.toml at deploy time.
       # So env.DB is populated at runtime → /api/admin/auth/* works.
       # (deps were installed earlier — same wrangler package is reused for
       # the deploy command below.)
+      #
+      # Phase 11: wrangler.toml now declares
+      #   [[routes]] pattern = "blog.frank2025.com/api/admin/*"
+      # in addition to the existing custom domain on cms.blog.frank2025.com.
+      # A successful `wrangler deploy` registers the new route so the
+      # browser hitting blog.frank2025.com/api/admin/* lands on this Worker.
       - name: Deploy worker-api to Cloudflare Workers
         run: cd worker-api && npx wrangler@4 deploy --minify
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      # ────── BLOG deploy (frank-blog project) ──────
-      - name: Prepare blog-only dir
-        run: |
-          rm -rf out-blog
-          mkdir -p out-blog
-          cp -r out/. out-blog/
-        # out-blog/ contains: blog pages + ja.html-as-index.html + public/_redirects
-        # NO functions/, NO admin SPA, NO D1 binding wrangler.toml would try to add
-
-      - name: Deploy blog to frank-blog
+      # ────── BLOG + CMS SPA deploy (frank-blog project) ──────
+      # Phase 11 collapsed frank-blog-cms into frank-blog: the same Pages
+      # project now serves blog.frank2025.com (blog) AND blog.frank2025.com/admin
+      # (admin SPA, statically exported). /api/admin/* is served by the
+      # Worker via the route declared in wrangler.toml above.
+      #
+      # out/ contains: blog pages + admin SPA + ja.html-as-index.html +
+      #                public/_redirects (including /admin → /admin.html rewrite).
+      - name: Deploy blog + admin SPA to frank-blog
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: frank-blog
-          directory: out-blog
+          directory: out
           wranglerVersion: '3'

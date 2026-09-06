@@ -16,3 +16,13 @@
 # Root → default Japanese locale (browser will follow the meta refresh
 # or user can switch via the in-page locale picker)
 /                         /ja                     302
+
+# ────────────────────────────────────────────────────────────────────
+# Phase 11 — CMS SPA at /admin/* on the main blog domain
+#
+# Next.js `output: 'export'` writes /admin as admin.html, not
+# admin/index.html. We rely on the copy-admin-spa.mjs postbuild step
+# to materialise `out/admin/index.html` from `admin/out/admin.html` —
+# so /admin (and /admin/, and /admin/<sub>/) all resolve naturally via
+# Pages' directory-index lookup. No rewrite needed.
+# ────────────────────────────────────────────────────────────────────

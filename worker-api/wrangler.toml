@@ -31,6 +31,16 @@ bucket_name = "frank-blog-assets"
 # Pattern matches cms.blog.frank2025.com/api/admin/* but the SPA at /admin/*
 # (still served by Pages) wins for non-/api paths.
 
+# Phase 11 — also serve /api/admin/* on the main blog domain so the entire
+# CMS can live at blog.frank2025.com/admin without a separate cms. subdomain.
+# zone_name is resolved to a zone_id at deploy time by wrangler using the
+# OAuth/Account token. Both routes are matched by the same Worker script.
+# The frank-blog Pages project serves /admin/* (static SPA) and falls through
+# to this Worker for /api/admin/* via Cloudflare's path-based priority.
+[[routes]]
+pattern = "blog.frank2025.com/api/admin/*"
+zone_name = "frank2025.com"
+
 [vars]
 ENVIRONMENT = "production"
 
