@@ -5,6 +5,7 @@
 // Real D1 counts via existing /api/admin/posts endpoint (collection + status filters)
 
 import { useEffect, useState, type CSSProperties } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -217,9 +218,15 @@ export default function DashboardPage() {
 
       <div style={sectionTitle}>Quick actions</div>
       <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
-        <button disabled title="Coming in Phase 3" style={disabledButtonStyle}>+ New Article</button>
-        <button disabled title="Coming in Phase 3" style={disabledButtonStyle}>+ New Note</button>
-        <button disabled title="Coming in Phase 4" style={disabledButtonStyle}>Upload Media</button>
+        <Link href="/admin/blog/new" style={{ textDecoration: 'none' }}>
+          <button style={primaryButtonStyle}>+ New Article</button>
+        </Link>
+        <Link href="/admin/notes/new" style={{ textDecoration: 'none' }}>
+          <button style={primaryButtonStyle}>+ New Note</button>
+        </Link>
+        <Link href="/admin/media" style={{ textDecoration: 'none' }}>
+          <button style={primaryButtonStyle}>Media Library</button>
+        </Link>
       </div>
 
       <div style={sectionTitle}>Recent activity</div>
@@ -264,4 +271,16 @@ const disabledButtonStyle: CSSProperties = {
   opacity: 0.5,
   fontFamily: 'inherit',
   fontSize: 'var(--font-size-base)',
+};
+
+const primaryButtonStyle: CSSProperties = {
+  padding: 'var(--space-md) var(--space-lg)',
+  background: 'var(--color-primary)',
+  color: 'var(--color-bg)',
+  border: 'none',
+  borderRadius: 'var(--radius-md)',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  fontSize: 'var(--font-size-base)',
+  fontWeight: 500,
 };

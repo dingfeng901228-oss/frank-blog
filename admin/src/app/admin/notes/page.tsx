@@ -7,8 +7,9 @@ export default function NotesPage() {
     <PostsList
       title="Notes"
       defaultCollection="notes"
-      newHref="/admin/posts/new"
+      newHref="/admin/notes/new"
       newLabel="+ New Note"
+      editBasePath="/admin/notes"
     />
   );
 }

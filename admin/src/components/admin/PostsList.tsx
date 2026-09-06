@@ -39,6 +39,13 @@ export interface PostsListProps {
   defaultStatus?: string;
   newHref: string;
   newLabel?: string;
+  // Base path for the Edit link — passed from the page so /admin/blog's
+  // table goes to /admin/blog/edit?id=X (consistent with where the user
+  // navigated from), and the all-posts /admin/drafts page can keep using
+  // /admin/posts/edit.
+  // Defaults to /admin/posts for backwards compatibility with links that
+  // don't set it explicitly.
+  editBasePath?: string;
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -53,6 +60,7 @@ export function PostsList({
   defaultStatus,
   newHref,
   newLabel = '+ New',
+  editBasePath = '/admin/posts',
 }: PostsListProps) {
   const [posts, setPosts] = useState<PostSummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -280,7 +288,7 @@ export function PostsList({
                     </td>
                     <td style={{ ...tdStyle, textAlign: 'right' }}>
                       <Link
-                        href={`/admin/posts/edit?id=${post.id}`}
+                        href={`${editBasePath}/edit?id=${post.id}`}
                         style={{ color: 'var(--color-primary)', fontSize: 12, marginRight: 12, textDecoration: 'none' }}
                       >
                         Edit

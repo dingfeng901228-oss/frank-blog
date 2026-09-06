@@ -10,6 +10,7 @@ export default function BlogPage() {
       defaultCollection="posts"
       newHref="/admin/blog/new"
       newLabel="+ New Article"
+      editBasePath="/admin/blog"
     />
   );
 }
