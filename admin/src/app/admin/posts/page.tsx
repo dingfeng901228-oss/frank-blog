@@ -271,7 +271,7 @@ export default function PostsListPage() {
                         Edit
                       </Link>
                       <a
-                        href={`/${post.locale}/${post.collection === 'notes' ? 'notes' : 'blog'}/${post.slug}`}
+                        href={`https://blog.frank2025.com/${post.locale}/${post.collection === 'notes' ? 'notes' : 'blog'}/${post.slug}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{ color: 'var(--color-primary)', fontSize: 12, marginRight: 12, textDecoration: 'none' }}

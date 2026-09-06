@@ -79,6 +79,72 @@ function checkCsrfIfNeeded(request: Request, path: string, method: string): Resp
   return null;
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// CSRF cookie refresh — Phase C2d §37
+// Sessions created BEFORE CSRF protection shipped (or after the cms_csrf cookie
+// expired/was cleared) still authenticate via cms_session, but have no csrf
+// token to echo. The admin SPA would otherwise be locked out until the user
+// logs out and back in. This endpoint issues a fresh cms_csrf cookie for any
+// already-authenticated session.
+//
+// GET /api/admin/auth/csrf — issues Set-Cookie cms_csrf (same double-submit
+// value as the one the browser will mirror as X-CSRF-Token). Returns 401 if
+// the session is also gone (caller should redirect to /admin/login).
+// ────────────────────────────────────────────────────────────────────────────
+
+async function refreshCsrf(request: Request, env: Env): Promise<Response> {
+  const cookies = parseCookies(request.headers.get('Cookie') || '');
+  const sessionToken = cookies[SESSION_COOKIE_NAME];
+  if (!sessionToken) {
+    return json(
+      { success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } },
+      401
+    );
+  }
+  const tokenHash = await sha256Hex(sessionToken);
+
+  // Re-fetch session row directly so we can match the existing cookie expiry.
+  // Reusing the same expires_at keeps CSRF lifetime tied to the session — no
+  // cookie can outlive the session that minted it.
+  const session = await queryFirst<{ user_id: number; expires_at: string }>(
+    env,
+    `SELECT user_id, expires_at FROM sessions WHERE token_hash = ?`,
+    [tokenHash]
+  );
+  if (!session) {
+    return json(
+      { success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } },
+      401
+    );
+  }
+  if (new Date(session.expires_at).getTime() < Date.now()) {
+    await deleteSession(env, tokenHash);
+    return json(
+      { success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Session expired' } },
+      401
+    );
+  }
+
+  const user = await getSessionUser(env, tokenHash);
+  if (!user) {
+    return json(
+      { success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } },
+      401
+    );
+  }
+
+  const csrfToken = randomBytes(32)
+    .reduce((hex, b) => hex + b.toString(16).padStart(2, '0'), '');
+
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  headers.append('Set-Cookie', buildCsrfCookie(csrfToken, session.expires_at));
+  return new Response(
+    JSON.stringify({ success: true, data: { csrf_token: csrfToken } }),
+    { status: 200, headers }
+  );
+}
+
 // ────────────────────────────────────────────────────
 // Default export — Worker entry point
 // ────────────────────────────────────────────────────
@@ -110,6 +176,10 @@ export default {
     if (path === '/api/admin/auth/login' && method === 'POST') return login(request, env);
     if (path === '/api/admin/auth/logout' && method === 'POST') return logout(request, env);
     if (path === '/api/admin/auth/me' && method === 'GET') return me(request, env);
+    // GET /api/admin/auth/csrf — refresh cms_csrf cookie for already-authenticated
+    // sessions that don't have one yet (Phase C2d). Without this, sessions minted
+    // before CSRF shipped would be locked out of every state-changing endpoint.
+    if (path === '/api/admin/auth/csrf' && method === 'GET') return refreshCsrf(request, env);
 
     // /api/admin/posts
     if (path === '/api/admin/posts') {

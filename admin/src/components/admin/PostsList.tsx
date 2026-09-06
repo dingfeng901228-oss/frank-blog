@@ -310,7 +310,11 @@ export function PostsList({
                         编辑
                       </Link>
                       <a
-                        href={`/${post.locale}/${post.collection === 'notes' ? 'notes' : 'blog'}/${post.slug}`}
+                        // Absolute URL — the admin SPA lives at cms.blog.frank2025.com,
+                        // but published posts are served by the public site at
+                        // blog.frank2025.com. A relative /ja/blog/... from the admin
+                        // host would 404.
+                        href={`https://blog.frank2025.com/${post.locale}/${post.collection === 'notes' ? 'notes' : 'blog'}/${post.slug}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{ color: 'var(--color-primary)', fontSize: 12, marginRight: 12, textDecoration: 'none' }}

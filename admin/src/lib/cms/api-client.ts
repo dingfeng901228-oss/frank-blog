@@ -31,10 +31,25 @@ export type ApiResponse<T> = ApiSuccess<T> | ApiErrorBody;
  * - credentials: 'include' — sends HttpOnly session cookie
  * - JSON Content-Type by default
  * - 401 → redirect to /admin/login (unless already on login page or explicitly skipped)
+ *
+ * Phase C2d §37 — CSRF auto-refresh:
+ * When a state-changing request is rejected with 403 CSRF_INVALID (typically
+ * because the session pre-dates CSRF protection, so the browser has no
+ * cms_csrf cookie to echo), we transparently call GET /api/admin/auth/csrf to
+ * mint a fresh cookie and retry the original request once. Only after that
+ * retry fails do we surface the error or fall back to the login redirect.
  */
 export async function apiFetch(
   path: string,
   init: RequestInit = {}
+): Promise<Response> {
+  return apiFetchWithCsrfRetry(path, init, false);
+}
+
+async function apiFetchWithCsrfRetry(
+  path: string,
+  init: RequestInit,
+  isRetry: boolean
 ): Promise<Response> {
   const method = (init.method || 'GET').toUpperCase();
   const headers: Record<string, string> = {
@@ -55,6 +70,36 @@ export async function apiFetch(
     headers,
   });
 
+  // Phase C2d §37 — one-shot CSRF auto-refresh on 403 CSRF_INVALID.
+  // Conditions:
+  //   - Not a retry already (avoid infinite loops)
+  //   - The error body specifically says CSRF_INVALID (don't auto-refresh on
+  //     any 403 — could mask real auth failures)
+  //   - We're inside /api/admin/* (don't trigger on unrelated 403s)
+  //   - Session must still be alive — handled implicitly: if refresh fails,
+  //     api-client falls through to the 401 redirect logic.
+  if (
+    !isRetry &&
+    method !== 'GET' &&
+    path.startsWith('/api/admin/') &&
+    response.status === 403
+  ) {
+    const cloned = response.clone();
+    let body: any = null;
+    try {
+      body = await cloned.json();
+    } catch {
+      /* not JSON — leave null */
+    }
+    if (body?.error?.code === 'CSRF_INVALID') {
+      const refreshed = await tryRefreshCsrf();
+      if (refreshed) {
+        // Retry the original request once with the freshly-minted cookie.
+        return apiFetchWithCsrfRetry(path, init, true);
+      }
+    }
+  }
+
   // Auto-redirect on 401 (unless we're calling login or already on login page).
   // Also redirect on 403 CSRF_INVALID — typically means the cms_csrf cookie
   // was lost (user logged in before CSRF was enabled, or browser session
@@ -68,8 +113,8 @@ export async function apiFetch(
     try {
       const data = await cloned.json().catch(() => null);
       if (data?.error?.code === 'CSRF_INVALID' && typeof window !== 'undefined') {
-        // Session is likely valid but cms_csrf cookie is missing/stale —
-        // reloading to /admin/login lets the user log in fresh.
+        // Auto-refresh above should have caught this, but if it didn't
+        // (refresh endpoint also 403'd) fall back to forcing re-login.
         window.location.href = '/admin/login';
       }
     } catch {
@@ -78,6 +123,22 @@ export async function apiFetch(
   }
 
   return response;
+}
+
+// Phase C2d §37 — call the CSRF refresh endpoint and let the browser store
+// the new Set-Cookie. Returns true on success, false on any failure (caller
+// should treat the original request as terminal in that case).
+async function tryRefreshCsrf(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/admin/auth/csrf', {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 function isLoginPath(path: string): boolean {
