@@ -501,6 +501,73 @@ export function getRequestIp(request: Request): string {
   return request.headers.get('CF-Connecting-IP') || '0.0.0.0';
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// SECURITY.md #4 + #5 — Input length + slug format validation.
+// Slug must match `^[a-z0-9-]+$` (lowercase, digits, hyphen only).
+// Length limits prevent D1 row-size abuse via long strings.
+// ────────────────────────────────────────────────────────────────────────────
+
+export const MAX_TITLE_LENGTH = 500;
+export const MAX_SLUG_LENGTH = 200;
+export const MAX_DESCRIPTION_LENGTH = 4096;
+export const MAX_CONTENT_LENGTH = 131072; // 128 KB — large enough for long MDX, small enough to fit D1 row limit
+export const MAX_NAME_LENGTH = 100;
+
+const SLUG_FORMAT_RE = /^[a-z0-9-]+$/;
+
+export function validateSlug(slug: unknown): string {
+  if (typeof slug !== 'string' || slug.length === 0) {
+    throw new Error('slug must be a non-empty string');
+  }
+  if (slug.length > MAX_SLUG_LENGTH) {
+    throw new Error(`slug must be at most ${MAX_SLUG_LENGTH} characters`);
+  }
+  if (!SLUG_FORMAT_RE.test(slug)) {
+    throw new Error('slug must match ^[a-z0-9-]+$ (lowercase, digits, hyphen only)');
+  }
+  return slug;
+}
+
+export function validateTitle(title: unknown): string {
+  if (typeof title !== 'string' || title.length === 0) {
+    throw new Error('title must be a non-empty string');
+  }
+  if (title.length > MAX_TITLE_LENGTH) {
+    throw new Error(`title must be at most ${MAX_TITLE_LENGTH} characters`);
+  }
+  return title;
+}
+
+export function validateContent(content: unknown): string {
+  if (typeof content !== 'string' || content.length === 0) {
+    throw new Error('content must be a non-empty string');
+  }
+  if (content.length > MAX_CONTENT_LENGTH) {
+    throw new Error(`content must be at most ${MAX_CONTENT_LENGTH} characters`);
+  }
+  return content;
+}
+
+export function validateDescriptionText(text: unknown): string {
+  if (typeof text !== 'string' || text.length === 0) {
+    throw new Error('description_text must be a non-empty string');
+  }
+  if (text.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`description_text must be at most ${MAX_DESCRIPTION_LENGTH} characters`);
+  }
+  return text;
+}
+
+export function validateName(name: unknown, field: string): string {
+  if (typeof name !== 'string' || name.length === 0) {
+    throw new Error(`${field} must be a non-empty string`);
+  }
+  if (name.length > MAX_NAME_LENGTH) {
+    throw new Error(`${field} must be at most ${MAX_NAME_LENGTH} characters`);
+  }
+  return name;
+}
+
 export function buildDescriptionRaw(text: string): string {
   const escaped = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   if (!text.includes('\n')) {

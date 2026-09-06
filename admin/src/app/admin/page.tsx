@@ -107,9 +107,10 @@ export default function DashboardPage() {
           notesDraft,
           recentActs,
         ] = await Promise.all([
-          fetchCount('collection=blog'),
-          fetchCount('collection=blog&status=published'),
-          fetchCount('collection=blog&status=draft'),
+          // Per §0001_initial.sql: collection ∈ ('posts', 'notes') — 'blog' is a UI label, not a DB value
+          fetchCount('collection=posts'),
+          fetchCount('collection=posts&status=published'),
+          fetchCount('collection=posts&status=draft'),
           fetchCount('collection=notes'),
           fetchCount('collection=notes&status=published'),
           fetchCount('collection=notes&status=draft'),

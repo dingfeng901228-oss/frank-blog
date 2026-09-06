@@ -51,7 +51,28 @@ const args = (() => {
 
 const BASE_URL      = args['base-url']      ?? 'http://localhost:8788';
 const ADMIN_EMAIL   = args['admin-email']   ?? 'admin@frank2025.com';
-const ADMIN_PASS    = args['admin-password'];
+// Fall back to $ADMIN_PASSWORD env var, then walk up from cwd to find .env.local
+// (mirrors the helper in scripts/seed-admin.mjs).
+const fs = await import('node:fs');
+const path = await import('node:path');
+function loadAdminPasswordFromEnvLocal() {
+  let dir = process.cwd();
+  for (let i = 0; i < 5; i++) {
+    const candidate = path.join(dir, '.env.local');
+    if (fs.existsSync(candidate)) {
+      const content = fs.readFileSync(candidate, 'utf8');
+      const m = content.match(/^\s*ADMIN_PASSWORD\s*=\s*(.*?)\s*$/m);
+      if (m) return m[1].replace(/^["']|["']$/g, '');
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+const ADMIN_PASS    = args['admin-password']
+                  ?? process.env.ADMIN_PASSWORD
+                  ?? loadAdminPasswordFromEnvLocal();
 const LOCALE        = args['locale']        ?? 'en';
 const COLLECTION    = args['collection']    ?? 'posts';
 const VERBOSE       = args['verbose']       === true || args['v'] === true;
@@ -63,10 +84,40 @@ if (!ADMIN_PASS) {
 }
 
 // ────────────────────────────────────────────────────
-// HTTP helper (with cookie jar)
+// HTTP helper (with cookie jar + CSRF)
 // ────────────────────────────────────────────────────
 
-let cookieJar = '';
+// Store all cookies in a single Cookie header value (joins "name=value" pairs).
+// Modern fetch API: response.headers.getSetCookie() returns array; older
+// response.headers.get('set-cookie') returns only the first one. Fall back
+// gracefully.
+let cookieJar = new Map(); // name -> value
+
+function cookieJarToHeader() {
+  return Array.from(cookieJar.entries()).map(([k, v]) => `${k}=${v}`).join('; ');
+}
+
+function ingestSetCookies(res) {
+  const setCookies = typeof res.headers.getSetCookie === 'function'
+    ? res.headers.getSetCookie()
+    : (() => {
+        const single = res.headers.get('set-cookie');
+        return single ? [single] : [];
+      })();
+  for (const sc of setCookies) {
+    const first = sc.split(';')[0]; // name=value
+    const eq = first.indexOf('=');
+    if (eq === -1) continue;
+    const name = first.slice(0, eq).trim();
+    const value = first.slice(eq + 1).trim();
+    // Max-Age=0 / expires in the past clears the cookie — drop it from the jar.
+    if (/Max-Age=0/i.test(sc) || /Expires=.*1970/i.test(sc)) {
+      cookieJar.delete(name);
+    } else {
+      cookieJar.set(name, value);
+    }
+  }
+}
 
 async function http(method, path, { body, headers = {}, expectStatus } = {}) {
   const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
@@ -78,15 +129,19 @@ async function http(method, path, { body, headers = {}, expectStatus } = {}) {
       ...headers,
     },
   };
-  if (cookieJar) opts.headers.Cookie = cookieJar;
+  const cookieHeader = cookieJarToHeader();
+  if (cookieHeader) opts.headers.Cookie = cookieHeader;
+
+  // Phase C2 §37 — state-changing requests must echo cms_csrf as X-CSRF-Token.
+  if (method !== 'GET' && method !== 'OPTIONS') {
+    const csrf = cookieJar.get('cms_csrf');
+    if (csrf) opts.headers['X-CSRF-Token'] = csrf;
+  }
+
   if (body !== undefined) opts.body = JSON.stringify(body);
 
   const res = await fetch(url, opts);
-  const setCookie = res.headers.get('set-cookie');
-  if (setCookie) {
-    // Take just the cookie name=value (drop Path, Max-Age, etc.)
-    cookieJar = setCookie.split(';')[0];
-  }
+  ingestSetCookies(res);
 
   let parsedBody = null;
   const ct = res.headers.get('content-type') ?? '';
@@ -171,21 +226,22 @@ async function main() {
     });
     assert(res.body?.success === true, 'response.success is true');
     assert(res.body?.data?.user?.email === ADMIN_EMAIL, 'returned user.email matches');
-    assert(cookieJar.length > 0, 'cookie was set');
+    assert(cookieJar.size > 0, 'cookie was set');
   });
 
   // ───── Test 3: Wrong password returns 401 ─────
   await test('3. POST /api/admin/auth/login (wrong password)', async () => {
-    // Save cookie first (don't pollute main flow)
-    const savedCookie = cookieJar;
-    cookieJar = '';
+    // Save cookies (don't pollute main flow)
+    const savedCookies = new Map(cookieJar);
+    cookieJar.clear();
     const res = await http('POST', '/api/admin/auth/login', {
       body: { email: ADMIN_EMAIL, password: 'wrong-password-12345' },
       expectStatus: 401,
     });
     assert(res.body?.success === false, 'response.success is false');
     assert(res.body?.error?.code === 'INVALID_CREDENTIALS', 'error.code is INVALID_CREDENTIALS');
-    cookieJar = savedCookie;
+    cookieJar.clear();
+    savedCookies.forEach((v, k) => cookieJar.set(k, v));
   });
 
   // ───── Test 4: GET /me with cookie ─────
@@ -197,11 +253,12 @@ async function main() {
 
   // ───── Test 5: GET /me without cookie (expect 401) ─────
   await test('5. GET /api/admin/auth/me (without cookie → 401)', async () => {
-    const savedCookie = cookieJar;
-    cookieJar = '';
+    const savedCookies = new Map(cookieJar);
+    cookieJar.clear();
     const res = await http('GET', '/api/admin/auth/me', { expectStatus: 401 });
     assert(res.body?.error?.code === 'NOT_AUTHENTICATED', 'error.code is NOT_AUTHENTICATED');
-    cookieJar = savedCookie;
+    cookieJar.clear();
+    savedCookies.forEach((v, k) => cookieJar.set(k, v));
   });
 
   // ───── Test 6: Create draft post ─────
@@ -309,16 +366,15 @@ async function main() {
   await test('16. POST /api/admin/auth/logout', async () => {
     const res = await http('POST', '/api/admin/auth/logout', { expectStatus: 200 });
     assert(res.body?.success === true, 'response.success is true');
-    assert(cookieJar.includes('Max-Age=0') || cookieJar.includes('cms_session=;'), 'cookie was cleared');
+    // cms_session should be cleared from the jar (Max-Age=0 dropped it on ingest).
+    assert(!cookieJar.has('cms_session') || cookieJar.get('cms_session') === '', 'session cookie was cleared');
   });
 
   // ───── Test 17: After logout, admin endpoints return 401 ─────
   await test('17. GET /api/admin/posts (no cookie → 401)', async () => {
-    const savedCookie = cookieJar;
-    cookieJar = '';
+    cookieJar.clear();
     const res = await http('GET', '/api/admin/posts', { expectStatus: 401 });
     assert(res.body?.error?.code === 'NOT_AUTHENTICATED', 'error.code is NOT_AUTHENTICATED');
-    cookieJar = savedCookie;
   });
 
   // ───── Summary ─────

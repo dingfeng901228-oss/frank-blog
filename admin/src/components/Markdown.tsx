@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeSlug from 'rehype-slug'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import { type ComponentProps } from 'react'
 
 /**
@@ -28,7 +29,15 @@ export default function Markdown({ children }: { children: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeHighlight, rehypeSlug]}
+      // SECURITY.md #7 — sanitize HTML to prevent XSS via markdown content.
+      // rehype-sanitize uses GitHub-flavored default schema (strips <script>,
+      // on* handlers, javascript: URLs, etc.). Must come BEFORE highlight/slug
+      // so plugins downstream see already-sanitized tree.
+      rehypePlugins={[
+        [rehypeSanitize, defaultSchema],
+        rehypeHighlight,
+        rehypeSlug,
+      ]}
       components={{
         // Force <a> to open in a new tab for external links. We detect
         // "external" by absolute URL — anything starting with http(s)://

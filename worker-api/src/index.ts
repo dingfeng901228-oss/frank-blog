@@ -45,6 +45,11 @@ import {
   listRevisions,
   restoreRevision,
   saveDraft,
+  validateSlug,
+  validateTitle,
+  validateContent,
+  validateDescriptionText,
+  validateName,
 } from './cms';
 
 const SESSION_TTL_DAYS = 7;
@@ -409,6 +414,9 @@ async function createCategoryHandler(request: Request, env: Env): Promise<Respon
     if (body.collection !== 'posts' && body.collection !== 'notes') {
       return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'collection must be "posts" or "notes"' } }, 400);
     }
+    // SECURITY.md #4 #5 — slug format + length validation
+    validateSlug(body.slug);
+    validateName(body.name, 'name');
     const cat = await createCategory(env, body.name, body.slug, body.collection);
     return json({ success: true, data: cat }, 201);
   } catch (e: any) {
@@ -426,6 +434,8 @@ async function updateCategoryHandler(request: Request, env: Env, id: number): Pr
     if (!body.name || !body.slug) {
       return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug required' } }, 400);
     }
+    validateSlug(body.slug);
+    validateName(body.name, 'name');
     await updateCategory(env, id, body.name, body.slug);
     return json({ success: true });
   } catch (e: any) {
@@ -471,6 +481,8 @@ async function createTagHandler(request: Request, env: Env): Promise<Response> {
     if (!body.name || !body.slug) {
       return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug required' } }, 400);
     }
+    validateSlug(body.slug);
+    validateName(body.name, 'name');
     const tag = await createTag(env, body.name, body.slug);
     return json({ success: true, data: tag }, 201);
   } catch (e: any) {
@@ -488,6 +500,8 @@ async function updateTagHandler(request: Request, env: Env, id: number): Promise
     if (!body.name || !body.slug) {
       return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug required' } }, 400);
     }
+    validateSlug(body.slug);
+    validateName(body.name, 'name');
     await updateTag(env, id, body.name, body.slug);
     return json({ success: true });
   } catch (e: any) {
@@ -561,6 +575,15 @@ async function saveDraftHandler(request: Request, env: Env, id: number): Promise
   } catch {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Body must be JSON' } }, 400);
   }
+  // SECURITY.md #4 #5 — validate auto-save payload before UPDATE.
+  try {
+    validateSlug(body.slug);
+    validateTitle(body.title);
+    validateContent(body.content);
+    validateDescriptionText(body.description_text);
+  } catch (e: any) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Invalid field' } }, 400);
+  }
   await saveDraft(env, id, {
     title: String(body.title ?? ''),
     slug: String(body.slug ?? ''),
@@ -574,6 +597,12 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
 async function listPosts(request: Request, env: Env): Promise<Response> {
+  // SECURITY: any authenticated user can list posts (admins only per ADR-004).
+  // Without this check, unauthenticated callers can read drafts + private content.
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
   const url = new URL(request.url);
   const locale = url.searchParams.get('locale');
   const status = url.searchParams.get('status');
@@ -645,6 +674,17 @@ async function createPost(request: Request, env: Env): Promise<Response> {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'locale must be zh/ja/en' } }, 400);
   }
 
+  // SECURITY.md #4 #5 — validate slug format + field length caps before
+  // hitting D1 (avoids wasting a write on bad input).
+  try {
+    validateSlug(body.slug);
+    validateTitle(body.title);
+    validateContent(body.content);
+    validateDescriptionText(body.description_text);
+  } catch (e: any) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Invalid field' } }, 400);
+  }
+
   const existing = await queryFirst<{ id: number }>(
     env,
     `SELECT id FROM posts WHERE collection = ? AND locale = ? AND slug = ?`,
@@ -688,7 +728,12 @@ async function createPost(request: Request, env: Env): Promise<Response> {
   );
 }
 
-async function getPost(_request: Request, env: Env, id: number): Promise<Response> {
+async function getPost(request: Request, env: Env, id: number): Promise<Response> {
+  // SECURITY: only authenticated users can read a single post (incl. drafts).
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
   if (!Number.isFinite(id)) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
   }
@@ -714,6 +759,17 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
   const existing = await queryFirst<Post>(env, `SELECT id FROM posts WHERE id = ?`, [id]);
   if (!existing) {
     return json({ success: false, error: { code: 'NOT_FOUND', message: 'Post not found' } }, 404);
+  }
+
+  // SECURITY.md #4 #5 — validate slug format + field length caps before UPDATE.
+  // Only check fields the client is actually trying to change.
+  try {
+    if (body.slug !== undefined) validateSlug(body.slug);
+    if (body.title !== undefined) validateTitle(body.title);
+    if (body.content !== undefined) validateContent(body.content);
+    if (body.description_text !== undefined) validateDescriptionText(body.description_text);
+  } catch (e: any) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Invalid field' } }, 400);
   }
 
   const updates: string[] = [];
@@ -902,7 +958,12 @@ async function unpublishPost(request: Request, env: Env, id: number): Promise<Re
 // /api/admin/preview/:id
 // ────────────────────────────────────────────────────
 
-async function previewPost(_request: Request, env: Env, id: number): Promise<Response> {
+async function previewPost(request: Request, env: Env, id: number): Promise<Response> {
+  // SECURITY: only authenticated users can preview posts.
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
   if (!Number.isFinite(id)) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
   }

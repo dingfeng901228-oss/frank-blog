@@ -39,3 +39,10 @@ backups/
 admin/node_modules/
 admin/.next/
 admin/out/
+
+# TypeScript build cache
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Next.js auto-generated
+admin/next-env.d.ts

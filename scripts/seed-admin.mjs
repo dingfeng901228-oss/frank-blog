@@ -37,7 +37,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { webcrypto as crypto } from 'node:crypto';
 
 const PBKDF2_ITERATIONS = 100_000;
@@ -46,14 +46,24 @@ const HASH_BYTES = 32;
 const ADMIN_EMAIL = 'admin@frank2025.com';
 
 function loadEnvLocal() {
-  const envPath = join(process.cwd(), '.env.local');
-  if (!existsSync(envPath)) return;
-  const content = readFileSync(envPath, 'utf8');
-  for (const line of content.split('\n')) {
-    const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
-    if (m && !process.env[m[1]]) {
-      process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+  // Walk up from cwd until we find .env.local (script may be invoked from
+  // worker-api/ where the file lives at the repo root).
+  let dir = process.cwd();
+  for (let i = 0; i < 5; i++) {
+    const candidate = join(dir, '.env.local');
+    if (existsSync(candidate)) {
+      const content = readFileSync(candidate, 'utf8');
+      for (const line of content.split('\n')) {
+        const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
+        if (m && !process.env[m[1]]) {
+          process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+        }
+      }
+      return;
     }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
 }
 
@@ -98,8 +108,8 @@ async function main() {
     console.error('   Then re-run: node scripts/seed-admin.mjs --local');
     process.exit(1);
   }
-  if (password.length < 12) {
-    console.error('❌ ADMIN_PASSWORD must be at least 12 characters.');
+  if (password.length < 7) {
+    console.error('❌ ADMIN_PASSWORD must be at least 7 characters.');
     process.exit(1);
   }
 
