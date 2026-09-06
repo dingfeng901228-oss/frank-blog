@@ -45,6 +45,7 @@ import {
   listRevisions,
   restoreRevision,
   saveDraft,
+  getDB,
   validateSlug,
   validateTitle,
   validateContent,
@@ -201,6 +202,14 @@ export default {
     // /api/admin/posts/:id/publish
     m = path.match(/^\/api\/admin\/posts\/(\d+)\/publish$/);
     if (m && method === 'POST') return publishPost(request, env, parseInt(m[1], 10));
+
+    // /api/admin/posts/bulk-publish
+    // NOTE: registered BEFORE the /:id/publish matcher isn't strictly
+    // required (the path doesn't match the digit-only :id regex), but we
+    // group it here so the related bulk endpoints sit together.
+    if (path === '/api/admin/posts/bulk-publish' && method === 'POST') {
+      return bulkPublishPosts(request, env);
+    }
 
     // /api/admin/posts/:id/unpublish
     m = path.match(/^\/api\/admin\/posts\/(\d+)\/unpublish$/);
@@ -980,6 +989,160 @@ async function publishPost(request: Request, env: Env, id: number): Promise<Resp
     },
     deploy.triggered ? 200 : 502
   );
+}
+
+// ────────────────────────────────────────────────────
+// /api/admin/posts/bulk-publish — Phase 11b
+// Publish many drafts in one request and trigger the deploy hook exactly
+// once. Without this, looping client-side over /:id/publish would trigger
+// the Pages rebuild hook N times — turning a 30-second bulk action into
+// a multi-minute queue of N independent rebuilds.
+//
+// Behaviour:
+//   - Accepts { ids: number[] } (max 100 to prevent runaway payloads).
+//   - Uses D1's db.batch() to UPDATE every row + insert one admin_log row
+//     per id in a single network round-trip.
+//   - Triggers the deploy hook ONCE at the end, regardless of how many
+//     posts were actually flipped to 'published'.
+//   - Per-id skip reasons (not found / already published) are reported
+//     individually so the UI can show "5 of 7 succeeded".
+// ────────────────────────────────────────────────────────────
+
+const BULK_PUBLISH_MAX = 100;
+
+async function bulkPublishPosts(request: Request, env: Env): Promise<Response> {
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Body must be JSON' } }, 400);
+  }
+
+  const rawIds = body?.ids;
+  if (!Array.isArray(rawIds) || rawIds.length === 0) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'ids must be a non-empty array' } }, 400);
+  }
+  if (rawIds.length > BULK_PUBLISH_MAX) {
+    return json(
+      { success: false, error: { code: 'INVALID_REQUEST', message: `Cannot publish more than ${BULK_PUBLISH_MAX} posts at once` } },
+      400
+    );
+  }
+
+  // Sanitize: keep only positive integers, dedupe.
+  const seen = new Set<number>();
+  const ids: number[] = [];
+  for (const v of rawIds) {
+    const n = typeof v === 'number' ? v : parseInt(String(v), 10);
+    if (Number.isFinite(n) && n > 0 && !seen.has(n)) {
+      seen.add(n);
+      ids.push(n);
+    }
+  }
+  if (ids.length === 0) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'No valid post ids in request' } }, 400);
+  }
+
+  const now = new Date().toISOString();
+
+  // Look up which ids actually exist + their current status. We only flip
+  // rows that are still 'draft' or 'archived' — re-publishing an
+  // already-published post would update published_at and surprise the user.
+  const placeholders = ids.map(() => '?').join(',');
+  const existing = await queryAll<{ id: number; status: string }>(
+    env,
+    `SELECT id, status FROM posts WHERE id IN (${placeholders})`,
+    ids
+  );
+  const existingMap = new Map(existing.map((p) => [p.id, p.status]));
+
+  const toPublish = ids.filter((id) => {
+    const s = existingMap.get(id);
+    return s === 'draft' || s === 'archived';
+  });
+  const skipped = ids.filter((id) => !existingMap.has(id) || existingMap.get(id) === 'published');
+
+  // Build batch statements. db.batch runs them sequentially within a
+  // single D1 RPC but doesn't wrap them in a transaction — D1 has no
+  // user-visible BEGIN/COMMIT. We accept that: if the batch fails
+  // partway, the worst case is some posts got flipped and some didn't,
+  // which is recoverable (UI re-renders shows updated states).
+  const db = getDB(env);
+  const statements: D1PreparedStatement[] = [];
+  for (const id of toPublish) {
+    statements.push(
+      db.prepare(
+        `UPDATE posts SET status = 'published', published_at = ?, updated_at = datetime('now') WHERE id = ?`
+      ).bind(now, id)
+    );
+  }
+  for (const id of toPublish) {
+    statements.push(
+      db.prepare(
+        `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, 'publish_post', 'post', ?)`
+      ).bind(user.id, id)
+    );
+  }
+
+  let batchError: string | null = null;
+  if (statements.length > 0) {
+    try {
+      await db.batch(statements);
+    } catch (e: any) {
+      batchError = e?.message || 'Batch update failed';
+    }
+  }
+
+  // Trigger the deploy hook exactly once — only if we actually flipped
+  // any rows. This is the whole point of this endpoint vs looping
+  // client-side: a 50-post bulk publish triggers ONE Pages rebuild,
+  // not 50.
+  let deployTriggered = false;
+  let deployError: string | null = null;
+  if (!batchError && toPublish.length > 0) {
+    const deploy = await triggerDeployHook(env);
+    deployTriggered = deploy.triggered;
+    deployError = deploy.error;
+    // Best-effort log the deploy outcome — separate from the per-post
+    // logs above so we don't lose visibility if it failed.
+    try {
+      await execute(
+        env,
+        `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, ?, 'bulk', ?)`,
+        [
+          user.id,
+          deployTriggered ? 'bulk_publish_deploy_ok' : 'bulk_publish_deploy_failed',
+          toPublish.length,
+        ]
+      );
+    } catch {
+      /* log write is best-effort, never block the response */
+    }
+  }
+
+  return json({
+    success: !batchError && deployTriggered,
+    data: {
+      requested: ids.length,
+      published: toPublish.length,
+      skipped: skipped.length,
+      skip_reasons: Object.fromEntries(
+        skipped.map((id) => [
+          String(id),
+          existingMap.has(id) ? 'already_published' : 'not_found',
+        ])
+      ),
+      published_at: now,
+      deploy_triggered: deployTriggered,
+      deploy_error: deployError,
+      ...(batchError ? { batch_error: batchError } : {}),
+    },
+  }, batchError ? 500 : (deployTriggered ? 200 : 502));
 }
 
 async function unpublishPost(request: Request, env: Env, id: number): Promise<Response> {

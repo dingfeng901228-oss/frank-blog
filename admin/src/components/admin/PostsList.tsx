@@ -3,7 +3,7 @@
 // src/components/admin/PostsList.tsx — Phase 2 (shared list component)
 // Used by /admin/posts, /admin/blog, /admin/notes, /admin/drafts
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useToast } from '@/components/ui/Toast';
-import { apiDelete, apiGet } from '@/lib/cms/api-client';
+import { apiDelete, apiGet, apiPost } from '@/lib/cms/api-client';
 
 interface PostSummary {
   id: number;
@@ -84,6 +84,13 @@ export function PostsList({
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Phase 11b — bulk selection. Only meaningful for drafts, but we keep
+  // the state local regardless of which list is showing so that
+  // cross-page navigation doesn't reset on filter change. Bulk publish is
+  // a no-op for already-published rows on the server side anyway.
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const toast = useToast();
 
   const [locale, setLocale] = useState('');
@@ -125,10 +132,99 @@ export function PostsList({
       // here was hitting the CSRF check without the token.
       await apiDelete(`/api/admin/posts/${id}`);
       toast.show('Post deleted', 'success');
+      // Drop the deleted id from the selection if it was selected.
+      setSelectedIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       fetchPosts();
     } catch (e: any) {
       toast.show(e.message || 'Delete failed', 'error');
     }
+  }
+
+  // Phase 11b — Bulk publish selected drafts in one round-trip + one
+  // Pages rebuild. The bulk endpoint (worker-api/src/index.ts:
+  // bulkPublishPosts) returns per-id skip reasons so we can show an
+  // honest "X published, Y already published" summary.
+  async function handleBulkPublish() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Publish ${ids.length} post${ids.length === 1 ? '' : 's'}?`)) return;
+
+    setBulkBusy(true);
+    try {
+      const data = await apiPost<{
+        published: number;
+        skipped: number;
+        skip_reasons: Record<string, string>;
+        deploy_triggered: boolean;
+        deploy_error: string | null;
+      }>('/api/admin/posts/bulk-publish', { ids });
+
+      const summary: string[] = [];
+      summary.push(`已发布 ${data.published} 篇`);
+      if (data.skipped > 0) {
+        const reasons = Object.values(data.skip_reasons || {});
+        const alreadyPublished = reasons.filter((r) => r === 'already_published').length;
+        const notFound = reasons.filter((r) => r === 'not_found').length;
+        const skipParts: string[] = [];
+        if (alreadyPublished > 0) skipParts.push(`${alreadyPublished} 已是已发布`);
+        if (notFound > 0) skipParts.push(`${notFound} 已删除`);
+        if (skipParts.length > 0) {
+          summary.push(`跳过 ${skipParts.join('、')}`);
+        }
+      }
+      if (!data.deploy_triggered && data.deploy_error) {
+        summary.push(`部署触发失败：${data.deploy_error}`);
+      }
+
+      toast.show(summary.join(' · '), data.deploy_triggered ? 'success' : 'error');
+
+      // Clear selection + refresh list to show new statuses.
+      setSelectedIds(new Set());
+      fetchPosts();
+    } catch (e: any) {
+      toast.show(e.message || '批量发布失败', 'error');
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  function toggleSelected(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // Select-all for the current page. Tri-state semantics via `indeterminate`
+  // when some-but-not-all are selected.
+  const allOnPageSelected = useMemo(
+    () => posts.length > 0 && posts.every((p) => selectedIds.has(p.id)),
+    [posts, selectedIds]
+  );
+  const someOnPageSelected = useMemo(
+    () => posts.some((p) => selectedIds.has(p.id)),
+    [posts, selectedIds]
+  );
+
+  function toggleSelectAllOnPage() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        // Deselect all on page
+        for (const p of posts) next.delete(p.id);
+      } else {
+        // Select all on page
+        for (const p of posts) next.add(p.id);
+      }
+      return next;
+    });
   }
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
@@ -138,6 +234,20 @@ export function PostsList({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 24,
+  };
+
+  // Phase 11b — Sticky-feel bulk action bar that slides in above the
+  // table once any row is selected. Sits inside the Card so it shares
+  // the elevated surface background with the table below it.
+  const bulkToolbarStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '10px 16px',
+    background: 'var(--color-surface-elevated)',
+    borderBottom: '1px solid var(--color-border)',
+    borderTopLeftRadius: 'var(--radius-md)',
+    borderTopRightRadius: 'var(--radius-md)',
   };
 
   const titleStyle: CSSProperties = {
@@ -263,9 +373,49 @@ export function PostsList({
             }
           />
         ) : (
+          <>
+          {/* Phase 11b — Bulk action toolbar. Slides in once the user has
+              picked at least one row. Sticky-feel: surfaces publish +
+              clear-selection controls above the table. */}
+          {selectedIds.size > 0 && (
+            <div style={bulkToolbarStyle}>
+              <span style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>
+                已选 <strong>{selectedIds.size}</strong> 项
+              </span>
+              <div style={{ flex: 1 }} />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+                disabled={bulkBusy}
+              >
+                取消选择
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleBulkPublish}
+                disabled={bulkBusy}
+              >
+                {bulkBusy ? '发布中…' : '一键发布'}
+              </Button>
+            </div>
+          )}
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
+                <th style={{ ...thStyle, width: 36 }}>
+                  <input
+                    type="checkbox"
+                    aria-label="全选当前页"
+                    checked={allOnPageSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = !allOnPageSelected && someOnPageSelected;
+                    }}
+                    onChange={toggleSelectAllOnPage}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </th>
                 <th style={thStyle}>Title</th>
                 <th style={thStyle}>Locale</th>
                 <th style={thStyle}>Status</th>
@@ -277,8 +427,23 @@ export function PostsList({
             <tbody>
               {posts.map((post) => {
                 const statusColor = STATUS_COLOR[post.status] || 'var(--color-text-muted)';
+                const isSelected = selectedIds.has(post.id);
                 return (
-                  <tr key={post.id}>
+                  <tr
+                    key={post.id}
+                    style={{
+                      background: isSelected ? 'var(--color-surface-elevated)' : undefined,
+                    }}
+                  >
+                    <td style={tdStyle}>
+                      <input
+                        type="checkbox"
+                        aria-label={`选择 ${post.title}`}
+                        checked={isSelected}
+                        onChange={() => toggleSelected(post.id)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </td>
                     <td style={tdStyle}>
                       <div style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{post.title}</div>
                       <div style={{ color: 'var(--color-text-muted)', fontSize: 11, marginTop: 2, fontFamily: 'var(--font-mono)' }}>
@@ -333,6 +498,7 @@ export function PostsList({
               })}
             </tbody>
           </table>
+          </>
         )}
       </Card>
 
