@@ -1,23 +1,18 @@
-# frank-blog-cms — Cloudflare Pages project (admin SPA only)
-# /api/admin/* moved to frank-blog-cms-api Worker (worker-api/, wrangler@4 deploy).
-# This wrangler.toml is Pages-only config; main field forbidden; functions/ tree removed.
-# Per ADR-001 (Single Worker) + D-1 (项目名 = frank-blog-cms, 不独立 frank-blog-api)
-# wrangler.toml name 仅是配置标签，不代表独立 Worker
+# frank-blog-live — Cloudflare Pages project (blog frontend only)
+# Admin SPA (frank-blog-cms) is a separate Pages project in admin/ subdir.
+# /api/admin/* lives in frank-blog-cms-api Worker (worker-api/, wrangler@4 deploy).
+# This wrangler.toml is Pages-only config for the BLOG frontend (not the admin SPA).
 
-name = "frank-blog-cms"
+name = "frank-blog"
 # main intentionally removed: Pages wrangler.toml forbids `main` (Worker-only).
 #   Worker-only code lives in worker-api/ (deployed via wrangler@4 from CI).
 compatibility_date = "2024-09-01"  # bumped from 2024-01-01
-pages_build_output_dir = "out-admin"  # match cms Pages deploy dir so [[d1_databases]] binding applies (wrangler ignores wrangler.toml unless this field matches the deploy dir)
+pages_build_output_dir = "out"  # blog `next build` exports static HTML here (not out-admin)
 
-# ============================================================
-# D1 database binding (D-3: database_name="frank-blog-db", binding="DB")
-# ============================================================
-# database_id 必须先 `wrangler d1 create frank-blog-db` 创建后填入
-[[d1_databases]]
-binding       = "DB"
-database_name = "frank-blog-db"
-database_id   = "a1dcda23-2b33-4c3b-9eaa-2c0429d35cb1"
+# D1 binding is intentionally NOT in this file:
+#   - Pages projects don't bind D1 directly (only Workers do via [[d1_databases]])
+#   - The blog renders pre-built MDX from `out/` (no request-time DB calls)
+#   - D1 is only bound in worker-api/wrangler.toml (Worker only, binding="DB")
 
 # ============================================================
 # Secrets (D-2: NEVER commit actual values — use `wrangler pages secret put <NAME>`)
@@ -30,7 +25,7 @@ database_id   = "a1dcda23-2b33-4c3b-9eaa-2c0429d35cb1"
 #                                仅放 .env.local (gitignored), 绝不入库
 # [secrets] section intentionally removed: it's a Worker-only construct and
 #   Pages rejects it as "Unexpected fields found in top-level field: secrets".
-#   Configure secrets via: wrangler pages secret put <NAME> --project-name=frank-blog-cms
+#   Configure secrets via: wrangler pages secret put <NAME> --project-name=frank-blog
 
 [vars]
 ENVIRONMENT = "production"
