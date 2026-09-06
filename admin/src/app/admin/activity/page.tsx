@@ -24,21 +24,22 @@ interface ActivityResponse {
 }
 
 function actionLabel(entry: ActivityEntry): string {
+  const kind = entry.resource_type === 'notes' ? '随笔' : '文章';
   switch (entry.action) {
     case 'login':
-      return 'Logged in';
+      return '登录';
     case 'logout':
-      return 'Logged out';
+      return '退出登录';
     case 'login_failed':
-      return 'Failed login attempt';
+      return '登录失败';
     case 'publish_post':
-      return `Published ${entry.resource_type === 'notes' ? 'note' : 'article'} #${entry.resource_id ?? ''}`;
+      return `发布了 ${kind} #${entry.resource_id ?? ''}`;
     case 'unpublish_post':
-      return `Unpublished ${entry.resource_type === 'notes' ? 'note' : 'article'} #${entry.resource_id ?? ''}`;
+      return `取消发布 ${kind} #${entry.resource_id ?? ''}`;
     case 'publish_post_failed':
-      return `Failed to publish #${entry.resource_id ?? ''}`;
+      return `发布失败 #${entry.resource_id ?? ''}`;
     case 'unpublish_post_failed':
-      return `Failed to unpublish #${entry.resource_id ?? ''}`;
+      return `取消发布失败 #${entry.resource_id ?? ''}`;
     default:
       return entry.action;
   }
@@ -71,12 +72,12 @@ function formatRelativeTime(createdAt: string): string {
   const iso = createdAt.includes('T') ? createdAt : createdAt.replace(' ', 'T') + 'Z';
   const ms = Date.now() - new Date(iso).getTime();
   const min = Math.floor(ms / 60000);
-  if (min < 1) return 'just now';
-  if (min < 60) return `${min} min ago`;
+  if (min < 1) return '刚刚';
+  if (min < 60) return `${min} 分钟前`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return `${hr} 小时前`;
   const day = Math.floor(hr / 24);
-  if (day < 7) return `${day}d ago`;
+  if (day < 7) return `${day} 天前`;
   return new Date(iso).toLocaleDateString();
 }
 
@@ -131,18 +132,18 @@ export default function ActivityPage() {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={titleStyle}>Activity</h1>
-        <p style={subStyle}>{items.length} recent</p>
+        <h1 style={titleStyle}>活动日志</h1>
+        <p style={subStyle}>最近 {items.length} 条</p>
       </div>
 
-      {error && <ErrorState title="Failed to load activity" description={error} />}
+      {error && <ErrorState title="加载活动日志失败" description={error} />}
 
       {loading ? (
-        <LoadingState message="Loading activity..." />
+        <LoadingState message="加载活动日志中…" />
       ) : items.length === 0 ? (
         <EmptyState
-          title="No activity yet"
-          description="Activity log entries appear here once you start publishing."
+          title="暂无活动记录"
+          description="一旦你开始发布文章，活动日志会显示在这里。"
         />
       ) : (
         <Card padding="md">

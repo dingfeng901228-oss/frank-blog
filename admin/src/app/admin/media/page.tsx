@@ -90,19 +90,19 @@ export default function MediaPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Upload failed');
+        throw new Error(data.error?.message || '上传失败');
       }
-      toast.show('Media uploaded', 'success');
+      toast.show('媒体已上传', 'success');
       fetchMedia();
     } catch (e: any) {
-      toast.show(e.message || 'Upload failed', 'error');
+      toast.show(e.message || '上传失败', 'error');
     } finally {
       setUploading(false);
     }
   }
 
   async function handleDelete(id: number, filename: string) {
-    if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+    if (!confirm(`确认删除「${filename}」？此操作不可撤销。`)) return;
     try {
       const res = await fetch(`/api/admin/media/${id}`, {
         method: 'DELETE',
@@ -112,10 +112,10 @@ export default function MediaPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error?.message || 'Delete failed');
       }
-      toast.show('Media deleted', 'success');
+      toast.show('媒体已删除', 'success');
       fetchMedia();
     } catch (e: any) {
-      toast.show(e.message || 'Delete failed', 'error');
+      toast.show(e.message || '删除失败', 'error');
     }
   }
 
@@ -174,9 +174,9 @@ export default function MediaPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={titleStyle}>Media Library</h1>
+          <h1 style={titleStyle}>媒体库</h1>
           <p style={subStyle}>
-            {total} total · page {page} of {totalPages}
+            {total} 张 · 第 {page} / {totalPages} 页
           </p>
         </div>
         <div>
@@ -188,7 +188,7 @@ export default function MediaPage() {
             style={{ display: 'none' }}
           />
           <Button variant="primary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-            {uploading ? 'Uploading…' : '+ Upload'}
+            {uploading ? '上传中…' : '+ 上传'}
           </Button>
         </div>
       </div>
@@ -197,25 +197,25 @@ export default function MediaPage() {
       <div style={{ marginBottom: 16 }}>
         <input
           type="search"
-          placeholder="Search filename or alt..."
+          placeholder="按文件名或 alt 搜索..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           style={{ ...inputStyle, width: '100%', maxWidth: 400 }}
         />
       </div>
 
-      {error && <ErrorState title="Failed to load media" description={error} />}
+      {error && <ErrorState title="加载媒体失败" description={error} />}
 
       {/* Grid */}
       {loading ? (
-        <LoadingState message="Loading media…" />
+        <LoadingState message="加载媒体中…" />
       ) : items.length === 0 ? (
         <EmptyState
-          title="No media yet"
-          description="Upload your first image to get started."
+          title="暂无媒体"
+          description="上传第一张图片开始使用。"
           action={
             <Button variant="primary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              + Upload
+              + 上传
             </Button>
           }
         />
@@ -272,17 +272,17 @@ export default function MediaPage() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(item.url);
-                    toast.show('URL copied', 'success');
+                    toast.show('URL 已复制', 'success');
                   }}
                   style={{ ...smallBtn, flex: 1 }}
                 >
-                  Copy URL
+                  复制 URL
                 </button>
                 <button
                   onClick={() => handleDelete(item.id, item.filename)}
                   style={dangerBtn}
                 >
-                  Delete
+                  删除
                 </button>
               </div>
             </Card>
@@ -293,11 +293,11 @@ export default function MediaPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 24 }}>
-          <Button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← Previous</Button>
+          <Button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← 上一页</Button>
           <span style={{ padding: 'var(--space-sm) var(--space-md)', color: 'var(--color-text-muted)', alignSelf: 'center' }}>
             {page} / {totalPages}
           </span>
-          <Button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next →</Button>
+          <Button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>下一页 →</Button>
         </div>
       )}
     </div>

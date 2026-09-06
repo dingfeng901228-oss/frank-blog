@@ -54,6 +54,22 @@ const STATUS_COLOR: Record<string, string> = {
   draft: 'var(--color-warning)',
 };
 
+// Localization maps (English → 中文)
+const LOCALE_LABEL: Record<string, string> = {
+  ja: '日本語',
+  zh: '中文',
+  en: 'English',
+};
+const STATUS_LABEL: Record<string, string> = {
+  published: '已发布',
+  archived: '已归档',
+  draft: '草稿',
+};
+const COLLECTION_LABEL: Record<string, string> = {
+  posts: '博客',
+  notes: '随笔',
+};
+
 export function PostsList({
   title,
   defaultCollection,
@@ -211,38 +227,38 @@ export function PostsList({
 
       <div style={filterBar}>
         <select value={locale} onChange={(e) => { setLocale(e.target.value); setPage(1); }} style={selectStyle}>
-          <option value="">All locales</option>
+          <option value="">所有语言</option>
           <option value="ja">日本語</option>
           <option value="zh">中文</option>
           <option value="en">English</option>
         </select>
         <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} style={selectStyle}>
-          <option value="">All statuses</option>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="archived">Archived</option>
+          <option value="">所有状态</option>
+          <option value="draft">草稿</option>
+          <option value="published">已发布</option>
+          <option value="archived">已归档</option>
         </select>
         <select value={collection} onChange={(e) => { setCollection(e.target.value); setPage(1); }} style={selectStyle}>
-          <option value="">All collections</option>
-          <option value="posts">Posts</option>
-          <option value="notes">Notes</option>
+          <option value="">所有集合</option>
+          <option value="posts">博客</option>
+          <option value="notes">随笔</option>
         </select>
         <input
           type="search"
-          placeholder="Search title or slug..."
+          placeholder="按标题或 slug 搜索..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); fetchPosts(); } }}
           style={inputStyle}
         />
-        <Button onClick={() => { setPage(1); fetchPosts(); }}>Search</Button>
+        <Button onClick={() => { setPage(1); fetchPosts(); }}>搜索</Button>
       </div>
 
-      {error && <ErrorState title="Failed to load" description={error} />}
+      {error && <ErrorState title="加载失败" description={error} />}
 
       <Card padding="none">
         {loading ? (
-          <LoadingState message="Loading..." />
+          <LoadingState message="加载中…" />
         ) : posts.length === 0 ? (
           <EmptyState
             title={`No ${title.toLowerCase()} match these filters`}
@@ -277,12 +293,12 @@ export function PostsList({
                       </div>
                     </td>
                     <td style={tdStyle}>
-                      <span style={badgeStyle('var(--color-border)')}>{post.locale}</span>
+                      <span style={badgeStyle('var(--color-border)')}>{LOCALE_LABEL[post.locale] || post.locale}</span>
                     </td>
                     <td style={tdStyle}>
-                      <span style={badgeStyle(statusColor)}>{post.status}</span>
+                      <span style={badgeStyle(statusColor)}>{STATUS_LABEL[post.status] || post.status}</span>
                     </td>
-                    <td style={tdStyle}>{post.collection}</td>
+                    <td style={tdStyle}>{COLLECTION_LABEL[post.collection] || post.collection}</td>
                     <td style={{ ...tdStyle, fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
                       {post.updated_at}
                     </td>
@@ -291,7 +307,7 @@ export function PostsList({
                         href={`${editBasePath}/edit?id=${post.id}`}
                         style={{ color: 'var(--color-primary)', fontSize: 12, marginRight: 12, textDecoration: 'none' }}
                       >
-                        Edit
+                        编辑
                       </Link>
                       <a
                         href={`/${post.locale}/${post.collection === 'notes' ? 'notes' : 'blog'}/${post.slug}`}
@@ -299,7 +315,7 @@ export function PostsList({
                         rel="noreferrer"
                         style={{ color: 'var(--color-primary)', fontSize: 12, marginRight: 12, textDecoration: 'none' }}
                       >
-                        View
+                        查看
                       </a>
                       <button
                         onClick={() => handleDelete(post.id, post.title)}
@@ -312,7 +328,7 @@ export function PostsList({
                           fontFamily: 'inherit',
                         }}
                       >
-                        Delete
+                        删除
                       </button>
                     </td>
                   </tr>
@@ -325,11 +341,11 @@ export function PostsList({
 
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 24 }}>
-          <Button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← Previous</Button>
+          <Button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← 上一页</Button>
           <span style={{ padding: 'var(--space-sm) var(--space-md)', color: 'var(--color-text-muted)', alignSelf: 'center' }}>
             {page} / {totalPages}
           </span>
-          <Button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next →</Button>
+          <Button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>下一页 →</Button>
         </div>
       )}
     </div>

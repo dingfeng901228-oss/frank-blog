@@ -31,10 +31,10 @@ export default function LoginPage() {
         // Hard navigation so middleware on next request sees the cookie
         window.location.href = '/admin';
       } else {
-        setError(data.error?.message || 'Login failed');
+        setError(data.error?.message || '登录失败');
       }
     } catch {
-      setError('Network error');
+      setError('网络错误');
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export default function LoginPage() {
           Admin
         </h1>
         <p style={{ textAlign: 'center', marginBottom: 40, fontSize: 13, color: '#707080' }}>
-          blog.frank2025.com
+          管理后台 · blog.frank2025.com
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -74,7 +74,7 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            placeholder="邮箱"
             required
             autoFocus
             autoComplete="email"
@@ -84,7 +84,7 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            placeholder="密码"
             required
             autoComplete="current-password"
             style={inputStyle}
@@ -103,12 +103,12 @@ export default function LoginPage() {
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? '登录中…' : '登录'}
           </button>
         </form>
 
         <p style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: '#707080' }}>
-          Sessions expire after 7 days. HttpOnly + Secure cookies.
+          会话 7 天后过期 · HttpOnly + Secure cookie
         </p>
       </div>
     </div>

@@ -63,6 +63,7 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
 
   // ── Phase B §13 ②③ — paste + drag/drop image upload ──
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
 
@@ -190,19 +191,19 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
 
   const isNotes = collection === 'notes';
   const listHref = `/admin/${isNotes ? 'notes' : 'blog'}`;
-  const listLabel = isNotes ? 'Notes' : 'Blog';
-  const typeLabel = isNotes ? 'Note' : 'Article';
-  const newLabel = isNotes ? 'New Note' : 'New Article';
+  const listLabel = isNotes ? '随笔' : '博客';
+  const typeLabel = isNotes ? '随笔' : '文章';
+  const newLabel = isNotes ? '新建随笔' : '新建文章';
 
   return (
     <div style={{ maxWidth: 1200 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Link href={listHref} style={{ fontSize: 12, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
-          ← Back to {listLabel}
+          ← 返回{listLabel}
         </Link>
         <h1 style={{ fontSize: 24, fontWeight: 500, color: 'var(--color-text-primary)' }}>
-          {isEdit ? 'Edit' : newLabel}
+          {isEdit ? '编辑' : newLabel}
         </h1>
       </div>
 
@@ -214,44 +215,95 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
           {/* Title */}
           <input
             type="text"
-            placeholder="Title"
+            placeholder="标题"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             style={{ ...inputStyle, fontSize: 'var(--font-size-xl)', padding: 'var(--space-md)', marginBottom: 16 }}
           />
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 0, marginBottom: 0, borderBottom: '1px solid var(--color-border)' }}>
-            <button
-              onClick={() => setTab('write')}
-              style={{
-                padding: 'var(--space-sm) var(--space-md)',
-                background: tab === 'write' ? 'var(--color-surface-elevated)' : 'transparent',
-                color: tab === 'write' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-                border: 'none',
-                borderBottom: tab === 'write' ? '2px solid var(--color-primary)' : '2px solid transparent',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            >
-              Write
-            </button>
-            <button
-              onClick={() => setTab('preview')}
-              style={{
-                padding: 'var(--space-sm) var(--space-md)',
-                background: tab === 'preview' ? 'var(--color-surface-elevated)' : 'transparent',
-                color: tab === 'preview' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-                border: 'none',
-                borderBottom: tab === 'preview' ? '2px solid var(--color-primary)' : '2px solid transparent',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 'var(--font-size-sm)',
-              }}
-            >
-              Preview
-            </button>
+          {/* Tabs + Toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 0,
+              borderBottom: '1px solid var(--color-border)',
+            }}
+          >
+            <div style={{ display: 'flex', gap: 0 }}>
+              <button
+                onClick={() => setTab('write')}
+                style={{
+                  padding: 'var(--space-sm) var(--space-md)',
+                  background: tab === 'write' ? 'var(--color-surface-elevated)' : 'transparent',
+                  color: tab === 'write' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                  border: 'none',
+                  borderBottom: tab === 'write' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              >
+                编写
+              </button>
+              <button
+                onClick={() => setTab('preview')}
+                style={{
+                  padding: 'var(--space-sm) var(--space-md)',
+                  background: tab === 'preview' ? 'var(--color-surface-elevated)' : 'transparent',
+                  color: tab === 'preview' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                  border: 'none',
+                  borderBottom: tab === 'preview' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: 'var(--font-size-sm)',
+                }}
+              >
+                预览
+              </button>
+            </div>
+            {/* Toolbar — image upload + paste/drop hint */}
+            {tab === 'write' && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingRight: 12 }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) await handleImageFile(file);
+                    // reset so the same file can be picked again
+                    e.target.value = '';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  title="上传图片（也可拖拽到下方文本框，或 Ctrl+V 粘贴）"
+                  style={{
+                    padding: '4px 12px',
+                    background: uploadingImage ? 'var(--color-surface)' : 'var(--color-surface-elevated)',
+                    color: 'var(--color-text-primary)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 12,
+                    fontFamily: 'inherit',
+                    cursor: uploadingImage ? 'wait' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  {uploadingImage ? '上传中…' : '🖼 上传图片'}
+                </button>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  或拖拽 / Ctrl+V
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Content editor / preview */}
@@ -273,7 +325,7 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
                   background: 'rgba(11, 12, 16, 0.85)', borderRadius: 'var(--radius-sm)', pointerEvents: 'none',
                   color: 'var(--color-primary)', fontSize: 'var(--font-size-md)', fontWeight: 500,
                 }}>
-                  Drop image to upload
+                  拖放图片以上传
                 </div>
               )}
               {uploadingImage && (
@@ -283,12 +335,12 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
                   border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)',
                   fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)',
                 }}>
-                  Uploading…
+                  上传中…
                 </div>
               )}
               <textarea
                 ref={contentRef}
-                placeholder="Write your content in Markdown… (Ctrl+V to paste image, or drop image)"
+                placeholder="在此处用 Markdown 编写内容…（可拖拽图片或 Ctrl+V 粘贴图片）"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 onPaste={handlePaste}
@@ -306,15 +358,15 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
             </div>
           ) : (
             <Card padding="md" style={{ minHeight: 500, borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-              {content.trim() ? <Markdown>{content}</Markdown> : <p style={{ color: 'var(--color-text-muted)' }}>Nothing to preview yet.</p>}
+              {content.trim() ? <Markdown>{content}</Markdown> : <p style={{ color: 'var(--color-text-muted)' }}>暂无内容可预览。</p>}
             </Card>
           )}
 
           {/* Description */}
           <div style={{ marginTop: 24 }}>
-            <label style={labelStyle}>Description (used for SEO / feed)</label>
+            <label style={labelStyle}>描述（用于 SEO / 摘要）</label>
             <textarea
-              placeholder="Short description"
+              placeholder="简短描述"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               style={{ ...inputStyle, minHeight: 80 }}
@@ -326,19 +378,19 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
         <div>
           <Card padding="md">
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Status</label>
+              <label style={labelStyle}>状态</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as Status)}
                 style={inputStyle}
               >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="archived">Archived</option>
+                <option value="draft">草稿</option>
+                <option value="published">已发布</option>
+                <option value="archived">归档</option>
               </select>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Locale</label>
+              <label style={labelStyle}>语言</label>
               <select
                 value={locale}
                 onChange={(e) => setLocale(e.target.value as Locale)}
@@ -362,16 +414,16 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
 
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <Button variant="secondary" onClick={() => save('draft')} disabled={saving}>
-              {saving ? 'Saving…' : 'Save Draft'}
+              {saving ? '保存中…' : '保存草稿'}
             </Button>
             <Button variant="primary" onClick={() => save('published')} disabled={saving}>
-              {saving ? 'Publishing…' : status === 'published' ? 'Update' : `Publish ${typeLabel}`}
+              {saving ? '发布中…' : status === 'published' ? '更新发布' : `发布${typeLabel}`}
             </Button>
           </div>
 
           <div style={{ marginTop: 16, fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
-            Collection: {isNotes ? 'notes' : 'posts (Blog)'}<br />
-            {isEdit && initialPost && <>ID: {initialPost.id}</>}
+            集合：{isNotes ? '随笔 (notes)' : '博客 (posts)'}<br />
+            {isEdit && initialPost && <>ID：{initialPost.id}</>}
           </div>
         </div>
       </div>

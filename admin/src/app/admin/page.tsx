@@ -28,9 +28,9 @@ interface ActivityItem {
 
 const greeting = () => {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return '早上好';
+  if (h < 18) return '下午好';
+  return '晚上好';
 };
 
 const formatRelativeTime = (createdAt: string): string => {
@@ -38,33 +38,25 @@ const formatRelativeTime = (createdAt: string): string => {
   const iso = createdAt.includes('T') ? createdAt : createdAt.replace(' ', 'T') + 'Z';
   const ms = Date.now() - new Date(iso).getTime();
   const min = Math.floor(ms / 60000);
-  if (min < 1) return 'just now';
-  if (min < 60) return `${min} min ago`;
+  if (min < 1) return '刚刚';
+  if (min < 60) return `${min} 分钟前`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return `${hr} 小时前`;
   const day = Math.floor(hr / 24);
-  if (day < 7) return `${day}d ago`;
+  if (day < 7) return `${day} 天前`;
   return new Date(iso).toLocaleDateString();
 };
 
 const formatAction = (item: ActivityItem): string => {
   switch (item.action) {
-    case 'login':
-      return 'Logged in';
-    case 'logout':
-      return 'Logged out';
-    case 'login_failed':
-      return 'Failed login attempt';
-    case 'publish_post':
-      return 'Published a post';
-    case 'unpublish_post':
-      return 'Unpublished a post';
-    case 'publish_post_failed':
-      return 'Failed to publish a post';
-    case 'unpublish_post_failed':
-      return 'Failed to unpublish a post';
-    default:
-      return item.action;
+    case 'login': return '登录';
+    case 'logout': return '退出登录';
+    case 'login_failed': return '登录失败';
+    case 'publish_post': return '发布了文章';
+    case 'unpublish_post': return '取消发布文章';
+    case 'publish_post_failed': return '发布文章失败';
+    case 'unpublish_post_failed': return '取消发布失败';
+    default: return item.action;
   }
 };
 
@@ -131,8 +123,8 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  if (loading) return <LoadingState message="Loading dashboard..." />;
-  if (error) return <ErrorState title="Failed to load dashboard" description={error} />;
+  if (loading) return <LoadingState message="加载中…" />;
+  if (error) return <ErrorState title="加载仪表盘失败" description={error} />;
 
   const sectionTitle: CSSProperties = {
     fontSize: 11,
@@ -177,59 +169,59 @@ export default function DashboardPage() {
   return (
     <div style={{ maxWidth: 960 }}>
       <h1 style={{ fontSize: 32, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 8 }}>
-        {greeting()}, Frank.
+        {greeting()}，Frank
       </h1>
       <p style={{ fontSize: 16, color: 'var(--color-text-secondary)', marginBottom: 32 }}>
-        Here's what's happening with your content.
+        这是你的内容近况。
       </p>
 
-      <div style={sectionTitle}>Content</div>
+      <div style={sectionTitle}>内容</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 32 }}>
         {blog && (
           <Card padding="lg">
-            <div style={cardLabel}>Blog</div>
+            <div style={cardLabel}>博客</div>
             <div style={cardNumber}>{blog.total}</div>
-            <div style={cardSublabel}>Articles</div>
+            <div style={cardSublabel}>篇文章</div>
             <div style={statRow}>
-              <span style={{ color: 'var(--color-success)' }}>{blog.published} Published</span>
-              <span style={{ color: 'var(--color-warning)' }}>{blog.drafts} Drafts</span>
+              <span style={{ color: 'var(--color-success)' }}>{blog.published} 已发布</span>
+              <span style={{ color: 'var(--color-warning)' }}>{blog.drafts} 草稿</span>
             </div>
           </Card>
         )}
         {notes && (
           <Card padding="lg">
-            <div style={cardLabel}>Notes</div>
+            <div style={cardLabel}>随笔</div>
             <div style={cardNumber}>{notes.total}</div>
-            <div style={cardSublabel}>Notes</div>
+            <div style={cardSublabel}>篇</div>
             <div style={statRow}>
-              <span style={{ color: 'var(--color-success)' }}>{notes.published} Published</span>
-              <span style={{ color: 'var(--color-warning)' }}>{notes.drafts} Drafts</span>
+              <span style={{ color: 'var(--color-success)' }}>{notes.published} 已发布</span>
+              <span style={{ color: 'var(--color-warning)' }}>{notes.drafts} 草稿</span>
             </div>
           </Card>
         )}
         {drafts !== null && (
           <Card padding="lg">
-            <div style={cardLabel}>Drafts</div>
+            <div style={cardLabel}>待发布</div>
             <div style={cardNumber}>{drafts}</div>
-            <div style={cardSublabel}>Awaiting publish</div>
+            <div style={cardSublabel}>篇草稿</div>
           </Card>
         )}
       </div>
 
-      <div style={sectionTitle}>Quick actions</div>
+      <div style={sectionTitle}>快捷操作</div>
       <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
         <Link href="/admin/blog/new" style={{ textDecoration: 'none' }}>
-          <button style={primaryButtonStyle}>+ New Article</button>
+          <button style={primaryButtonStyle}>+ 新建文章</button>
         </Link>
         <Link href="/admin/notes/new" style={{ textDecoration: 'none' }}>
-          <button style={primaryButtonStyle}>+ New Note</button>
+          <button style={primaryButtonStyle}>+ 新建随笔</button>
         </Link>
         <Link href="/admin/media" style={{ textDecoration: 'none' }}>
-          <button style={primaryButtonStyle}>Media Library</button>
+          <button style={primaryButtonStyle}>媒体库</button>
         </Link>
       </div>
 
-      <div style={sectionTitle}>Recent activity</div>
+      <div style={sectionTitle}>最近活动</div>
       {activity && activity.length > 0 ? (
         <Card padding="md">
           {activity.map((item, i) => (
@@ -253,8 +245,8 @@ export default function DashboardPage() {
         </Card>
       ) : (
         <EmptyState
-          title="No recent activity"
-          description="Activity log entries will appear here once you start publishing. (Activity endpoint arrives in Phase 6.)"
+          title="暂无活动"
+          description="一旦你开始发布文章，活动日志会显示在这里。"
         />
       )}
     </div>

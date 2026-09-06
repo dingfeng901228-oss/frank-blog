@@ -4,9 +4,9 @@ import { PlaceholderPage } from '@/components/PlaceholderPage';
 export default function SettingsPage() {
   return (
     <PlaceholderPage
-      title="Settings"
-      phase="Future phase"
-      description="Account / preferences settings — change password, profile display name, theme preferences. Backend endpoints TBD."
+      title="设置"
+      phase="后续阶段"
+      description="账户 / 偏好设置 —— 修改密码、个人资料显示名、主题偏好。后端接口待定。"
     />
   );
 }

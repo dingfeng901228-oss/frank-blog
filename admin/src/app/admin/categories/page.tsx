@@ -63,7 +63,7 @@ export default function CategoriesPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!formName.trim() || !formSlug.trim()) {
-      toast.show('Name and slug required', 'error');
+      toast.show('请填写名称和 slug', 'error');
       return;
     }
     try {
@@ -79,20 +79,20 @@ export default function CategoriesPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Create failed');
+        throw new Error(data.error?.message || '创建失败');
       }
-      toast.show('Category created', 'success');
+      toast.show('分类已创建', 'success');
       setShowForm(false);
       setFormName('');
       setFormSlug('');
       fetchCategories();
     } catch (e: any) {
-      toast.show(e.message || 'Create failed', 'error');
+      toast.show(e.message || '创建失败', 'error');
     }
   }
 
   async function handleDelete(id: number, name: string) {
-    if (!confirm(`Delete category "${name}"? This cannot be undone.`)) return;
+    if (!confirm(`确认删除分类「${name}」？此操作不可撤销。`)) return;
     try {
       const res = await fetch(`/api/admin/categories/${id}`, {
         method: 'DELETE',
@@ -100,12 +100,12 @@ export default function CategoriesPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error?.message || 'Delete failed');
+        throw new Error(data.error?.message || '删除失败');
       }
-      toast.show('Category deleted', 'success');
+      toast.show('分类已删除', 'success');
       fetchCategories();
     } catch (e: any) {
-      toast.show(e.message || 'Delete failed', 'error');
+      toast.show(e.message || '删除失败', 'error');
     }
   }
 
@@ -115,9 +115,9 @@ export default function CategoriesPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 500, color: 'var(--color-text-primary)' }}>Categories</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 500, color: 'var(--color-text-primary)' }}>分类</h1>
         <Button variant="primary" onClick={() => setShowForm((s) => !s)}>
-          {showForm ? 'Cancel' : '+ New Category'}
+          {showForm ? '取消' : '+ 新建分类'}
         </Button>
       </div>
 
@@ -125,7 +125,7 @@ export default function CategoriesPage() {
         <Card padding="md" style={{ marginBottom: 24 }}>
           <form onSubmit={handleCreate} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 160 }}>
-              <label style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, display: 'block' }}>Name</label>
+              <label style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, display: 'block' }}>名称</label>
               <input
                 type="text"
                 value={formName}
@@ -146,51 +146,51 @@ export default function CategoriesPage() {
               />
             </div>
             <div style={{ minWidth: 120 }}>
-              <label style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, display: 'block' }}>Collection</label>
+              <label style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, display: 'block' }}>集合</label>
               <select
                 value={formCollection}
                 onChange={(e) => setFormCollection(e.target.value as 'posts' | 'notes')}
                 style={{ ...inputStyle, width: '100%' }}
               >
-                <option value="posts">Blog</option>
-                <option value="notes">Notes</option>
+                <option value="posts">博客</option>
+                <option value="notes">随笔</option>
               </select>
             </div>
-            <Button variant="primary" type="submit">Create</Button>
+            <Button variant="primary" type="submit">创建</Button>
           </form>
         </Card>
       )}
 
-      {error && <ErrorState title="Failed to load categories" description={error} />}
+      {error && <ErrorState title="加载分类失败" description={error} />}
 
       {loading ? (
-        <LoadingState message="Loading categories..." />
+        <LoadingState message="加载分类中…" />
       ) : items.length === 0 ? (
         <EmptyState
-          title="No categories yet"
-          description="Create your first category to organize posts."
+          title="暂无分类"
+          description="创建第一个分类来组织文章。"
           action={
-            <Button variant="primary" onClick={() => setShowForm(true)}>+ New Category</Button>
+            <Button variant="primary" onClick={() => setShowForm(true)}>+ 新建分类</Button>
           }
         />
       ) : (
         <>
           <h2 style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: 12 }}>
-            Blog ({blogCategories.length})
+            博客 ({blogCategories.length})
           </h2>
           {blogCategories.length === 0 ? (
             <Card padding="md" style={{ marginBottom: 24, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
-              No blog categories
+              暂无博客分类
             </Card>
           ) : (
             <CategoryList items={blogCategories} onDelete={handleDelete} />
           )}
           <h2 style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: 12, marginTop: 32 }}>
-            Notes ({noteCategories.length})
+            随笔 ({noteCategories.length})
           </h2>
           {noteCategories.length === 0 ? (
             <Card padding="md" style={{ marginBottom: 24, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
-              No note categories
+              暂无随笔分类
             </Card>
           ) : (
             <CategoryList items={noteCategories} onDelete={handleDelete} />
@@ -213,9 +213,9 @@ function CategoryList({
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th style={thStyle}>Name</th>
+            <th style={thStyle}>名称</th>
             <th style={thStyle}>Slug</th>
-            <th style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -239,7 +239,7 @@ function CategoryList({
                     fontFamily: 'inherit',
                   }}
                 >
-                  Delete
+                  删除
                 </button>
               </td>
             </tr>

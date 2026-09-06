@@ -5,10 +5,10 @@ import { PostsList } from '@/components/admin/PostsList';
 export default function DraftsPage() {
   return (
     <PostsList
-      title="Drafts"
+      title="草稿箱"
       defaultStatus="draft"
       newHref="/admin/posts/new"
-      newLabel="+ New"
+      newLabel="+ 新建"
     />
   );
 }

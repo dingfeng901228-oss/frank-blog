@@ -60,7 +60,7 @@ export default function TagsPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!formName.trim()) {
-      toast.show('Name required', 'error');
+      toast.show('请填写名称', 'error');
       return;
     }
     const slug = formName.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
@@ -73,19 +73,19 @@ export default function TagsPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Create failed');
+        throw new Error(data.error?.message || '创建失败');
       }
-      toast.show('Tag created', 'success');
+      toast.show('标签已创建', 'success');
       setShowForm(false);
       setFormSlug('');
       fetchTags();
     } catch (e: any) {
-      toast.show(e.message || 'Create failed', 'error');
+      toast.show(e.message || '创建失败', 'error');
     }
   }
 
   async function handleDelete(id: number, name: string) {
-    if (!confirm(`Delete tag "${name}"? This cannot be undone.`)) return;
+    if (!confirm(`确认删除标签「${name}」？此操作不可撤销。`)) return;
     try {
       const res = await fetch(`/api/admin/tags/${id}`, {
         method: 'DELETE',
@@ -93,12 +93,12 @@ export default function TagsPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error?.message || 'Delete failed');
+        throw new Error(data.error?.message || '删除失败');
       }
-      toast.show('Tag deleted', 'success');
+      toast.show('标签已删除', 'success');
       fetchTags();
     } catch (e: any) {
-      toast.show(e.message || 'Delete failed', 'error');
+      toast.show(e.message || '删除失败', 'error');
     }
   }
 
@@ -106,13 +106,13 @@ export default function TagsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>Tags</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>标签</h1>
           <p style={{ fontSize: 12, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
-            {items.length} total
+            共 {items.length} 个
           </p>
         </div>
         <Button variant="primary" onClick={() => setShowForm((s) => !s)}>
-          {showForm ? 'Cancel' : '+ New Tag'}
+          {showForm ? '取消' : '+ 新建标签'}
         </Button>
       </div>
 
@@ -120,38 +120,38 @@ export default function TagsPage() {
         <Card padding="md" style={{ marginBottom: 24 }}>
           <form onSubmit={handleCreate} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <label style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, display: 'block' }}>Name</label>
+              <label style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, display: 'block' }}>名称</label>
               <input
                 type="text"
                 value={formName}
                 onChange={(e) => setFormSlug(e.target.value)}
                 style={{ ...inputStyle, width: '100%' }}
-                placeholder="e.g. Japanese, Cloudflare, AI"
+                placeholder="例如：日本語、Cloudflare、AI"
               />
             </div>
-            <Button variant="primary" type="submit">Create</Button>
+            <Button variant="primary" type="submit">创建</Button>
           </form>
         </Card>
       )}
 
-      {error && <ErrorState title="Failed to load tags" description={error} />}
+      {error && <ErrorState title="加载标签失败" description={error} />}
 
       {loading ? (
-        <LoadingState message="Loading tags..." />
+        <LoadingState message="加载标签中…" />
       ) : items.length === 0 ? (
         <EmptyState
-          title="No tags yet"
-          description="Create tags to label your articles."
-          action={<Button variant="primary" onClick={() => setShowForm(true)}>+ New Tag</Button>}
+          title="暂无标签"
+          description="创建标签来标记文章主题。"
+          action={<Button variant="primary" onClick={() => setShowForm(true)}>+ 新建标签</Button>}
         />
       ) : (
         <Card padding="none">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={thStyle}>Name</th>
+                <th style={thStyle}>名称</th>
                 <th style={thStyle}>Slug</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -177,7 +177,7 @@ export default function TagsPage() {
                         fontFamily: 'inherit',
                       }}
                     >
-                      Delete
+                      删除
                     </button>
                   </td>
                 </tr>

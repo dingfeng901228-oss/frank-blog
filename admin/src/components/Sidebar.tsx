@@ -21,28 +21,28 @@ interface NavSection {
 }
 
 const navSections: NavSection[] = [
-  { items: [{ label: 'Overview', href: '/admin' }] },
+  { items: [{ label: '概览', href: '/admin' }] },
   {
-    title: 'Content',
+    title: '内容',
     items: [
-      { label: 'Blog', href: '/admin/blog' },
-      { label: 'Notes', href: '/admin/notes' },
-      { label: 'Drafts', href: '/admin/drafts' },
+      { label: '博客', href: '/admin/blog' },
+      { label: '随笔', href: '/admin/notes' },
+      { label: '草稿箱', href: '/admin/drafts' },
     ],
   },
   {
-    title: 'Organize',
+    title: '整理',
     items: [
-      { label: 'Categories', href: '/admin/categories' },
-      { label: 'Tags', href: '/admin/tags' },
-      { label: 'Media', href: '/admin/media' },
+      { label: '分类', href: '/admin/categories' },
+      { label: '标签', href: '/admin/tags' },
+      { label: '媒体库', href: '/admin/media' },
     ],
   },
   {
-    title: 'System',
+    title: '系统',
     items: [
-      { label: 'Activity', href: '/admin/activity' },
-      { label: 'Settings', href: '/admin/settings' },
+      { label: '活动日志', href: '/admin/activity' },
+      { label: '设置', href: '/admin/settings' },
     ],
   },
 ];
@@ -61,10 +61,10 @@ export function Sidebar() {
       if (res.ok) {
         router.push('/admin/login');
       } else {
-        toast.show('Logout failed', 'error');
+        toast.show('退出登录失败', 'error');
       }
     } catch (e) {
-      toast.show('Logout failed', 'error');
+      toast.show('退出登录失败', 'error');
     }
   }
 
@@ -137,15 +137,15 @@ export function Sidebar() {
 
       <div style={footerStyle}>
         <a
-          href="https://frank2025.com"
+          href="https://blog.frank2025.com"
           target="_blank"
           rel="noreferrer"
           style={linkStyle(false)}
         >
-          ↗ View Website
+          ↗ 访问博客
         </a>
         <Button variant="ghost" size="sm" onClick={handleLogout} style={{ width: '100%', justifyContent: 'flex-start' }}>
-          Logout
+          退出登录
         </Button>
       </div>
     </aside>

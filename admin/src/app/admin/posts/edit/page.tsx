@@ -81,7 +81,7 @@ function EditPostInner() {
         setForm({ ...currentForm, content: currentForm.content + md });
       }
     } catch (e: any) {
-      setError(e.message || 'Upload failed');
+      setError(e.message || '上传失败');
     } finally {
       setUploadingImage(false);
     }
@@ -246,10 +246,10 @@ function EditPostInner() {
         credentials: 'include',
       });
       if (res.ok) {
-        setSavedAt(`Published at ${new Date().toLocaleTimeString()}`);
+        setSavedAt(`发布于 ${new Date().toLocaleTimeString()}`);
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(`Publish failed: ${data.error?.message || res.statusText}`);
+        setError(`发布失败：${data.error?.message || res.statusText}`);
       }
       fetchPost();
     } catch (e: any) {
@@ -257,7 +257,7 @@ function EditPostInner() {
         setConflictMessage(e.message);
         setConflictOpen(true);
       } else {
-        setError(`Publish failed: ${e.message}`);
+        setError(`发布失败：${e.message}`);
       }
     } finally {
       setPublishing(false);
@@ -266,7 +266,7 @@ function EditPostInner() {
 
   async function handleDelete() {
     if (!post) return;
-    if (!confirm(`Delete post "${post.title}"? This cannot be undone.`)) return;
+    if (!confirm(`确认删除文章「${post.title}」？此操作不可撤销。`)) return;
     try {
       await fetch(`/api/admin/posts/${postId}`, {
         method: 'DELETE',
@@ -280,7 +280,7 @@ function EditPostInner() {
 
   // ── Phase A §26 — Restore revision handler ──
   async function handleRestoreRevision(revisionId: number) {
-    if (!confirm('Restore this revision? Current content will be overwritten with the revision snapshot.')) return;
+    if (!confirm('确认恢复此版本？当前内容将被覆盖。')) return;
     setRestoringId(revisionId);
     try {
       const res = await fetch(`/api/admin/posts/${postId}/revisions/${revisionId}/restore`, {
@@ -295,7 +295,7 @@ function EditPostInner() {
       await fetchRevisions();
       setDrawerOpen(false);
     } catch (e: any) {
-      setError(`Restore failed: ${e.message}`);
+      setError(`恢复失败：${e.message}`);
     } finally {
       setRestoringId(null);
     }
@@ -304,8 +304,8 @@ function EditPostInner() {
   if (!Number.isFinite(postId)) {
     return (
       <div style={s.page}>
-        <p style={s.error}>Missing or invalid post id. Use ?id=123 in the URL.</p>
-        <Link href="/admin/posts" style={s.backLink}>← Posts</Link>
+        <p style={s.error}>缺少或无效的文章 ID。请在 URL 中使用 ?id=123 形式。</p>
+        <Link href="/admin/posts" style={s.backLink}>← 返回列表</Link>
       </div>
     );
   }
@@ -313,7 +313,7 @@ function EditPostInner() {
   if (loading) {
     return (
       <div style={s.page}>
-        <p style={{ color: '#707080' }}>Loading…</p>
+        <p style={{ color: '#707080' }}>加载中…</p>
       </div>
     );
   }
@@ -321,7 +321,7 @@ function EditPostInner() {
   if (error && !form) {
     return (
       <div style={s.page}>
-        <Link href="/admin/posts" style={s.backLink}>← Posts</Link>
+        <Link href="/admin/posts" style={s.backLink}>← 返回列表</Link>
         <p style={{ ...s.error, marginTop: 16 }}>{error}</p>
       </div>
     );
@@ -332,9 +332,9 @@ function EditPostInner() {
   return (
     <div style={s.page}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
-        <Link href="/admin/posts" style={s.backLink}>← Posts</Link>
+        <Link href="/admin/posts" style={s.backLink}>← 返回列表</Link>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 8 }}>
-          <h1 style={s.h1}>Edit Post #{postId}</h1>
+          <h1 style={s.h1}>编辑文章 #{postId}</h1>
           <button
             onClick={() => setDrawerOpen(true)}
             style={{
@@ -350,23 +350,23 @@ function EditPostInner() {
             }}
             type="button"
           >
-            📜 History ({revisions.length})
+            📜 历史 ({revisions.length})
           </button>
           <div style={{ fontSize: 11, color: '#707080', textAlign: 'right' }}>
-            <div>Updated {form.updated_at}</div>
-            {form.published_at && <div>Published {form.published_at}</div>}
-            {autoSaving && <div style={{ color: '#F59E0B' }}>Saving…</div>}
-            {!autoSaving && autoSavedAt && <div style={{ color: '#10B981' }}>Saved at {autoSavedAt}</div>}
+            <div>更新时间 {form.updated_at}</div>
+            {form.published_at && <div>发布时间 {form.published_at}</div>}
+            {autoSaving && <div style={{ color: '#F59E0B' }}>保存中…</div>}
+            {!autoSaving && autoSavedAt && <div style={{ color: '#10B981' }}>已自动保存于 {autoSavedAt}</div>}
           </div>
         </div>
 
         {/* Tabs */}
         <div style={tabBarStyle}>
           <button onClick={() => setMode('edit')} style={mode === 'edit' ? tabActiveStyle : tabStyle}>
-            ✏️ Edit
+            ✏️ 编辑
           </button>
           <button onClick={() => setMode('preview')} style={mode === 'preview' ? tabActiveStyle : tabStyle}>
-            👁 Preview
+            👁 预览
           </button>
         </div>
 
@@ -383,14 +383,14 @@ function EditPostInner() {
           <form onSubmit={handleSave} style={s.form}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
               <div>
-                <label style={s.label}>Collection</label>
+                <label style={s.label}>集合</label>
                 <select value={form.collection} onChange={(e) => setForm({ ...form, collection: e.target.value as PostCollection })} style={s.input}>
-                  <option value="posts">Posts</option>
-                  <option value="notes">Notes</option>
+                  <option value="posts">博客</option>
+                  <option value="notes">随笔</option>
                 </select>
               </div>
               <div>
-                <label style={s.label}>Locale</label>
+                <label style={s.label}>语言</label>
                 <select value={form.locale} onChange={(e) => setForm({ ...form, locale: e.target.value as Locale })} style={s.input}>
                   <option value="ja">日本語</option>
                   <option value="zh">中文</option>
@@ -398,16 +398,16 @@ function EditPostInner() {
                 </select>
               </div>
               <div>
-                <label style={s.label}>Status</label>
+                <label style={s.label}>状态</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as FormState['status'] })} style={s.input}>
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
+                  <option value="draft">草稿</option>
+                  <option value="published">已发布</option>
+                  <option value="archived">归档</option>
                 </select>
               </div>
             </div>
 
-            <Field label="Title">
+            <Field label="标题">
               <input
                 type="text"
                 value={form.title}
@@ -427,7 +427,7 @@ function EditPostInner() {
               />
             </Field>
 
-            <Field label="Description" hint="multi-line OK (preserves as YAML block scalar)">
+            <Field label="描述" hint="支持多行（保留为 YAML block scalar）">
               <textarea
                 value={form.description_text}
                 onChange={(e) => setForm({ ...form, description_text: e.target.value })}
@@ -436,7 +436,7 @@ function EditPostInner() {
               />
             </Field>
 
-            <Field label="Cover Image URL">
+            <Field label="封面图 URL">
               <input
                 type="text"
                 value={form.cover_image}
@@ -445,7 +445,7 @@ function EditPostInner() {
               />
             </Field>
 
-            <Field label="Tags" hint="comma-separated">
+            <Field label="标签" hint="逗号分隔">
               <input
                 type="text"
                 value={form.tags}
@@ -454,7 +454,7 @@ function EditPostInner() {
               />
             </Field>
 
-            <Field label="Featured">
+            <Field label="精选">
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <input
                   type="checkbox"
@@ -462,11 +462,11 @@ function EditPostInner() {
                   onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
                   style={{ width: 16, height: 16 }}
                 />
-                <span style={{ fontSize: 13 }}>Show on homepage featured section</span>
+                <span style={{ fontSize: 13 }}>在首页精选区域显示</span>
               </label>
             </Field>
 
-            <Field label="Content (MDX)" hint="Ctrl+V paste image, or drag image in">
+            <Field label="正文 (MDX)" hint="可 Ctrl+V 粘贴图片，或拖拽图片到此处">
               <div
                 onDragOver={handleContentDragOver}
                 onDragLeave={handleContentDragLeave}
@@ -484,7 +484,7 @@ function EditPostInner() {
                     background: 'rgba(0, 0, 0, 0.8)', borderRadius: 8, pointerEvents: 'none',
                     color: '#10b981', fontSize: 14, fontWeight: 500,
                   }}>
-                    Drop image to upload
+                    拖放图片以上传
                   </div>
                 )}
                 {uploadingImage && (
@@ -494,7 +494,7 @@ function EditPostInner() {
                     border: '1px solid #1E1E2E', borderRadius: 6,
                     fontSize: 11, color: '#707887',
                   }}>
-                    Uploading…
+                    上传中…
                   </div>
                 )}
                 <textarea
@@ -517,7 +517,7 @@ function EditPostInner() {
 
             <div style={{ display: 'flex', gap: 8, marginTop: 24, flexWrap: 'wrap' }}>
               <button type="submit" disabled={saving} style={{ ...s.primaryButton, opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'Saving…' : 'Save Draft'}
+                {saving ? '保存中…' : '保存草稿'}
               </button>
               <button
                 type="button"
@@ -525,16 +525,16 @@ function EditPostInner() {
                 disabled={publishing}
                 style={{ ...s.primaryButton, backgroundColor: '#10b981', opacity: publishing ? 0.7 : 1 }}
               >
-                {publishing ? 'Publishing…' : 'Publish'}
+                {publishing ? '发布中…' : (form.status === 'published' ? '更新发布' : '发布')}
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
                 style={{ ...s.secondaryButton, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
               >
-                Delete
+                删除
               </button>
-              <Link href="/admin/posts" style={s.secondaryButton}>Cancel</Link>
+              <Link href="/admin/posts" style={s.secondaryButton}>取消</Link>
             </div>
           </form>
         )}
@@ -570,10 +570,10 @@ function PreviewPanel({ form }: { form: FormState }) {
       {/* Preview header */}
       <div style={{ borderBottom: '1px solid #1E1E2E', paddingBottom: 16, marginBottom: 24 }}>
         <h2 style={{ fontSize: 11, color: '#707080', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: 8 }}>
-          Preview · live unsaved changes
+          预览 · 显示未保存的修改
         </h2>
         <h1 style={{ fontSize: 32, fontFamily: 'Georgia, serif', fontWeight: 500, lineHeight: 1.2, marginBottom: 12 }}>
-          {form.title || <span style={{ color: '#707080' }}>(Untitled)</span>}
+          {form.title || <span style={{ color: '#707080' }}>（未命名）</span>}
         </h1>
         {form.description_text && (
           <p style={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.65)', lineHeight: 1.5 }}>
@@ -590,7 +590,7 @@ function PreviewPanel({ form }: { form: FormState }) {
         {form.content ? (
           <Markdown>{form.content}</Markdown>
         ) : (
-          <p style={{ color: '#707080', fontStyle: 'italic' }}>(No content yet)</p>
+          <p style={{ color: '#707080', fontStyle: 'italic' }}>（暂无内容）</p>
         )}
       </article>
     </div>
@@ -642,7 +642,7 @@ function RevisionDrawer({ open, revisions, loading, restoringId, onRestore, onCl
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, color: '#F5F7FA', margin: 0 }}>Revision History</h2>
+          <h2 style={{ fontSize: 16, color: '#F5F7FA', margin: 0 }}>修订历史</h2>
           <button
             onClick={onClose}
             style={{ background: 'transparent', border: 'none', color: '#A6ADBB', fontSize: 20, cursor: 'pointer' }}
@@ -651,9 +651,9 @@ function RevisionDrawer({ open, revisions, loading, restoringId, onRestore, onCl
             ×
           </button>
         </div>
-        {loading && <p style={{ color: '#707887', fontSize: 13 }}>Loading revisions…</p>}
+        {loading && <p style={{ color: '#707887', fontSize: 13 }}>加载修订中…</p>}
         {!loading && revisions.length === 0 && (
-          <p style={{ color: '#707887', fontSize: 13 }}>No revisions yet. Save the post to create one.</p>
+          <p style={{ color: '#707887', fontSize: 13 }}>暂无修订记录。保存文章即可创建。</p>
         )}
         {!loading && revisions.map((rev) => (
           <div
@@ -672,7 +672,7 @@ function RevisionDrawer({ open, revisions, loading, restoringId, onRestore, onCl
               {rev.status && ` · ${rev.status}`}
             </div>
             <div style={{ fontSize: 13, color: '#F5F7FA', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {rev.title || '(untitled)'}
+              {rev.title || '（无标题）'}
             </div>
             <button
               onClick={() => onRestore(rev.id)}
@@ -689,7 +689,7 @@ function RevisionDrawer({ open, revisions, loading, restoringId, onRestore, onCl
                 fontFamily: 'inherit',
               }}
             >
-              {restoringId === rev.id ? 'Restoring…' : 'Restore'}
+              {restoringId === rev.id ? '恢复中…' : '恢复此版本'}
             </button>
           </div>
         ))}
@@ -735,14 +735,14 @@ function ConflictModal({ open, message, onReload, onKeepEditing }: ConflictModal
         }}
       >
         <h2 style={{ fontSize: 16, color: '#F59E0B', margin: '0 0 12px 0', fontWeight: 600 }}>
-          ⚠ Conflict — Post modified elsewhere
+          ⚠ 冲突 — 文章在其他地方被修改
         </h2>
         <p style={{ fontSize: 13, color: '#A6ADBB', lineHeight: 1.6, margin: '0 0 20px 0' }}>
           {message}
         </p>
         <p style={{ fontSize: 12, color: '#707887', margin: '0 0 24px 0', fontFamily: 'monospace' }}>
-          Reloading will discard your unsaved local edits.
-          Keep editing will overwrite the server version with what you have now.
+          重新加载会丢弃你本地未保存的修改。
+          继续编辑会用当前表单的内容覆盖服务器版本。
         </p>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button
@@ -754,7 +754,7 @@ function ConflictModal({ open, message, onReload, onKeepEditing }: ConflictModal
               fontFamily: 'inherit',
             }}
           >
-            Keep editing
+            继续编辑
           </button>
           <button
             onClick={onReload}
@@ -765,7 +765,7 @@ function ConflictModal({ open, message, onReload, onKeepEditing }: ConflictModal
               fontFamily: 'inherit', fontWeight: 600,
             }}
           >
-            Reload latest
+            加载最新版本
           </button>
         </div>
       </div>
@@ -815,7 +815,7 @@ const tabActiveStyle: CSSProperties = {
 // Wrap in Suspense for useSearchParams (Next.js 15 requirement)
 export default function EditPostPage() {
   return (
-    <Suspense fallback={<div style={s.page}><p style={{ color: '#707080' }}>Loading…</p></div>}>
+    <Suspense fallback={<div style={s.page}><p style={{ color: '#707080' }}>加载中…</p></div>}>
       <EditPostInner />
     </Suspense>
   );

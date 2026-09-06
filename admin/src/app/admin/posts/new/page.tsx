@@ -75,7 +75,7 @@ export default function NewPostPage() {
 
       router.push(`/admin/posts/${data.id}`);
     } catch (e: any) {
-      setError(e.message || 'Failed to create post');
+      setError(e.message || '创建失败');
       setSaving(false);
     }
   }
@@ -83,36 +83,36 @@ export default function NewPostPage() {
   return (
     <div style={s.page}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
-        <Link href="/admin/posts" style={s.backLink}>← Posts</Link>
-        <h1 style={s.h1}>New Post</h1>
+        <Link href="/admin/posts" style={s.backLink}>← 返回列表</Link>
+        <h1 style={s.h1}>新建文章</h1>
 
         {error && <p style={s.error}>{error}</p>}
 
         <form onSubmit={handleSubmit} style={s.form}>
           <Row>
-            <Field label="Collection">
+            <Field label="集合">
               <select value={form.collection} onChange={(e) => setForm({ ...form, collection: e.target.value as PostCollection })} style={s.input}>
-                <option value="posts">Posts</option>
-                <option value="notes">Notes</option>
+                <option value="posts">博客</option>
+                <option value="notes">随笔</option>
               </select>
             </Field>
-            <Field label="Locale">
+            <Field label="语言">
               <select value={form.locale} onChange={(e) => setForm({ ...form, locale: e.target.value as Locale })} style={s.input}>
                 <option value="ja">日本語</option>
                 <option value="zh">中文</option>
                 <option value="en">English</option>
               </select>
             </Field>
-            <Field label="Status">
+            <Field label="状态">
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as FormState['status'] })} style={s.input}>
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="archived">Archived</option>
+                <option value="draft">草稿</option>
+                <option value="published">已发布</option>
+                <option value="archived">归档</option>
               </select>
             </Field>
           </Row>
 
-          <Field label="Title">
+          <Field label="标题">
             <input
               type="text"
               value={form.title}
@@ -120,11 +120,11 @@ export default function NewPostPage() {
               onBlur={() => { if (!form.slug && form.title) setForm({ ...form, slug: autoSlug(form.title) }); }}
               required
               style={{ ...s.input, fontSize: 18, fontFamily: 'Georgia, serif' }}
-              placeholder="Post title"
+              placeholder="文章标题"
             />
           </Field>
 
-          <Field label="Slug" hint="auto-generated from title if empty">
+          <Field label="Slug" hint="为空时根据标题自动生成">
             <input
               type="text"
               value={form.slug}
@@ -135,17 +135,17 @@ export default function NewPostPage() {
             />
           </Field>
 
-          <Field label="Description" hint="multi-line OK (preserves as YAML block scalar)">
+          <Field label="描述" hint="支持多行（保留为 YAML block scalar）">
             <textarea
               value={form.description_text}
               onChange={(e) => setForm({ ...form, description_text: e.target.value })}
               rows={3}
               style={{ ...s.input, fontFamily: 'inherit', resize: 'vertical' }}
-              placeholder="Brief description for SEO meta..."
+              placeholder="SEO/摘要描述…"
             />
           </Field>
 
-          <Field label="Cover Image URL" hint="absolute URL, e.g. https://blog.frank2025.com/images/...">
+          <Field label="封面图 URL" hint="绝对 URL，例如 https://blog.frank2025.com/images/...">
             <input
               type="text"
               value={form.cover_image}
@@ -155,7 +155,7 @@ export default function NewPostPage() {
             />
           </Field>
 
-          <Field label="Tags" hint="comma-separated">
+          <Field label="标签" hint="逗号分隔">
             <input
               type="text"
               value={form.tags}
@@ -165,7 +165,7 @@ export default function NewPostPage() {
             />
           </Field>
 
-          <Field label="Featured">
+          <Field label="精选">
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <input
                 type="checkbox"
@@ -173,11 +173,11 @@ export default function NewPostPage() {
                 onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
                 style={{ width: 16, height: 16 }}
               />
-              <span style={{ fontSize: 13 }}>Show on homepage featured section</span>
+              <span style={{ fontSize: 13 }}>在首页精选区域显示</span>
             </label>
           </Field>
 
-          <Field label="Content (MDX)" hint="raw MDX/Markdown body — no frontmatter (auto-generated)">
+          <Field label="正文 (MDX)" hint="原始 MDX / Markdown（不含 frontmatter，自动生成）">
             <textarea
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
@@ -190,15 +190,15 @@ export default function NewPostPage() {
                 lineHeight: 1.6,
                 resize: 'vertical',
               }}
-              placeholder={"## Hello\n\nWrite your MDX/Markdown here.\n\nUse `code`, **bold**, *italic*."}
+              placeholder={"## 标题\n\n在此书写 MDX/Markdown 内容。\n\n支持 `代码`、**粗体**、*斜体*。"}
             />
           </Field>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
             <button type="submit" disabled={saving} style={{ ...s.primaryButton, opacity: saving ? 0.7 : 1 }}>
-              {saving ? 'Creating…' : 'Create Post'}
+              {saving ? '创建中…' : '创建文章'}
             </button>
-            <Link href="/admin/posts" style={s.secondaryButton}>Cancel</Link>
+            <Link href="/admin/posts" style={s.secondaryButton}>取消</Link>
           </div>
         </form>
       </div>
