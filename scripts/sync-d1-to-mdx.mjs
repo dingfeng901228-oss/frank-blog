@@ -43,6 +43,29 @@ import { execSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync, statSync, rmSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 
+/**
+ * Convert an ISO 8601 timestamp (stored in D1 as UTC) into a YYYY-MM-DD
+ * string formatted in the blog's display timezone, Asia/Tokyo.
+ *
+ * Why we don't just do `iso.split('T')[0]`:
+ *   D1 stores `published_at` as `new Date().toISOString()` (UTC). If Frank
+ *   publishes at Tokyo 2026-09-07 00:30, D1 stores `2026-09-06T15:30:00.000Z`.
+ *   Naively slicing gives `2026-09-06` — the public site then renders the
+ *   article as published "yesterday" even though Frank just hit publish.
+ *   By formatting in Asia/Tokyo first, the calendar date the visitor sees
+ *   matches Frank's intent.
+ *
+ * Falls back to the raw date substring if the input can't be parsed —
+ * better to render a slightly wrong date than throw and break the build.
+ */
+function tokyoDateString(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso).split('T')[0];
+  // en-CA gives YYYY-MM-DD format deterministically (unlike toLocaleDateString
+  // which depends on the system locale).
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
+}
+
 // Walk up from cwd to find the project root (same pattern as
 // migrate-md-to-d1.mjs / seed-admin.mjs / smoke-test.mjs).
 function findProjectRoot() {
@@ -173,9 +196,13 @@ function buildMdx(post) {
     lines.push(`description: "${escapeYamlString(post.description_text)}"`);
   }
 
-  // Published date (YYYY-MM-DD from ISO timestamp)
+  // Published date — convert D1's UTC ISO timestamp to the blog's
+  // display timezone (Asia/Tokyo) before slicing the YYYY-MM-DD portion.
+  // Without this, an article published at Tokyo 2026-09-07 00:30 (which
+  // is UTC 2026-09-06 15:30) would render as 2026-09-06 on the public site
+  // — the visitor sees "yesterday" for an article that came out this morning.
   if (post.published_at) {
-    const dateStr = String(post.published_at).split('T')[0];
+    const dateStr = tokyoDateString(post.published_at);
     lines.push(`publishedAt: "${dateStr}"`);
   }
 
