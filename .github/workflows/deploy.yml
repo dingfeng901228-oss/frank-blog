@@ -62,7 +62,15 @@ jobs:
       # Worker DOES apply [[d1_databases]] from wrangler.toml at deploy time.
       # So env.DB is populated at runtime → /api/admin/auth/* works.
       - name: Install worker-api deps
-        run: cd worker-api && npm install --no-audit --prefer-offline --legacy-peer-deps
+        # --legacy-peer-deps bridges the wrangler@4 / workers-types@5 peer
+        # dep gap. wrangler@4.129 ships an esbuild package.json @ 0.28.1 but
+        # the platform-specific binary (linux-x64 / win32-x64) is still
+        # 0.27.3; the install.js validation kills the postinstall on Linux
+        # with "Expected 0.28.1 but got 0.27.3". We pin wrangler to a version
+        # (4.128) where esbuild binary and package.json match.
+        run: |
+          cd worker-api
+          npm install wrangler@4.128.0 --save-dev --no-audit --no-fund --prefer-offline --legacy-peer-deps
 
       - name: Deploy worker-api to Cloudflare Workers
         run: cd worker-api && npx wrangler@4 deploy --minify
