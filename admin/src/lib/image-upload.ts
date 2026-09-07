@@ -127,7 +127,21 @@ export function extractImageFile(
  * Build markdown image syntax for the uploaded image.
  * Format: ![alt](url)
  */
-export function buildImageMarkdown(image: UploadedImage): string {
-  const alt = image.alt || image.filename.replace(/\.[^.]+$/, '') || 'image';
+export interface MarkdownImageInput {
+  url: string;
+  filename?: string;
+  alt?: string;
+}
+
+export function buildImageMarkdown(image: MarkdownImageInput | UploadedImage): string {
+  // Prefer the explicit alt text, then fall back to the filename stem,
+  // then a generic "image". Stays compatible with the strict UploadedImage
+  // shape used by uploadImageFile while accepting the looser shape returned
+  // by the Media Library (where width/height/id are present but optional
+  // for markdown rendering).
+  const alt = (image as UploadedImage).alt
+    || (image as MarkdownImageInput).alt
+    || (image as MarkdownImageInput).filename?.replace(/\.[^.]+$/, '')
+    || 'image';
   return `![${alt}](${image.url})`;
 }

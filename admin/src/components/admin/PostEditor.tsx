@@ -96,6 +96,10 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
   const [slugTouched, setSlugTouched] = useState(isEdit);
   // Phase 11b — toggle for the CoverImagePicker modal
   const [coverPickerOpen, setCoverPickerOpen] = useState(false);
+  // Phase 11c — toggle for the content-image picker (inserts at cursor,
+  // not into coverImage). The same CoverImagePicker component is reused —
+  // it just receives a different onSelect callback.
+  const [contentPickerOpen, setContentPickerOpen] = useState(false);
 
   // ── Phase A §19 — Auto-save state (edit mode only) ──
   const [autoSaving, setAutoSaving] = useState(false);
@@ -548,6 +552,28 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
                 >
                   {uploadingImage ? '上传中…' : '🖼 上传图片'}
                 </button>
+                {/* Phase 11c — Insert an image that already lives in the Media
+                    Library. Picks append markdown at the current cursor. */}
+                <button
+                  type="button"
+                  onClick={() => setContentPickerOpen(true)}
+                  title="从已上传的媒体库中挑一张插入正文"
+                  style={{
+                    padding: '4px 12px',
+                    background: 'var(--color-surface-elevated)',
+                    color: 'var(--color-text-primary)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 12,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  📚 从媒体库
+                </button>
                 <span style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
                   或拖拽 / Ctrl+V
                 </span>
@@ -786,8 +812,30 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       <CoverImagePicker
         open={coverPickerOpen}
         onClose={() => setCoverPickerOpen(false)}
-        onSelect={(url) => setCoverImage(url)}
+        onSelect={(item) => setCoverImage(item.url)}
         currentValue={coverImage}
+      />
+
+      {/* Phase 11c — Same Picker UI, different intent: picks get inserted as
+          Markdown at the current cursor (not assigned to coverImage). Uses
+          the freshly built lib/image-upload.buildImageMarkdown so the alt
+          text + filename-from-media-library gets preserved through the
+          round-trip into the post body. */}
+      <CoverImagePicker
+        open={contentPickerOpen}
+        onClose={() => setContentPickerOpen(false)}
+        onSelect={(item) => {
+          const md = buildImageMarkdown(item) + '\n';
+          if (contentRef.current) {
+            insertAtCursor(contentRef.current, md);
+            // insertAtCursor dispatches 'input' — React may not pick it up.
+            setContent(contentRef.current.value);
+          } else {
+            setContent((c) => c + md);
+          }
+          toast.show('已插入图片', 'success');
+        }}
+        currentValue={undefined}
       />
     </div>
   );

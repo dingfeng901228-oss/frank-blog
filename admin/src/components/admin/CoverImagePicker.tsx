@@ -28,7 +28,14 @@ interface MediaItem {
 interface CoverImagePickerProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (url: string) => void;
+  /**
+   * Called when the user picks an image. Receives the full MediaItem so
+   * the caller has access to alt text and filename — useful for callers
+   * that insert markdown into a post body (the alt should round-trip
+   * into the rendered image). Callers that only need the URL can read
+   * `item.url`.
+   */
+  onSelect: (item: MediaItem) => void;
   /** When the user picks something AND closes. Optional — used to also
    *  keep the URL for callers that want a side-effect on close. */
   currentValue?: string;
@@ -105,7 +112,15 @@ export function CoverImagePicker({
       ]);
       // Auto-select the newly uploaded image — common workflow is
       // "I just dragged in an image, of course I want to use it".
-      onSelect(image.url);
+      onSelect({
+        id: image.id,
+        filename: image.filename,
+        url: image.url,
+        alt: image.alt,
+        mime_type: file.type,
+        width: image.width,
+        height: image.height,
+      });
       toast.show('已上传并选中', 'success');
     } catch (e: any) {
       toast.show(e.message || '上传失败', 'error');
@@ -115,7 +130,7 @@ export function CoverImagePicker({
   }
 
   function handleSelect(item: MediaItem) {
-    onSelect(item.url);
+    onSelect(item);
     onClose();
   }
 
