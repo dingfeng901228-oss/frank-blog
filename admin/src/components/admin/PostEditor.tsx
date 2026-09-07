@@ -100,6 +100,18 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
   // not into coverImage). The same CoverImagePicker component is reused —
   // it just receives a different onSelect callback.
   const [contentPickerOpen, setContentPickerOpen] = useState(false);
+  // Phase 11d — tracks the locale that the currently-loaded post is in,
+  // so the locale-switch effect only fires on real user changes (not on
+  // initial mount and not when refetchPost syncs locale from server).
+  const lastLoadedLocale = useRef<Locale | null>(initialPost?.locale ?? null);
+  // Slug on the last successful load — used to look up the same logical
+  // post in a different locale. Null until the first refetchPost completes.
+  // initialPost doesn't carry collection (PostEditorProps passes it as a
+  // top-level prop), so we fall back to that.
+  const [loadedCollection, setLoadedCollection] = useState<Collection | null>(
+    initialPost ? collection : null
+  );
+  const [loadedSlug, setLoadedSlug] = useState<string | null>(initialPost?.slug ?? null);
 
   // ── Phase A §19 — Auto-save state (edit mode only) ──
   const [autoSaving, setAutoSaving] = useState(false);
@@ -193,12 +205,16 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     }
   }
 
-  async function refetchPost() {
+  // Pulls the latest server state into the form. When switching language
+  // we already know the slug is the same (Phase 11d — a post's slug is
+  // its identity across locales), so we pass skipSlug to avoid clobbering
+  // whatever the user has currently in the input.
+  async function refetchPost(opts: { skipSlug?: boolean } = {}) {
     if (postId === null) return;
     try {
       const data = await apiGet<any>(`/api/admin/posts/${postId}`);
       setTitle(data.title);
-      setSlug(data.slug);
+      if (!opts.skipSlug) setSlug(data.slug);
       setDescription(data.description_text);
       setContent(data.content);
       setCoverImage(data.cover_image ?? '');
@@ -208,8 +224,58 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       setStatus(data.status);
       setPublishedAt(data.published_at);
       setUpdatedAt(data.updated_at);
+      // Remember what the server gave us so the locale-switch effect can
+      // distinguish a user-driven switch from an internal re-sync.
+      lastLoadedLocale.current = data.locale as Locale;
+      setLoadedCollection((data.collection as Collection) ?? null);
+      setLoadedSlug(data.slug);
     } catch (e: any) {
       setError(e.message || 'Reload failed');
+    }
+  }
+
+  // Phase 11d — Switching the language dropdown while editing should load
+  // the corresponding (collection, slug, new-locale) row from the DB —
+  // a single post is normally published in multiple languages under
+  // the same slug. We find the matching id by hitting /api/admin/posts
+  // with a (collection, slug, locale) filter, then call refetchPost with
+  // skipSlug so the slug input isn't clobbered (Phase 11d — the slug
+  // is the post's identity across locales and must stay stable).
+  async function loadLocalizedPost(newLocale: Locale) {
+    if (loadedCollection === null || loadedSlug === null) return;
+    try {
+      const params = new URLSearchParams();
+      params.set('collection', loadedCollection);
+      params.set('slug', loadedSlug);
+      params.set('locale', newLocale);
+      params.set('limit', '1');
+      const data = await apiGet<{ items: Array<{ id: number; locale: string }>; total: number }>(
+        `/api/admin/posts?${params}`
+      );
+      const found = data.items.find((p) => p.locale === newLocale);
+      if (!found) {
+        // No translation exists yet for this locale. Revert the dropdown
+        // so the visible UI matches the data still loaded in the form.
+        setLocale(lastLoadedLocale.current ?? 'ja');
+        toast.show(
+          `该语言版本不存在（${loadedCollection}/${loadedSlug}/${newLocale}）。请到对应列表页「+ 新建」并使用相同 slug 创建翻译。`,
+          'error'
+        );
+        return;
+      }
+      // Capture the current slug so we can restore it if the server's
+      // value drifts (it shouldn't, but defensive — the slug is the
+      // post's identity and we never want a locale switch to mutate it).
+      const slugBefore = slug;
+      setSavedPostId(found.id);
+      // Explicitly pull the new locale's content into the form, skipping
+      // any slug mutation.
+      await refetchPost({ skipSlug: true });
+      // Defensive restore in case the server response carries a different
+      // (slug-formatted-for-this-locale?) value.
+      setSlug(slugBefore);
+    } catch (e: any) {
+      toast.show(`切换语言失败：${e.message || 'Unknown error'}`, 'error');
     }
   }
 
@@ -220,6 +286,21 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
+
+  // Phase 11d — Watch for locale changes the user makes via the dropdown.
+  // We only act when:
+  //   1. We're in edit mode (effectiveIsEdit) — new articles don't have a
+  //      (slug, locale) pair to look up yet.
+  //   2. The new locale differs from the locale currently loaded in the
+  //      form (avoid loops when refetchPost syncs locale from server).
+  //   3. We have a (collection, slug) pair to look up against.
+  useEffect(() => {
+    if (!effectiveIsEdit) return;
+    if (locale === lastLoadedLocale.current) return;
+    if (loadedCollection === null || loadedSlug === null) return;
+    loadLocalizedPost(locale);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, effectiveIsEdit, loadedCollection, loadedSlug]);
 
   // ── Phase A §19 — Auto-save (edit mode only, debounced 2s, silent on failure) ──
   useEffect(() => {
