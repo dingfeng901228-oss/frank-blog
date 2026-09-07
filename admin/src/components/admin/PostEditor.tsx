@@ -10,7 +10,7 @@
 // become live (revisions/delete/etc.) without leaving the page.
 
 import { useEffect, useRef, useState, type CSSProperties, type ClipboardEvent, type DragEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -191,6 +191,25 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       setSlug(slugify(title));
     }
   }, [title, slugTouched]);
+
+  // Phase 11d — When the editor is mounted via /admin/{posts,notes,blog}/edit?id=…
+  // it doesn't have an initialPost passed down. Detect the ?id= query param
+  // and self-fetch the row. Without this, the edit page would have to be
+  // wrapped in a server component that pre-loads the row, which defeats
+  // the lazy / on-demand editor model.
+  useEffect(() => {
+    if (initialPost) return; // already populated by the parent
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const idParam = params.get('id');
+    const id = idParam ? parseInt(idParam, 10) : NaN;
+    if (!Number.isFinite(id) || id <= 0) return;
+    setSavedPostId(id);
+    // Initial load picks up everything via the existing refetchPost path.
+    // We deliberately don't preload via a separate apiGet here — refetchPost
+    // already runs in the postId-effect below and fills the form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function fetchRevisions() {
     if (postId === null) return;
