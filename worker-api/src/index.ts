@@ -46,6 +46,7 @@ import {
   restoreRevision,
   saveDraft,
   getDB,
+  createRevision,
   validateSlug,
   validateTitle,
   validateContent,
@@ -828,6 +829,11 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
   }
 
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+
   let body: any;
   try {
     body = await request.json();
@@ -835,7 +841,7 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Body must be JSON' } }, 400);
   }
 
-  const existing = await queryFirst<Post>(env, `SELECT id FROM posts WHERE id = ?`, [id]);
+  const existing = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [id]);
   if (!existing) {
     return json({ success: false, error: { code: 'NOT_FOUND', message: 'Post not found' } }, 404);
   }
@@ -928,10 +934,81 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
         409
       );
     }
+    // Phase 11e — successful update writes a revision so the post-revision
+    // drawer has something to display. Without this, the drawer stays
+    // empty forever (autosave uses saveDraft which deliberately skips
+    // revisions to avoid 1-revision-per-keystroke noise; explicit Save
+    // Draft and Publish are the right granularity). We re-SELECT after the
+    // UPDATE so the revision captures the post-update state (locale/status
+    // may have changed in this call).
+    const fresh = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [id]);
+    if (fresh) {
+      await createRevision(env, fresh, user.id);
+    }
+
+    // Phase 11f — If the post is already published and we just edited its
+    // body / title / etc. (without changing status), the MDX files out
+    // there are now stale. Trigger the Pages rebuild so visitors see the
+    // edit on the next deploy cycle. We only do this for published posts
+    // — editing a draft doesn't need a rebuild since it's not on the
+    // public site. The deploy hook is fire-and-forget; a failure logs
+    // to admin_logs but doesn't fail the PUT.
+    if (existing.status === 'published' || body.status === 'published') {
+      const deploy = await triggerDeployHook(env);
+      try {
+        await execute(
+          env,
+          `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, ?, 'post', ?)`,
+          [
+            user.id,
+            deploy.triggered ? 'update_post_deploy_ok' : 'update_post_deploy_failed',
+            id,
+          ]
+        );
+      } catch {
+        /* log is best-effort */
+      }
+      if (!deploy.triggered) {
+        return json(
+          {
+            success: true,
+            data: { id, updated: true, updated_at: loadedUpdatedAt, deploy_triggered: false, deploy_error: deploy.error },
+          },
+          200
+        );
+      }
+    }
+
     return json({ success: true, data: { id, updated: true, updated_at: loadedUpdatedAt } });
   }
 
   await execute(env, `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`, params);
+  // See optimistic-lock branch above for why we write a revision here.
+  const fresh = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [id]);
+  if (fresh) {
+    await createRevision(env, fresh, user.id);
+  }
+
+  // Phase 11f — same deploy-on-edit rationale as above. This branch runs
+  // when the client didn't send loaded_updated_at (the optimistic-lock
+  // path is skipped). Same trigger condition.
+  if (existing.status === 'published' || body.status === 'published') {
+    const deploy = await triggerDeployHook(env);
+    try {
+      await execute(
+        env,
+        `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, ?, 'post', ?)`,
+        [
+          user.id,
+          deploy.triggered ? 'update_post_deploy_ok' : 'update_post_deploy_failed',
+          id,
+        ]
+      );
+    } catch {
+      /* log is best-effort */
+    }
+  }
+
   return json({ success: true, data: { id, updated: true } });
 }
 

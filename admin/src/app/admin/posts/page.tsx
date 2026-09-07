@@ -170,9 +170,6 @@ export default function PostsListPage() {
           <h1 style={titleStyle}>Posts</h1>
           <p style={subStyle}>
             {total} total · page {page} of {totalPages}
-            <span style={{ marginLeft: 12, color: 'var(--color-warning)' }}>
-              ⚠ legacy route — Phase 2 splits into /admin/blog + /admin/notes
-            </span>
           </p>
         </div>
         <Link href="/admin/posts/new" style={{ textDecoration: 'none' }}>

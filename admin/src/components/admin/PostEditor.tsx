@@ -194,9 +194,10 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
 
   // Phase 11d — When the editor is mounted via /admin/{posts,notes,blog}/edit?id=…
   // it doesn't have an initialPost passed down. Detect the ?id= query param
-  // and self-fetch the row. Without this, the edit page would have to be
-  // wrapped in a server component that pre-loads the row, which defeats
-  // the lazy / on-demand editor model.
+  // and set postId. The postId-effect below then loads the row, which
+  // synchronously populates updatedAt/locale/loadedCollection/loadedSlug
+  // — critical because save()'s optimistic lock relies on updatedAt, and
+  // leaving it as '' would produce a spurious 409 conflict on every save.
   useEffect(() => {
     if (initialPost) return; // already populated by the parent
     if (typeof window === 'undefined') return;
@@ -205,9 +206,7 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     const id = idParam ? parseInt(idParam, 10) : NaN;
     if (!Number.isFinite(id) || id <= 0) return;
     setSavedPostId(id);
-    // Initial load picks up everything via the existing refetchPost path.
-    // We deliberately don't preload via a separate apiGet here — refetchPost
-    // already runs in the postId-effect below and fills the form.
+    // refetchPost() is invoked from the [postId] effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -299,9 +298,21 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
   }
 
   // Load revisions once we have a postId (edit mode, or after first POST in new mode).
+  // ALSO kicks off the initial data load: when the editor is mounted via
+  // ?id= the form starts with empty fields, and refetchPost() is the only
+  // thing that pulls the row from the API and fills them. This single effect
+  // covers both the initial mount (self-fetch effect set postId) and any
+  // postId change after a successful save() (transitions new → edit).
   useEffect(() => {
     if (postId !== null) {
       fetchRevisions();
+      if (!initialPost) {
+        // refetchPost's `if (postId === null) return` guard means this is
+        // safe to call even when initialPost already populated the form —
+        // we just skip when initialPost is set because the parent already
+        // loaded the data.
+        refetchPost();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
