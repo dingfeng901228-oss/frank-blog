@@ -267,10 +267,16 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       params.set('slug', loadedSlug);
       params.set('locale', newLocale);
       params.set('limit', '1');
-      const data = await apiGet<{ items: Array<{ id: number; locale: string }>; total: number }>(
-        `/api/admin/posts?${params}`
-      );
-      const found = data.items.find((p) => p.locale === newLocale);
+      // /api/admin/posts returns { posts: [...], total, page, limit, has_more }
+      // (api-client unwraps the {success, data} envelope). We then need
+      // to find a row matching the target locale in case the server
+      // ignored the locale filter for some reason (it shouldn't, but be
+      // defensive).
+      const data = await apiGet<{
+        posts: Array<{ id: number; locale: string }>;
+        total: number;
+      }>(`/api/admin/posts?${params}`);
+      const found = data.posts.find((p) => p.locale === newLocale);
       if (!found) {
         // No translation exists yet for this locale. Revert the dropdown
         // so the visible UI matches the data still loaded in the form.
