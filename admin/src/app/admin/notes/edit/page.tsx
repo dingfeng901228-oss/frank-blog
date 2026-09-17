@@ -1,12 +1,17 @@
-// src/app/admin/notes/edit/page.tsx
-// Alias for /admin/posts/edit — same editor (collection='notes'). Kept as a
-// separate route per CMS V2 §二 URL convention:
-//   /admin/notes/:id/edit
-// (the real route uses ?id= since output: 'export' forbids dynamic segments).
+// admin/src/app/admin/notes/edit/page.tsx
+// Edit an existing note — ?id= query param.
+//
+// NOTE: this used to `import EditPostPage from '../../posts/edit/page'`,
+// which hardcodes collection='posts'. Every note opened through this route
+// therefore reported itself as a blog post (wrong sidebar link, wrong
+// "new" label, and — before the fix — a broken locale lookup). Mount
+// PostEditor directly with collection='notes' instead of re-exporting the
+// blog edit page.
+
 'use client';
 
-import EditPostPage from '../../posts/edit/page';
+import { PostEditor } from '@/components/admin/PostEditor';
 
-export default function NotesEditAlias() {
-  return <EditPostPage />;
+export default function NotesEditPage() {
+  return <PostEditor collection="notes" />;
 }

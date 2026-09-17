@@ -959,12 +959,21 @@ export async function saveDraft(
   env: Env,
   id: number,
   fields: { title: string; slug: string; content: string; description_text: string }
-): Promise<void> {
+): Promise<{ updated_at: string } | null> {
   await execute(
     env,
     `UPDATE posts
      SET title = ?, slug = ?, content = ?, description_text = ?, updated_at = datetime('now')
      WHERE id = ?`,
     [fields.title, fields.slug, fields.content, fields.description_text, id]
+  );
+  // Return the new timestamp so the client can keep its optimistic-lock
+  // token in sync. Without this, every auto-save silently invalidated the
+  // client's loaded_updated_at and the next manual Save/Publish got a
+  // spurious 409 Conflict.
+  return await queryFirst<{ updated_at: string }>(
+    env,
+    `SELECT updated_at FROM posts WHERE id = ?`,
+    [id]
   );
 }

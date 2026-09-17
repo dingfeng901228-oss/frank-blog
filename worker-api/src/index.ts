@@ -664,13 +664,16 @@ async function saveDraftHandler(request: Request, env: Env, id: number): Promise
   } catch (e: any) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Invalid field' } }, 400);
   }
-  await saveDraft(env, id, {
+  const updated = await saveDraft(env, id, {
     title: String(body.title ?? ''),
     slug: String(body.slug ?? ''),
     content: String(body.content ?? ''),
     description_text: String(body.description_text ?? ''),
   });
-  return json({ success: true });
+  // Return the new updated_at so the client can refresh its optimistic-lock
+  // token. This is what stops auto-save from causing a 409 on the next
+  // manual Save/Publish.
+  return json({ success: true, data: { updated_at: updated?.updated_at ?? null } });
 }
 
 const DEFAULT_LIMIT = 20;
@@ -943,7 +946,11 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     // may have changed in this call).
     const fresh = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [id]);
     if (fresh) {
-      await createRevision(env, fresh, user.id);
+      try {
+        await createRevision(env, fresh, user.id);
+      } catch {
+        /* revision history is best-effort — never block the save */
+      }
     }
 
     // Phase 11f — If the post is already published and we just edited its
@@ -986,7 +993,11 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
   // See optimistic-lock branch above for why we write a revision here.
   const fresh = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [id]);
   if (fresh) {
-    await createRevision(env, fresh, user.id);
+    try {
+      await createRevision(env, fresh, user.id);
+    } catch {
+      /* revision history is best-effort — never block the save */
+    }
   }
 
   // Phase 11f — same deploy-on-edit rationale as above. This branch runs

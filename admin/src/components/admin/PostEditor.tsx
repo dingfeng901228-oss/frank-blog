@@ -233,6 +233,13 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       const data = await apiGet<any>(`/api/admin/posts/${postId}`);
       setTitle(data.title);
       if (!opts.skipSlug) setSlug(data.slug);
+      // The slug we just loaded is authoritative — stop the
+      // auto-generate-from-title effect from clobbering it. This matters
+      // most on the self-fetch path (?id=) where initialPost is undefined,
+      // so slugTouched started false and the effect would rewrite the slug
+      // the moment the title arrived (e.g. turning a Japanese/Chinese
+      // post's hand-picked slug into '' because slugify() strips non-ASCII).
+      setSlugTouched(true);
       setDescription(data.description_text);
       setContent(data.content);
       setCoverImage(data.cover_image ?? '');
@@ -352,13 +359,21 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     autoSaveTimer.current = setTimeout(async () => {
       try {
         setAutoSaving(true);
-        await apiPatch(`/api/admin/posts/${postId}`, {
-          title,
-          slug,
-          content,
-          description_text: description,
-        });
+        const res = await apiPatch<{ updated_at: string | null }>(
+          `/api/admin/posts/${postId}`,
+          {
+            title,
+            slug,
+            content,
+            description_text: description,
+          }
+        );
         lastAutoSavedSnapshot.current = snapshot;
+        // Keep the optimistic-lock token in sync. The PATCH bumps the
+        // server's updated_at; if we don't mirror it here, the next manual
+        // Save/Publish sends a stale loaded_updated_at and gets a spurious
+        // 409 Conflict — which made the editor feel like it "never saves".
+        if (res?.updated_at) setUpdatedAt(res.updated_at);
         setAutoSavedAt(new Date().toLocaleTimeString());
       } catch {
         // Silent fail — user is still typing
