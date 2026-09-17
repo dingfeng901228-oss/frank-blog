@@ -160,29 +160,73 @@ git push origin master
 
 ## 3. Ongoing deploy
 
-Just `git push origin master` — `deploy.yml` handles both Pages deploys.
+Just `git push origin master`. `deploy.yml` (GitHub Actions) is the **sole
+deployment path** and does everything in one run:
 
-For worker-api Worker changes, also run `npx wrangler@4 deploy --minify` from
-`worker-api/` manually if you want them live before next git push (worker-api
-is also re-deployed by `deploy.yml` but uses `wranglerVersion: '3'` for the
-Pages action — actually the worker-api deploy step uses `wrangler@4 deploy`).
+1. builds the admin SPA (`cd admin && npm run build`)
+2. syncs D1 → `src/content/` MDX (`node scripts/sync-d1-to-mdx.mjs --remote`)
+3. builds the site (`npm run build` — its postbuild merges `admin/out/`
+   into `out/admin/` via `copy-admin-spa.mjs`)
+4. deploys the API Worker (`cd worker-api && npx wrangler@4 deploy --minify`)
+5. deploys the whole `out/` to the `frank-blog` Pages project
+
+### ⚠️ Cloudflare Pages Git integration is DISABLED (on purpose)
+
+The `frank-blog` Pages project still has "Git provider: Yes", but its
+automatic deployments are turned **off** (`deployments_enabled: false`,
+`production_deployments_enabled: false`).
+
+Why: it was running a stale build config —
+
+- `build_command`: `node scripts/sync-d1-to-mdx.mjs --remote && npm run build`
+  — never built the admin SPA, so `copy-admin-spa.mjs` found no
+  `admin/out/` and skipped it
+- `destination_dir`: `out-admin` — a directory from the two-Pages-project
+  era that no longer exists after the Phase 11 collapse
+
+So every push produced two Pages deployments: the complete one from
+Actions, and an admin-less one from the Git integration that landed later
+and **overwrote it**. That is what made `blog.frank2025.com/admin` 404.
+
+Do not re-enable it without first fixing both fields above. Actions is the
+only path that also deploys the Worker, so it is the correct single source
+of truth.
+
+### Manual deploy (hotfix path)
+
+```bash
+cd F:/WebSite/frank-blog-live
+npm run build            # builds site + merges admin/out → out/admin
+cd admin && npm run build && cd ..   # if admin/out/ is stale
+npx wrangler pages deploy out --project-name=frank-blog --branch=master --commit-dirty=true
+```
+
+Use this to restore production immediately if a deploy goes wrong; it does
+not touch the Worker or D1.
 
 ---
 
 ## 4. Post-deploy verification
 
 ```bash
-# Test worker-api is up
-curl https://cms.blog.frank2025.com/api/admin/auth/me
-# expect: 401 NOT_AUTHENTICATED (no cookie sent)
+# API Worker (401 = reachable, unauthenticated — correct)
+curl -s -o /dev/null -w '%{http_code}\n' https://blog.frank2025.com/api/admin/auth/me
 
-# Test blog is up
+# blog frontend
 curl -I https://blog.frank2025.com/
-# expect: 200 OK
+# expect: 302 → /ja
 
-# Test admin SPA is up
-curl -I https://cms.frank2025.com/admin/login
-# expect: 200 OK (returns login HTML)
+# CMS SPA entry point
+curl -s -o /dev/null -w '%{http_code}\n' https://blog.frank2025.com/admin/
+# expect: 200
+
+# CMS SPA sub-routes (all must be 200, not 404)
+for p in /admin/login/ /admin/blog/ /admin/notes/ /admin/tags/ \
+         /admin/categories/ /admin/media/ /admin/drafts/ \
+         /admin/activity/ /admin/settings/; do
+  printf '%s -> ' "$p"
+  curl -s -o /dev/null -w '%{http_code}\n' "https://blog.frank2025.com$p"
+done
 ```
 
 ---
