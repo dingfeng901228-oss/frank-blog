@@ -958,15 +958,48 @@ export async function restoreRevision(env: Env, revisionId: number): Promise<voi
 export async function saveDraft(
   env: Env,
   id: number,
-  fields: { title: string; slug: string; content: string; description_text: string }
+  fields: {
+    title?: string;
+    slug?: string;
+    content?: string;
+    description_text?: string;
+  }
 ): Promise<{ updated_at: string } | null> {
-  await execute(
-    env,
-    `UPDATE posts
-     SET title = ?, slug = ?, content = ?, description_text = ?, updated_at = datetime('now')
-     WHERE id = ?`,
-    [fields.title, fields.slug, fields.content, fields.description_text, id]
-  );
+  // Only touch the columns the caller actually sent. In particular the
+  // editor's auto-save deliberately omits `slug`: persisting a
+  // half-typed slug would silently move the article's public URL.
+  // Explicit Save / Publish is the only path that changes a slug.
+  const columns: string[] = [];
+  const params: unknown[] = [];
+  if (fields.title !== undefined) {
+    columns.push('title = ?');
+    params.push(fields.title);
+  }
+  if (fields.slug !== undefined) {
+    columns.push('slug = ?');
+    params.push(fields.slug);
+  }
+  if (fields.content !== undefined) {
+    columns.push('content = ?');
+    params.push(fields.content);
+  }
+  if (fields.description_text !== undefined) {
+    columns.push('description_text = ?');
+    params.push(fields.description_text);
+  }
+
+  if (columns.length === 0) {
+    return await queryFirst<{ updated_at: string }>(
+      env,
+      `SELECT updated_at FROM posts WHERE id = ?`,
+      [id]
+    );
+  }
+
+  columns.push(`updated_at = datetime('now')`);
+  params.push(id);
+  await execute(env, `UPDATE posts SET ${columns.join(', ')} WHERE id = ?`, params);
+
   // Return the new timestamp so the client can keep its optimistic-lock
   // token in sync. Without this, every auto-save silently invalidated the
   // client's loaded_updated_at and the next manual Save/Publish got a

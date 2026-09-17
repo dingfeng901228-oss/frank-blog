@@ -346,11 +346,13 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
   }, [locale, effectiveIsEdit, loadedCollection, loadedSlug]);
 
   // ── Phase A §19 — Auto-save (edit mode only, debounced 2s, silent on failure) ──
+  // Deliberately excludes `slug`: auto-save must never move an article's
+  // public URL. A half-typed slug would otherwise be persisted 2s after the
+  // user stops typing. Only an explicit Save / Publish changes the slug.
   useEffect(() => {
     if (!effectiveIsEdit || postId === null) return;
     const snapshot = JSON.stringify({
       title,
-      slug,
       content,
       description_text: description,
     });
@@ -363,7 +365,6 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
           `/api/admin/posts/${postId}`,
           {
             title,
-            slug,
             content,
             description_text: description,
           }
@@ -816,6 +817,10 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
                 onChange={(e) => { setSlug(e.target.value); setSlugTouched(true); }}
                 style={{ ...inputStyle, fontFamily: 'var(--font-mono)', fontSize: 'var(--font-size-sm)' }}
               />
+              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                同一篇文章的各语言版本应使用<strong>相同 slug</strong>，否则切换语言时会找不到对应翻译。
+                改动 slug 会改变公开链接，且<strong>只有点击「保存」/「发布」才会生效</strong>（自动保存不会改动 slug）。
+              </div>
             </div>
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>

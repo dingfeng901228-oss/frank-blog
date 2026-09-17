@@ -656,20 +656,29 @@ async function saveDraftHandler(request: Request, env: Env, id: number): Promise
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Body must be JSON' } }, 400);
   }
   // SECURITY.md #4 #5 — validate auto-save payload before UPDATE.
+  // Partial update: validate and write only the fields actually sent.
+  // The editor's auto-save omits `slug` on purpose so a half-typed slug
+  // can never move the article's public URL.
+  const fields: {
+    title?: string;
+    slug?: string;
+    content?: string;
+    description_text?: string;
+  } = {};
   try {
-    validateSlug(body.slug);
-    validateTitle(body.title);
-    validateContent(body.content);
-    validateDescriptionText(body.description_text);
+    if (body.title !== undefined) fields.title = validateTitle(body.title);
+    if (body.slug !== undefined) fields.slug = validateSlug(body.slug);
+    if (body.content !== undefined) fields.content = validateContent(body.content);
+    if (body.description_text !== undefined) {
+      fields.description_text = validateDescriptionText(body.description_text);
+    }
   } catch (e: any) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Invalid field' } }, 400);
   }
-  const updated = await saveDraft(env, id, {
-    title: String(body.title ?? ''),
-    slug: String(body.slug ?? ''),
-    content: String(body.content ?? ''),
-    description_text: String(body.description_text ?? ''),
-  });
+  if (Object.keys(fields).length === 0) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'No fields to update' } }, 400);
+  }
+  const updated = await saveDraft(env, id, fields);
   // Return the new updated_at so the client can refresh its optimistic-lock
   // token. This is what stops auto-save from causing a 409 on the next
   // manual Save/Publish.
