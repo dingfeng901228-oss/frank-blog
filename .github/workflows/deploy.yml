@@ -84,12 +84,16 @@ jobs:
       # Worker via the route declared in wrangler.toml above.
       #
       # out/ contains: blog pages + admin SPA + ja.html-as-index.html +
-      #                public/_redirects (including /admin → /admin.html rewrite).
+      #                public/_redirects (including the /admin rewrites).
+      #
+      # NOTE: this used to be `uses: cloudflare/pages-action@v1`. Cloudflare
+      # deprecated and then removed that action from the marketplace, so the
+      # whole job started failing at "Set up job" with
+      #   Unable to resolve action `cloudflare/pages-action`, not found
+      # (before any build ran). `wrangler pages deploy` is the supported
+      # replacement and is what a local deploy already uses — one code path.
       - name: Deploy blog + admin SPA to frank-blog
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: frank-blog
-          directory: out
-          wranglerVersion: '3'
+        run: npx wrangler@4 pages deploy out --project-name=frank-blog --branch=master
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
