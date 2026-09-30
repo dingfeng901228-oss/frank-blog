@@ -56,8 +56,16 @@ const DST_ADMIN = join(DST, 'admin');
 const TAG = '[copy-admin-spa]';
 
 if (!existsSync(SRC)) {
-  console.log(`${TAG} no admin/out/ — skipping (run \`cd admin && npm run build\` first)`);
-  process.exit(0);
+  // Do NOT silently succeed here. Skipping the admin SPA used to exit 0, so
+  // the deploy went out complete-looking but with no /admin at all — and
+  // overwrote the last good deployment. That is what made
+  // blog.frank2025.com/admin intermittently 404. Failing loudly keeps the
+  // previous good deployment live instead.
+  console.error(`${TAG} ✗ admin/out/ is missing — the SPA was never built.`);
+  console.error(`${TAG}   Refusing to produce an admin-less deploy.`);
+  console.error(`${TAG}   Fix: run \`npm run build\` from the repo root (its prebuild`);
+  console.error(`${TAG}        hook builds the admin SPA), or \`cd admin && npm run build\`.`);
+  process.exit(1);
 }
 
 if (!existsSync(DST)) {
