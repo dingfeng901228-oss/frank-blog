@@ -6,7 +6,7 @@
     "dev": "next dev",
     "prebuild": "node scripts/prebuild.mjs",
     "build": "next build",
-    "postbuild": "node scripts/copy-admin-to-out.mjs && node scripts/copy-admin-spa.mjs",
+    "postbuild": "node scripts/copy-admin-to-out.mjs && node scripts/copy-admin-spa.mjs && node scripts/copy-root-index.mjs",
     "start": "next start",
     "lint": "next lint",
     "preview": "next build && npx wrangler pages dev out --port 3456",

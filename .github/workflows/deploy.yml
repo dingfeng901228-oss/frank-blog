@@ -57,8 +57,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Copy ja.html → out/index.html (blog fallback)
-        run: cp out/ja.html out/index.html
+      # NOTE: out/index.html (the root fallback copy of out/ja.html) is produced
+      # by postbuild's copy-root-index.mjs, so it exists on every build path —
+      # not only this one. See that script for why the bare domain needs it.
 
       # ────── worker-api deploy (Cloudflare Workers) ──────
       # Worker DOES apply [[d1_databases]] from wrangler.toml at deploy time.
