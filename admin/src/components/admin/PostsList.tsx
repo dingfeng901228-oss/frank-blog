@@ -1,7 +1,13 @@
 'use client';
 
 // src/components/admin/PostsList.tsx — Phase 2 (shared list component)
-// Used by /admin/posts, /admin/blog, /admin/notes, /admin/drafts
+// Used by /admin/blog, /admin/notes, /admin/drafts. The legacy /admin/posts
+// route used to host a parallel implementation of this view (305 lines,
+// filterable but no bulk actions); it was deleted to remove the drift —
+// PostsList already handles locale/status/collection/search filtering,
+// pagination, and bulk publish. The /admin/posts/edit and /admin/posts/new
+// sub-routes are still alive as compat entry points (drafts list "Edit"
+// still links to /admin/posts/edit?id=X), but /admin/posts itself is gone.
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';

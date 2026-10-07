@@ -13,6 +13,11 @@ import { useToast } from './ui/Toast';
 interface NavItem {
   label: string;
   href: string;
+  // Optional "+ New" shortcut surfaced inline next to the row. Used for
+  // content sections so the new-post action is one click from anywhere in
+  // the sidebar instead of having to drill into the list page first.
+  newHref?: string;
+  newLabel?: string;
 }
 
 interface NavSection {
@@ -25,8 +30,8 @@ const navSections: NavSection[] = [
   {
     title: '内容',
     items: [
-      { label: '博客', href: '/admin/blog' },
-      { label: '随笔', href: '/admin/notes' },
+      { label: '博客', href: '/admin/blog', newHref: '/admin/blog/new', newLabel: '+ 新文章' },
+      { label: '随笔', href: '/admin/notes', newHref: '/admin/notes/new', newLabel: '+ 新随笔' },
       { label: '草稿箱', href: '/admin/drafts' },
     ],
   },
@@ -105,7 +110,6 @@ export function Sidebar() {
     color: active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
     background: active ? 'var(--color-surface-elevated)' : 'transparent',
     textDecoration: 'none',
-    marginBottom: '2px',
   });
 
   const footerStyle = {
@@ -127,9 +131,34 @@ export function Sidebar() {
           {section.items.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
-              <Link key={item.href} href={item.href} style={linkStyle(active)}>
-                {item.label}
-              </Link>
+              <div key={item.href} style={{ display: 'flex', alignItems: 'stretch', gap: 4 }}>
+                <Link href={item.href} style={{ ...linkStyle(active), flex: 1, marginBottom: 0 }}>
+                  {item.label}
+                </Link>
+                {item.newHref && (
+                  <Link
+                    href={item.newHref}
+                    aria-label={item.newLabel || '新建'}
+                    title={item.newLabel || '新建'}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 10px',
+                      fontSize: 11,
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--color-text-secondary)',
+                      background: 'transparent',
+                      border: '1px solid transparent',
+                      borderRadius: 'var(--radius-sm)',
+                      textDecoration: 'none',
+                      flexShrink: 0,
+                    }}
+                  >
+                    +
+                  </Link>
+                )}
+              </div>
             );
           })}
         </div>

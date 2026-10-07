@@ -12,6 +12,7 @@ import {
   createSession,
   getSessionUser,
   deleteSession,
+  hashPassword,
   triggerDeployHook,
   json,
   parseCookies,
@@ -178,6 +179,13 @@ export default {
     if (path === '/api/admin/auth/login' && method === 'POST') return login(request, env);
     if (path === '/api/admin/auth/logout' && method === 'POST') return logout(request, env);
     if (path === '/api/admin/auth/me' && method === 'GET') return me(request, env);
+    // POST /api/admin/auth/change-password — rotate the current user's
+    // password. Requires the existing password (defence-in-depth: a stolen
+    // cookie alone isn't enough to lock the real owner out). The new
+    // hash is minted with the same PBKDF2-SHA256 format the seed script uses.
+    if (path === '/api/admin/auth/change-password' && method === 'POST') {
+      return changePassword(request, env);
+    }
     // GET /api/admin/auth/csrf — refresh cms_csrf cookie for already-authenticated
     // sessions that don't have one yet (Phase C2d). Without this, sessions minted
     // before CSRF shipped would be locked out of every state-changing endpoint.
@@ -394,6 +402,66 @@ async function me(request: Request, env: Env): Promise<Response> {
   }
 
   return json({ success: true, data: { user: publicUser(user) } });
+}
+
+// POST /api/admin/auth/change-password
+// Body: { current_password, new_password }
+// Validates current_password against the user's stored hash, then writes a
+// fresh PBKDF2-SHA256 hash for new_password. Active sessions are NOT
+// invalidated — the old cookie stays usable until it expires naturally.
+// (If you ever add 'log out everywhere' you wipe sessions here too.)
+async function changePassword(request: Request, env: Env): Promise<Response> {
+  let body: { current_password?: unknown; new_password?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return json(
+      { success: false, error: { code: 'INVALID_REQUEST', message: 'Body must be JSON' } },
+      400
+    );
+  }
+
+  const current = typeof body.current_password === 'string' ? body.current_password : '';
+  const next = typeof body.new_password === 'string' ? body.new_password : '';
+
+  if (!current || !next) {
+    return json(
+      {
+        success: false,
+        error: { code: 'INVALID_REQUEST', message: 'current_password and new_password required' },
+      },
+      400
+    );
+  }
+  // Mirror the login validation floor so a weak password can't lock the user
+  // out of a weaker one. 8 chars is the minimum we accept anywhere.
+  if (next.length < 8) {
+    return json(
+      { success: false, error: { code: 'INVALID_REQUEST', message: '新密码至少 8 位' } },
+      400
+    );
+  }
+
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json(
+      { success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } },
+      401
+    );
+  }
+
+  const currentOk = await verifyPassword(current, user.password_hash);
+  if (!currentOk) {
+    return json(
+      { success: false, error: { code: 'INVALID_CREDENTIALS', message: '当前密码不正确' } },
+      401
+    );
+  }
+
+  const newHash = await hashPassword(next);
+  await execute(env, `UPDATE users SET password_hash = ? WHERE id = ?`, [newHash, user.id]);
+
+  return json({ success: true });
 }
 
 // ────────────────────────────────────────────────────

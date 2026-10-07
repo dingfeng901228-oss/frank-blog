@@ -252,6 +252,33 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
   return constantTimeEqual(derivedHash, parsed.hash);
 }
 
+// Same hash format as scripts/seed-admin.mjs. The seed script lives outside
+// the Worker bundle (it's a CLI script), so this is the only way the
+// /api/admin/auth/change-password route can mint a fresh password_hash.
+export async function hashPassword(plain: string): Promise<string> {
+  const salt = randomBytes(16);
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(plain),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt as Uint8Array<ArrayBuffer>,
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    key,
+    32 * 8 // 32-byte hash, same shape as parsePasswordHash expects
+  );
+  const hash = new Uint8Array(bits);
+  return `pbkdf2_sha256$${PBKDF2_ITERATIONS}$${toBase64Url(salt)}$${toBase64Url(hash)}`;
+}
+
 function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
