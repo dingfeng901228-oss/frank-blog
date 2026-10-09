@@ -30,10 +30,10 @@ export async function generateStaticParams() {
 }
 
 const navLabels = {
-  ja: { back: '← ブログ一覧' },
-  zh: { back: '← 返回博客' },
-  en: { back: '← Back to Blog' },
-}
+  ja: { back: '← ブログ一覧', prev: '← 前の記事', next: '次の記事 →' },
+  zh: { back: '← 返回博客', prev: '← 上一篇', next: '下一篇 →' },
+  en: { back: '← Back to Blog', prev: '← Previous', next: 'Next →' },
+} as const
 
 export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params
@@ -201,13 +201,23 @@ export default async function PostPage({ params }: PageProps) {
           {/* Header */}
           <header className="mb-10 lg:mb-12 lg:col-span-3">
             {post.tags && post.tags.length > 0 && (
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3 mb-5 flex-wrap">
                 {post.tags.map((tag) => (
-                  <span key={tag} className="text-[10px] font-mono px-2.5 py-0.5 rounded-full" style={{
-                    background: 'rgba(59,130,246,0.10)',
-                    border: '1px solid rgba(59,130,246,0.15)',
-                    color: 'rgba(147,197,253,0.9)',
-                  }}>{tag}</span>
+                  // Tags are now clickable → /${locale}/blog/tag/${tag}.
+                  // This route filters the post list by tag. Previously tags
+                  // were inert <span>s.
+                  <Link
+                    key={tag}
+                    href={`/${locale}/blog/tag/${encodeURIComponent(tag)}`}
+                    className="text-[10px] font-mono px-2.5 py-0.5 rounded-full transition-colors hover:border-[var(--accent)]"
+                    style={{
+                      background: 'rgba(59,130,246,0.10)',
+                      border: '1px solid rgba(59,130,246,0.15)',
+                      color: 'rgba(147,197,253,0.9)',
+                    }}
+                  >
+                    {tag}
+                  </Link>
                 ))}
               </div>
             )}
@@ -219,7 +229,7 @@ export default async function PostPage({ params }: PageProps) {
                 {post.description}
               </p>
             )}
-            <div className="flex items-center gap-4 text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <div className="flex items-center gap-4 text-xs font-mono flex-wrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
               <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
               {post.readingTime && (
                 <>
@@ -227,7 +237,43 @@ export default async function PostPage({ params }: PageProps) {
                   <span>{post.readingTime}</span>
                 </>
               )}
+              {post.updatedAt && post.updatedAt !== post.publishedAt && (
+                // Only show "updated" when the article has been edited after
+                // publish — gives readers a freshness signal without
+                // cluttering first-published articles.
+                <>
+                  <span>·</span>
+                  <span>
+                    {locale === 'ja' ? '更新 ' : locale === 'zh' ? '更新 ' : 'Updated '}
+                    {formatDate(post.updatedAt, locale)}
+                  </span>
+                </>
+              )}
             </div>
+
+            {/* Cover image — shown only when the post declares one. The
+                og:image already uses this same URL, so we are not adding
+                a new asset. Plain <img> (not next/image) keeps the static
+                export simple: next.config.ts has images.unoptimized = true
+                and there is no remote pattern set, which would be required
+                for next/image with an external R2 host anyway. loading=lazy
+                and an explicit maxHeight cap keep this from hurting LCP. */}
+            {post.coverImage && (
+              <figure className="mt-8 lg:mt-10 -mx-2 lg:mx-0">
+                <img
+                  src={post.coverImage}
+                  alt={post.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-auto rounded-lg"
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    maxHeight: '480px',
+                    objectFit: 'cover',
+                  }}
+                />
+              </figure>
+            )}
           </header>
 
           {/* Three-column layout */}
@@ -263,7 +309,7 @@ export default async function PostPage({ params }: PageProps) {
             <div>
               {prevPost && (
                 <Link href={`/${locale}/blog/${prevPost.slug}`} className="block group">
-                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>← Previous</span>
+                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>{nav.prev}</span>
                   <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{prevPost.title}</span>
                 </Link>
               )}
@@ -271,7 +317,7 @@ export default async function PostPage({ params }: PageProps) {
             <div className="text-right">
               {nextPost && (
                 <Link href={`/${locale}/blog/${nextPost.slug}`} className="block group">
-                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>Next →</span>
+                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>{nav.next}</span>
                   <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{nextPost.title}</span>
                 </Link>
               )}

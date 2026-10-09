@@ -104,13 +104,14 @@ export default async function BlogPage({ params }: PageProps) {
                   {post.tags && post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-4">
                       {post.tags.map((tag) => (
-                        <span
+                        <Link
                           key={tag}
-                          className="px-2 py-0.5 bg-[var(--card)] rounded text-xs"
+                          href={`/${locale}/blog/tag/${encodeURIComponent(tag)}`}
+                          className="px-2 py-0.5 bg-[var(--card)] rounded text-xs transition-colors hover:text-[var(--accent)]"
                           style={{ color: 'var(--muted)' }}
                         >
                           {tag}
-                        </span>
+                        </Link>
                       ))}
                     </div>
                   )}

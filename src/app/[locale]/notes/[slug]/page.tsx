@@ -31,10 +31,10 @@ export async function generateStaticParams() {
 }
 
 const navLabels = {
-  ja: { back: '← ノート一覧' },
-  zh: { back: '← 返回随笔' },
-  en: { back: '← Back to Notes' },
-}
+  ja: { back: '← ノート一覧', prev: '← 前の記事', next: '次の記事 →' },
+  zh: { back: '← 返回随笔', prev: '← 上一篇', next: '下一篇 →' },
+  en: { back: '← Back to Notes', prev: '← Previous', next: 'Next →' },
+} as const
 
 export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params
@@ -174,13 +174,20 @@ export default async function NotePage({ params }: PageProps) {
           {/* Header */}
           <header className="mb-10 lg:mb-12 lg:col-span-3">
             {note.tags && note.tags.length > 0 && (
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3 mb-5 flex-wrap">
                 {note.tags.map((tag) => (
-                  <span key={tag} className="text-[10px] font-mono px-2.5 py-0.5 rounded-full" style={{
-                    background: 'rgba(59,130,246,0.10)',
-                    border: '1px solid rgba(59,130,246,0.15)',
-                    color: 'rgba(147,197,253,0.9)',
-                  }}>{tag}</span>
+                  <Link
+                    key={tag}
+                    href={`/${locale}/notes/tag/${encodeURIComponent(tag)}`}
+                    className="text-[10px] font-mono px-2.5 py-0.5 rounded-full transition-colors hover:border-[var(--accent)]"
+                    style={{
+                      background: 'rgba(59,130,246,0.10)',
+                      border: '1px solid rgba(59,130,246,0.15)',
+                      color: 'rgba(147,197,253,0.9)',
+                    }}
+                  >
+                    {tag}
+                  </Link>
                 ))}
               </div>
             )}
@@ -192,9 +199,35 @@ export default async function NotePage({ params }: PageProps) {
                 {note.description}
               </p>
             )}
-            <div className="flex items-center gap-4 text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <div className="flex items-center gap-4 text-xs font-mono flex-wrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
               <time dateTime={note.publishedAt}>{formatDate(note.publishedAt, locale)}</time>
+              {note.updatedAt && note.updatedAt !== note.publishedAt && (
+                <>
+                  <span>·</span>
+                  <span>
+                    {locale === 'ja' ? '更新 ' : locale === 'zh' ? '更新 ' : 'Updated '}
+                    {formatDate(note.updatedAt, locale)}
+                  </span>
+                </>
+              )}
             </div>
+
+            {note.coverImage && (
+              <figure className="mt-8 lg:mt-10 -mx-2 lg:mx-0">
+                <img
+                  src={note.coverImage}
+                  alt={note.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-auto rounded-lg"
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    maxHeight: '480px',
+                    objectFit: 'cover',
+                  }}
+                />
+              </figure>
+            )}
           </header>
 
           {/* Three-column layout */}
@@ -229,7 +262,7 @@ export default async function NotePage({ params }: PageProps) {
             <div>
               {prevNote && (
                 <Link href={`/${locale}/notes/${prevNote.slug}`} className="block group">
-                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>← Previous</span>
+                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>{nav.prev}</span>
                   <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{prevNote.title}</span>
                 </Link>
               )}
@@ -237,7 +270,7 @@ export default async function NotePage({ params }: PageProps) {
             <div className="text-right">
               {nextNote && (
                 <Link href={`/${locale}/notes/${nextNote.slug}`} className="block group">
-                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>Next →</span>
+                  <span className="text-[10px] font-mono tracking-wider mb-2 block" style={{ color: 'rgba(255,255,255,0.35)' }}>{nav.next}</span>
                   <span className="text-sm font-serif group-hover:text-[var(--accent)] transition-colors text-white/80">{nextNote.title}</span>
                 </Link>
               )}

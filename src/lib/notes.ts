@@ -57,3 +57,12 @@ export function getAllNotes(locale: Locale): Post[] {
 export function getNotes(locale: Locale): Post[] {
   return getAllNotes(locale)
 }
+
+export function getAllNoteTags(locale: Locale): string[] {
+  const notes = getAllNotes(locale)
+  const tagSet = new Set<string>()
+  notes.forEach((note) => {
+    note.tags?.forEach((tag) => tagSet.add(tag))
+  })
+  return Array.from(tagSet).sort()
+}
