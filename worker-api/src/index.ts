@@ -4,6 +4,7 @@
 // (Pages Functions couldn't apply [[d1_databases]] to deployment; Worker can.)
 
 import type { Env, User, Post, MediaRecord, CategoryRecord, TagRecord, PostCollection, ActivityEntry, PostRevision } from './cms';
+import { autoTranslateSiblings, type TranslationOutcome } from './autotranslate';
 import {
   queryFirst,
   queryAll,
@@ -211,6 +212,11 @@ export default {
     // /api/admin/posts/:id/publish
     m = path.match(/^\/api\/admin\/posts\/(\d+)\/publish$/);
     if (m && method === 'POST') return publishPost(request, env, parseInt(m[1], 10));
+
+    // /api/admin/posts/:id/retranslate — explicit re-translation of one
+    // target locale, overwriting that locale's row.
+    m = path.match(/^\/api\/admin\/posts\/(\d+)\/retranslate$/);
+    if (m && method === 'POST') return retranslatePost(request, env, parseInt(m[1], 10));
 
     // /api/admin/posts/bulk-publish
     // NOTE: registered BEFORE the /:id/publish matcher isn't strictly
@@ -795,7 +801,7 @@ async function listPosts(request: Request, env: Env): Promise<Response> {
 
   const posts = await queryAll<Post>(
     env,
-    `SELECT id, collection, locale, slug, title, status, published_at, updated_at, created_at, cover_image, is_featured
+    `SELECT id, collection, locale, slug, title, status, published_at, updated_at, created_at, cover_image, is_featured, auto_translated
      FROM posts
      ${whereClause}
      ORDER BY updated_at DESC
@@ -875,13 +881,30 @@ async function createPost(request: Request, env: Env): Promise<Response> {
     ]
   );
 
+  const newId = result.meta?.last_row_id;
+
+  // Auto-translate a newly-created post that goes straight to published.
+  // The same "create the missing sibling locales" logic as updatePost.
+  let translations: TranslationOutcome[] = [];
+  if (body.status === 'published' && body.auto_translate !== false && newId) {
+    const created = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [newId]);
+    if (created) {
+      translations = await autoTranslateSiblings(env, created);
+    }
+  }
+
   return json(
     {
       success: true,
       data: {
-        id: result.meta?.last_row_id,
+        id: newId,
         slug: body.slug,
         status: body.status ?? 'draft',
+        translations,
+        translated_count: translations.filter((t) => t.status === 'created').length,
+        translation_errors: translations
+          .filter((t) => t.status === 'failed')
+          .map((t) => ({ locale: t.locale, error: t.error })),
       },
     },
     201
@@ -971,6 +994,22 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     params.push(body.is_featured ? 1 : 0);
   }
 
+  // A hand-edit of a machine-translated row turns it into Frank's own
+  // text, so the "机器翻译" badge must go away. He can still re-translate
+  // explicitly via POST /posts/:id/retranslate.
+  //
+  // The comparison is against the stored value, not just "the field was
+  // sent" — the editor's Save button always sends title/content, so a
+  // no-op re-save of an untouched machine translation would otherwise
+  // silently drop the badge.
+  if (
+    (body.content !== undefined && body.content !== existing.content) ||
+    (body.title !== undefined && body.title !== existing.title) ||
+    (body.description_text !== undefined && body.description_text !== existing.description_text)
+  ) {
+    updates.push('auto_translated = NULL');
+  }
+
   if (body.description_text !== undefined) {
     updates.push('description_raw = ?');
     params.push(buildDescriptionRaw(body.description_text));
@@ -1038,6 +1077,17 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     // public site. The deploy hook is fire-and-forget; a failure logs
     // to admin_logs but doesn't fail the PUT.
     if (existing.status === 'published' || body.status === 'published') {
+      // Auto-translation: when a post transitions INTO published, generate
+      // the sibling locales. `existing.status !== 'published'` is the
+      // "just published" signal — an edit to an already-published post
+      // must NOT re-translate, because the sibling may have been
+      // hand-edited since.
+      const justPublished = existing.status !== 'published' && body.status === 'published';
+      let translations: TranslationOutcome[] = [];
+      if (justPublished && fresh && body.auto_translate !== false) {
+        translations = await autoTranslateSiblings(env, fresh);
+      }
+
       const deploy = await triggerDeployHook(env);
       try {
         await execute(
@@ -1052,15 +1102,38 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
       } catch {
         /* log is best-effort */
       }
+      const translationErrors = translations
+        .filter((t) => t.status === 'failed')
+        .map((t) => ({ locale: t.locale, error: t.error }));
       if (!deploy.triggered) {
         return json(
           {
             success: true,
-            data: { id, updated: true, updated_at: loadedUpdatedAt, deploy_triggered: false, deploy_error: deploy.error },
+            data: {
+              id,
+              updated: true,
+              updated_at: loadedUpdatedAt,
+              deploy_triggered: false,
+              deploy_error: deploy.error,
+              translations,
+              translated_count: translations.filter((t) => t.status === 'created').length,
+              translation_errors: translationErrors,
+            },
           },
           200
         );
       }
+      return json({
+        success: true,
+        data: {
+          id,
+          updated: true,
+          updated_at: loadedUpdatedAt,
+          translations,
+          translated_count: translations.filter((t) => t.status === 'created').length,
+          translation_errors: translationErrors,
+        },
+      });
     }
 
     return json({ success: true, data: { id, updated: true, updated_at: loadedUpdatedAt } });
@@ -1081,6 +1154,11 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
   // when the client didn't send loaded_updated_at (the optimistic-lock
   // path is skipped). Same trigger condition.
   if (existing.status === 'published' || body.status === 'published') {
+    const justPublished = existing.status !== 'published' && body.status === 'published';
+    let translations: TranslationOutcome[] = [];
+    if (justPublished && fresh && body.auto_translate !== false) {
+      translations = await autoTranslateSiblings(env, fresh);
+    }
     const deploy = await triggerDeployHook(env);
     try {
       await execute(
@@ -1095,6 +1173,18 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     } catch {
       /* log is best-effort */
     }
+    return json({
+      success: true,
+      data: {
+        id,
+        updated: true,
+        translations,
+        translated_count: translations.filter((t) => t.status === 'created').length,
+        translation_errors: translations
+          .filter((t) => t.status === 'failed')
+          .map((t) => ({ locale: t.locale, error: t.error })),
+      },
+    });
   }
 
   return json({ success: true, data: { id, updated: true } });
@@ -1117,9 +1207,31 @@ async function publishPost(request: Request, env: Env, id: number): Promise<Resp
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
   }
 
-  const post = await queryFirst<{ id: number }>(env, `SELECT id FROM posts WHERE id = ?`, [id]);
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+
+  const post = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [id]);
   if (!post) {
     return json({ success: false, error: { code: 'NOT_FOUND', message: 'Post not found' } }, 404);
+  }
+
+  // Optional body: { auto_translate?: boolean }
+  // Default is ON — Frank's whole point of this feature is that he writes
+  // one language and the other two follow. He can turn it off per publish
+  // if he ever wants to publish a single-locale version on purpose.
+  let autoTranslate = true;
+  try {
+    const raw = await request.text();
+    if (raw.trim()) {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.auto_translate === 'boolean') {
+        autoTranslate = parsed.auto_translate;
+      }
+    }
+  } catch {
+    // A malformed body means "no options" — keep the default.
   }
 
   const now = new Date().toISOString();
@@ -1129,6 +1241,17 @@ async function publishPost(request: Request, env: Env, id: number): Promise<Resp
     [now, id]
   );
 
+  // Refresh the row so the translation sees the just-published state.
+  const published = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [id]);
+
+  // Auto-translate into the sibling locales. A failure here must NOT
+  // block the publish of the source article — the Chinese version is
+  // already live at this point.
+  let translations: TranslationOutcome[] = [];
+  if (autoTranslate && published) {
+    translations = await autoTranslateSiblings(env, published);
+  }
+
   const deploy = await triggerDeployHook(env);
 
   await execute(
@@ -1136,6 +1259,9 @@ async function publishPost(request: Request, env: Env, id: number): Promise<Resp
     `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, ?, ?, ?)`,
     [null, deploy.triggered ? 'publish_post' : 'publish_post_failed', 'post', id]
   );
+
+  const translatedOk = translations.filter((t) => t.status === 'created').length;
+  const translatedFailed = translations.filter((t) => t.status === 'failed');
 
   return json(
     {
@@ -1147,6 +1273,14 @@ async function publishPost(request: Request, env: Env, id: number): Promise<Resp
         deploy_triggered: deploy.triggered,
         deploy_error: deploy.error,
         deploy_ts: deploy.ts,
+        auto_translate: autoTranslate,
+        translations,
+        // Convenience summary for the admin UI toast.
+        translated_count: translatedOk,
+        translation_errors: translatedFailed.map((t) => ({
+          locale: t.locale,
+          error: t.error,
+        })),
       },
       ...(deploy.triggered
         ? {}
@@ -1154,6 +1288,82 @@ async function publishPost(request: Request, env: Env, id: number): Promise<Resp
     },
     deploy.triggered ? 200 : 502
   );
+}
+
+/**
+ * POST /api/admin/posts/:id/retranslate
+ *
+ * Re-runs the machine translation for a specific target locale and
+ * overwrites that locale's row. This is the explicit escape hatch for the
+ * "auto-translation never overwrites an existing sibling" rule: Frank
+ * asks for it, so it happens.
+ *
+ * Body: { locale: 'ja' | 'en', force?: boolean }
+ */
+async function retranslatePost(request: Request, env: Env, id: number): Promise<Response> {
+  if (!Number.isFinite(id)) {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
+  }
+
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+
+  let body: { locale?: unknown; force?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Body must be JSON' } }, 400);
+  }
+
+  const locale = typeof body.locale === 'string' ? body.locale : '';
+  if (!['ja', 'en', 'zh'].includes(locale)) {
+    return json(
+      { success: false, error: { code: 'INVALID_REQUEST', message: 'locale must be zh/ja/en' } },
+      400
+    );
+  }
+
+  const post = await queryFirst<Post>(env, `SELECT * FROM posts WHERE id = ?`, [id]);
+  if (!post) {
+    return json({ success: false, error: { code: 'NOT_FOUND', message: 'Post not found' } }, 404);
+  }
+  if (post.locale === locale) {
+    return json(
+      { success: false, error: { code: 'INVALID_REQUEST', message: 'Cannot translate a post into its own locale' } },
+      400
+    );
+  }
+
+  const outcomes = await autoTranslateSiblings(env, post, { force: true });
+  const outcome = outcomes.find((o) => o.locale === locale);
+
+  if (!outcome || outcome.status === 'failed') {
+    return json(
+      {
+        success: false,
+        error: {
+          code: 'TRANSLATION_FAILED',
+          message: outcome?.error || 'Translation failed',
+        },
+      },
+      502
+    );
+  }
+
+  const deploy = await triggerDeployHook(env);
+
+  return json({
+    success: true,
+    data: {
+      id,
+      locale,
+      translation: outcome,
+      deploy_triggered: deploy.triggered,
+      deploy_error: deploy.error,
+    },
+  });
 }
 
 // ────────────────────────────────────────────────────

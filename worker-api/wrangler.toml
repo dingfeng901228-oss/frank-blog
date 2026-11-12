@@ -24,6 +24,14 @@ id = "3645c12d1da548ea889494ec692b161a"
 binding = "R2"
 bucket_name = "frank-blog-assets"
 
+# Workers AI — used by the CMS auto-translation feature. When Frank
+# publishes a Chinese article, the Worker translates it into Japanese and
+# English and publishes those versions alongside it. No external API key
+# is needed: the AI binding is free on the Workers plan and the account
+# already has the Workers AI models enabled.
+[ai]
+binding = "AI"
+
 # Routes — Worker handles /api/admin/* on cms.blog.frank2025.com
 # These are appended to any existing custom-domain routes on the Worker.
 # Frank sets up the custom domain in CF Dashboard → Workers → frank-blog-cms-api

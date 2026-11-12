@@ -1,0 +1,24 @@
+-- migrations/0006_auto_translated.sql
+--
+-- Marks a post row as machine-translated so the CMS can show the
+-- "🤖 机器翻译 · 建议人工校对" badge and offer the "重新翻译" action.
+--
+-- WHY A COLUMN INSTEAD OF A SIDE TABLE
+-- -----------------------------------
+-- The flag travels with the row: one boolean on posts answers "is this
+-- version machine-generated?". A separate table would need a join on
+-- every locale switch in the editor, for one bit of information.
+--
+-- IDEMPOTENT: adding a column that already exists fails on D1, and this
+-- file may be applied more than once across environments. SQLite has no
+-- "ADD COLUMN IF NOT EXISTS", so the safe form is to check the pragma
+-- first — but wrangler's migration runner executes plain SQL without
+-- procedural IF support.
+--
+-- Resolution: this migration is written as a plain ALTER TABLE ADD
+-- COLUMN. It is applied exactly once per database (tracked by
+-- d1_migrations), which is how every other migration in this repo works.
+-- The column is nullable with a NULL default, so an existing row simply
+-- reads NULL = "not machine-translated" (hand-written, or pre-feature).
+
+ALTER TABLE posts ADD COLUMN auto_translated INTEGER;

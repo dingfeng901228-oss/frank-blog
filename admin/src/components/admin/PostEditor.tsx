@@ -9,7 +9,7 @@
 // stays in the same component instance after first POST so the same fields/buttons
 // become live (revisions/delete/etc.) without leaving the page.
 
-import { useEffect, useRef, useState, type CSSProperties, type ClipboardEvent, type DragEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ClipboardEvent, type DragEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -23,6 +23,25 @@ import { CoverImagePicker } from '@/components/admin/CoverImagePicker';
 
 type Tab = 'write' | 'preview';
 type Status = 'draft' | 'published' | 'archived';
+
+/**
+ * One target locale's translation outcome, as reported by the Worker.
+ * `created` = a new row was generated; `skipped` = a row already existed
+ * (hand-written or previously translated) and was left alone;
+ * `failed` = the translation did not succeed.
+ */
+interface TranslationOutcome {
+  locale: 'zh' | 'ja' | 'en';
+  status: 'created' | 'skipped' | 'failed';
+  id?: number;
+  error?: string;
+}
+
+const LOCALE_LABEL: Record<string, string> = {
+  ja: '日本語',
+  zh: '中文',
+  en: 'English',
+};
 type Locale = 'ja' | 'zh' | 'en';
 type Collection = 'posts' | 'notes'; // API collection value (blog articles use 'posts')
 
@@ -88,6 +107,20 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
   const [isFeatured, setIsFeatured] = useState(initialPost?.is_featured ?? false);
   const [locale, setLocale] = useState<Locale>(initialPost?.locale || 'ja');
   const [status, setStatus] = useState<Status>(initialPost?.status || 'draft');
+
+  // Auto-translation on publish. Default ON: Frank writes one language and
+  // the Worker generates the other two. Turn it off for a post that should
+  // only exist in the language it was written in.
+  const [autoTranslate, setAutoTranslate] = useState(true);
+  // True while a publish is waiting on the Worker to translate — the
+  // publish itself is synchronous, but the translation adds ~20s.
+  const [translating, setTranslating] = useState(false);
+  // True while an explicit "重新翻译" is running.
+  const [retranslating, setRetranslating] = useState(false);
+  // Which sibling locales were machine-generated. Populated from the
+  // posts list (the editor looks up all locales for the current slug) so
+  // the "机器翻译" badge shows on the right version.
+  const [machineTranslatedLocales, setMachineTranslatedLocales] = useState<Set<Locale>>(new Set());
   const [publishedAt, setPublishedAt] = useState<string | null>(initialPost?.published_at ?? null);
   const [updatedAt, setUpdatedAt] = useState<string>(initialPost?.updated_at ?? '');
   const [tab, setTab] = useState<Tab>('write');
@@ -310,6 +343,30 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     }
   }
 
+  // Load which sibling locales are machine-translated, so the badge and
+  // the "重新翻译" button know what they are acting on. This is a separate
+  // query from the single-post fetch because it needs ALL locales for the
+  // slug, not just the one being edited.
+  const refreshMachineTranslated = useCallback(async () => {
+    if (loadedCollection === null || loadedSlug === null) return;
+    try {
+      const params = new URLSearchParams();
+      params.set('collection', loadedCollection);
+      params.set('slug', loadedSlug);
+      params.set('limit', '10');
+      const data = await apiGet<{
+        posts: Array<{ locale: string; auto_translated: number | null }>;
+      }>(`/api/admin/posts?${params}`);
+      const set = new Set<Locale>();
+      for (const p of data.posts ?? []) {
+        if (p.auto_translated) set.add(p.locale as Locale);
+      }
+      setMachineTranslatedLocales(set);
+    } catch {
+      // A failure here only costs the badge, not the editing flow.
+    }
+  }, [loadedCollection, loadedSlug]);
+
   // Load revisions once we have a postId (edit mode, or after first POST in new mode).
   // ALSO kicks off the initial data load: when the editor is mounted via
   // ?id= the form starts with empty fields, and refetchPost() is the only
@@ -329,6 +386,12 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
+
+  // Load the machine-translation badges once we know the slug to look up.
+  // Runs after the post row is loaded (loadedSlug changes then).
+  useEffect(() => {
+    refreshMachineTranslated();
+  }, [refreshMachineTranslated]);
 
   // Phase 11d — Watch for locale changes the user makes via the dropdown.
   // We only act when:
@@ -404,7 +467,11 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       // Edit mode: PUT (full update) so slug/cover/tags/featured/etc. all persist.
       // New mode: POST to create, then transition into edit mode (no page reload).
       if (effectiveIsEdit && postId !== null) {
-        await apiPut(`/api/admin/posts/${postId}`, {
+        const res = await apiPut<{
+          translations?: TranslationOutcome[];
+          translated_count?: number;
+          translation_errors?: Array<{ locale: string; error?: string }>;
+        }>(`/api/admin/posts/${postId}`, {
           collection,
           locale,
           slug,
@@ -416,17 +483,27 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
           is_featured: isFeatured,
           status: targetStatus,
           loaded_updated_at: updatedAt,
+          // Auto-translate the sibling locales when this publish moves the
+          // post from draft → published. The Worker skips locales that
+          // already have a row, so hand-written translations are never
+          // overwritten.
+          auto_translate: targetStatus === 'published' && autoTranslate,
         });
         await refetchPost();
         setStatus(targetStatus);
-        toast.show(
-          targetStatus === 'published'
-            ? (isEdit ? 'Published' : 'Article published')
-            : 'Draft saved',
-          'success'
-        );
+        reportTranslation(res, targetStatus);
+        // The publish may have created sibling locales — refresh the
+        // machine-translation badges so they show up right away.
+        if (targetStatus === 'published') {
+          setTimeout(() => refreshMachineTranslated(), 500);
+        }
       } else {
-        const data = await apiPost<{ id: number }>('/api/admin/posts', {
+        const data = await apiPost<{
+          id: number;
+          translations?: TranslationOutcome[];
+          translated_count?: number;
+          translation_errors?: Array<{ locale: string; error?: string }>;
+        }>('/api/admin/posts', {
           collection,
           locale,
           slug,
@@ -437,14 +514,12 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
           tags,
           is_featured: isFeatured,
           status: targetStatus,
+          auto_translate: targetStatus === 'published' && autoTranslate,
         });
         // Transition into edit mode in-place — URL stays the same, revisions
         // and other edit-only features light up without a navigation.
         setSavedPostId(data.id);
-        toast.show(
-          targetStatus === 'published' ? 'Article published' : 'Draft saved',
-          'success'
-        );
+        reportTranslation(data, targetStatus);
         // Refresh server-side timestamps by reloading the row.
         await refetchPost();
         // Update browser URL to the canonical edit route for shareability/bookmarks.
@@ -463,6 +538,90 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     } finally {
       setSaving(false);
     }
+  }
+
+  /**
+   * Explicitly re-translate the version currently being edited, from the
+   * post's other-language sibling. The Worker uses the SAME slug, so the
+   * source of truth is whichever locale row exists and is NOT the target.
+   *
+   * The Worker endpoint picks the source itself: it translates post X into
+   * locale L by reading X's content. So we must call it on a row in a
+   * DIFFERENT locale than the one we want regenerated.
+   */
+  async function handleRetranslate() {
+    if (postId === null) return;
+    if (!confirm(`重新机器翻译「${LOCALE_LABEL[locale]}」版本？这会覆盖当前的机器翻译内容。`)) {
+      return;
+    }
+    setRetranslating(true);
+    try {
+      // Find the source sibling (any locale other than the current one).
+      const params = new URLSearchParams();
+      params.set('collection', collection);
+      params.set('slug', slug);
+      params.set('limit', '10');
+      const list = await apiGet<{
+        posts: Array<{ id: number; locale: string }>;
+      }>(`/api/admin/posts?${params}`);
+      const source = (list.posts ?? []).find((p) => p.locale !== locale);
+      if (!source) {
+        toast.show('找不到其他语言版本作为翻译源', 'error');
+        return;
+      }
+      await apiPost(`/api/admin/posts/${source.id}/retranslate`, { locale });
+      toast.show(`已重新翻译「${LOCALE_LABEL[locale]}」版本`, 'success');
+      await refetchPost({ skipSlug: true });
+      await refreshMachineTranslated();
+    } catch (e: any) {
+      toast.show(e.message || '重新翻译失败', 'error');
+    } finally {
+      setRetranslating(false);
+    }
+  }
+
+  /**
+   * Tell Frank what happened to the auto-translation. The publish itself
+   * succeeded either way — a failed translation is a warning, not an
+   * error, and must not look like the publish failed.
+   */
+  function reportTranslation(
+    res: {
+      translations?: TranslationOutcome[];
+      translated_count?: number;
+      translation_errors?: Array<{ locale: string; error?: string }>;
+    },
+    targetStatus: Status
+  ) {
+    if (targetStatus !== 'published') {
+      toast.show('草稿已保存', 'success');
+      return;
+    }
+    const created = (res.translations ?? []).filter((t) => t.status === 'created');
+    const failed = res.translation_errors ?? [];
+    const skipped = (res.translations ?? []).filter((t) => t.status === 'skipped');
+
+    if (failed.length > 0) {
+      toast.show(
+        `已发布，但翻译失败：${failed.map((f) => LOCALE_LABEL[f.locale] ?? f.locale).join('、')}`,
+        'error'
+      );
+      return;
+    }
+    if (created.length > 0) {
+      toast.show(
+        `已发布，机器翻译已生成：${created.map((c) => LOCALE_LABEL[c.locale] ?? c.locale).join('、')}`,
+        'success'
+      );
+      return;
+    }
+    if (skipped.length > 0) {
+      // The sibling locales already existed — either hand-written or
+      // previously translated. Nothing was overwritten.
+      toast.show('已发布（其他语言版本已存在，未覆盖）', 'success');
+      return;
+    }
+    toast.show('已发布', 'success');
   }
 
   async function handleDelete() {
@@ -808,7 +967,60 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
                 <option value="zh">中文</option>
                 <option value="en">English</option>
               </select>
+              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                {machineTranslatedLocales.has(locale) ? (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    padding: '1px 6px', borderRadius: 'var(--radius-sm)',
+                    background: 'rgba(251, 191, 36, 0.10)',
+                    border: '1px solid rgba(251, 191, 36, 0.25)',
+                    color: 'rgba(253, 224, 71, 0.95)',
+                  }}>
+                    🤖 机器翻译 · 建议人工校对
+                  </span>
+                ) : (
+                  <span>发布时自动生成其他语言版本</span>
+                )}
+              </div>
             </div>
+            <div style={{ marginBottom: 16 }}>
+              <label
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)',
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={autoTranslate}
+                  onChange={(e) => setAutoTranslate(e.target.checked)}
+                  style={{ width: 16, height: 16 }}
+                />
+                <span>发布时自动翻译成其他语言</span>
+              </label>
+              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                用 Workers AI 生成日文和英文版本（标题、描述、正文、标签一起翻）。
+                已存在的语言版本<strong>不会被覆盖</strong>，所以你手写的译文是安全的。
+                翻译约需 20 秒。
+              </div>
+            </div>
+            {effectiveIsEdit && machineTranslatedLocales.has(locale) && (
+              <div style={{ marginBottom: 16 }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRetranslate}
+                  disabled={retranslating}
+                  style={{ width: '100%' }}
+                >
+                  {retranslating ? '重新翻译中…' : `重新机器翻译（${LOCALE_LABEL[locale]}）`}
+                </Button>
+                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                  用当前语言的原文重新生成这一版。会覆盖当前的机器翻译结果。
+                </div>
+              </div>
+            )}
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>Slug</label>
               <input
@@ -906,7 +1118,11 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
               {saving ? '保存中…' : '保存草稿'}
             </Button>
             <Button variant="primary" onClick={() => save('published')} disabled={saving}>
-              {saving ? '发布中…' : status === 'published' ? '更新发布' : `发布${typeLabel}`}
+              {saving
+                ? (autoTranslate ? '发布并翻译中…（约 20 秒）' : '发布中…')
+                : status === 'published'
+                  ? '更新发布'
+                  : `发布${typeLabel}`}
             </Button>
             {effectiveIsEdit && (
               <Button
