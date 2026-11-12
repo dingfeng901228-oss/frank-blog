@@ -56,12 +56,12 @@ const LOCALE_NAMES: Record<Locale, string> = {
 
 const FENCED_CODE = /```[\s\S]*?```/g;
 const INLINE_CODE = /`[^`\n]+`/g;
-// Whole image / link markup, including the target. The alt text goes
-// inside the placeholder too, so it is never translated — that is
-// deliberate: alt text is an image label, and Frank's images are named
-// things like "photo_2026-09-06_20-25-38" which must not change.
-const IMAGE_MARKUP = /!\[[^\]]*\]\([^)]*\)/g;
-const LINK_MARKUP = /(?<!!)\[[^\]]*\]\([^)]*\)/g;
+// The image TARGET (the URL) is protected, but the ALT TEXT is not — alt
+// text is reader-visible prose ("测试封面" / "test cover") and should be
+// translated like any other text. The pattern captures the URL so the
+// placeholder can carry just that part.
+const IMAGE_MARKUP = /!\[([^\]]*)\]\(([^)]*)\)/g;
+const LINK_MARKUP = /(?<!!)\[([^\]]*)\]\(([^)]*)\)/g;
 
 export interface Protected {
   text: string;
@@ -79,8 +79,16 @@ export function protectSpans(text: string): Protected {
   // inline code, then images, then links.
   out = out.replace(FENCED_CODE, push);
   out = out.replace(INLINE_CODE, push);
-  out = out.replace(IMAGE_MARKUP, push);
-  out = out.replace(LINK_MARKUP, push);
+  // Images: keep the alt text in the flow, protect only the URL.
+  out = out.replace(IMAGE_MARKUP, (_m, alt: string, url: string) => {
+    store.push(url);
+    return `![${alt}](${MARK_OPEN}${store.length - 1}${MARK_CLOSE})`;
+  });
+  // Links: keep the link text in the flow, protect only the target.
+  out = out.replace(LINK_MARKUP, (_m, text: string, url: string) => {
+    store.push(url);
+    return `[${text}](${MARK_OPEN}${store.length - 1}${MARK_CLOSE})`;
+  });
   return { text: out, store };
 }
 
@@ -154,18 +162,42 @@ function systemPrompt(target: Locale, source: Locale): string {
     '2. Translate EVERY character of the source language. Do not leave any sentence untranslated, not even a short one inside quotes.',
     '3. Keep the SAME number of paragraphs as the input. Never merge two paragraphs, never split one. Keep blank lines exactly where they are.',
     '4. Preserve markdown syntax exactly: ## headings, **bold**, *italic*, - lists, 1. ordered lists, > blockquotes, | tables |, and horizontal rules.',
-    '5. The markers N stand for images, links, inline code and code blocks. Reproduce each marker EXACTLY ONCE, in the correct position. Never translate a marker, never drop one, never duplicate one, never move one.',
-    '6. Keep these terms unchanged because they are the names of products and technologies: Gateway, Agent, AI, CI, CD, commit, rollback, Windows, GitHub, Hermes, OpenClaw, Python, JavaScript, TypeScript, R2, D1, API, MCP, RSS, PWA.',
-    '7. Use natural punctuation for the target language. For Japanese use 、。「」 and です・ます調. For English use standard English punctuation.',
-    '8. Do not add or remove content. Do not add a title. The first line of the source is already the first line of the translation.',
+    '5. The markers N stand for URLs, inline code and code blocks. Reproduce each marker EXACTLY ONCE, in the correct position. Never translate a marker, never drop one, never duplicate one, never move one.',
+    '6. Translate image ALT TEXT (the text inside ![ ]) too — it is reader-visible prose. But never touch the URL inside ( ).',
+    '7. Keep these terms unchanged because they are the names of products and technologies: Gateway, Agent, AI, CI, CD, commit, rollback, Windows, GitHub, Hermes, OpenClaw, Python, JavaScript, TypeScript, R2, D1, API, MCP, RSS, PWA.',
+    '8. Use natural punctuation for the target language. For Japanese use 、。「」 and です・ます調. For English use standard English punctuation.',
+    '9. Do not add or remove content. Do not add a title. The first line of the source is already the first line of the translation.',
+    `10. If you find yourself unable to translate a fragment, wrap that fragment in 【】 instead of copying it verbatim. For example: 【untranslatable】. This is rare and will be checked.`,
   ].join('\n');
+}
+
+/**
+ * The model wraps anything it could not translate in 【】. Finding one means
+ * the chunk has a hole in it, and the chunk should be retried with a
+ * stronger nudge rather than shipped.
+ */
+const UNTRANSLATED_MARKER = /【[^】]*】/g;
+
+function hasUntranslated(text: string): boolean {
+  UNTRANSLATED_MARKER.lastIndex = 0;
+  return UNTRANSLATED_MARKER.test(text);
+}
+
+/**
+ * Remove the 【】 markers from a translation that will be shipped as-is.
+ * The wrapped text stays in place (untranslated) but the reader does not
+ * see stray brackets.
+ */
+function stripUntranslatedMarkers(text: string): string {
+  return text.replace(/【([^】]*)】/g, '$1');
 }
 
 async function callModel(
   env: Env,
   system: string,
   user: string,
-  maxTokens: number
+  maxTokens: number,
+  temperature = 0.2
 ): Promise<string | null> {
   // The AI binding is optional in the Env type so the Worker still
   // type-checks if the binding is ever removed from wrangler.toml. Every
@@ -178,7 +210,7 @@ async function callModel(
         { role: 'user', content: user },
       ],
       max_tokens: maxTokens,
-      temperature: 0.2,
+      temperature,
     });
     const text = res?.response;
     return typeof text === 'string' && text.trim().length > 0 ? text : null;
@@ -246,10 +278,31 @@ export async function translateMarkdown(
   // source character count, and the model must not truncate.
   const perChunkMax = 4000;
 
+  const translateOne = async (chunkText: string): Promise<string | null> => {
+    let out = await callModel(env, system, chunkText, perChunkMax);
+    if (out !== null && hasUntranslated(out)) {
+      // The model admitted it could not translate a fragment. Retry once
+      // with a harder instruction — a second attempt at a different
+      // temperature usually closes the hole.
+      const retry = await callModel(
+        env,
+        system +
+          '\n\nIMPORTANT: your previous attempt left some text untranslated. Translate EVERY fragment, including short phrases inside parentheses or quotes. Do not use 【】 — translate everything.',
+        chunkText,
+        perChunkMax,
+        0.5
+      );
+      if (retry !== null && !hasUntranslated(retry)) {
+        out = retry;
+      }
+    }
+    return out;
+  };
+
   const results = await Promise.all(
     chunks.map(async (c) => {
-      const out = await callModel(env, system, c.text, perChunkMax);
-      return { chunk: c, translated: out };
+      const translated = await translateOne(c.text);
+      return { chunk: c, translated };
     })
   );
 
@@ -262,14 +315,17 @@ export async function translateMarkdown(
       .map((r) => r.translated ?? r.chunk.text)
       .join('\n\n');
     return {
-      text: restoreSpans(merged, store),
+      text: restoreSpans(stripUntranslatedMarkers(merged), store),
       ok: false,
       error: `${failures.length}/${chunks.length} chunk(s) failed to translate`,
     };
   }
 
   const merged = results.map((r) => r.translated as string).join('\n\n');
-  return { text: restoreSpans(merged, store), ok: true };
+  return {
+    text: restoreSpans(stripUntranslatedMarkers(merged), store),
+    ok: true,
+  };
 }
 
 /**
