@@ -15,7 +15,7 @@ import Footer from '@/components/layout/Footer'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import type { Metadata } from 'next'
-import { tagCanonical } from '@/lib/tags'
+import { decodeTagParam, tagCanonical } from '@/lib/tags'
 
 interface PageProps {
   params: Promise<{ locale: string; tag: string }>
@@ -47,10 +47,15 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, tag } = await params
+  // The route parameter is the URL path segment. Next.js hands it over
+  // percent-encoded, so it has to be decoded before it can be matched
+  // against the tags in the frontmatter. `decodeTagParam` is idempotent,
+  // so it is safe whether the value arrives encoded or already decoded.
+  const decoded = decodeTagParam(tag)
   return {
-    title: titleByLocale[locale as keyof typeof titleByLocale].heading(tag),
+    title: titleByLocale[locale as keyof typeof titleByLocale].heading(decoded),
     alternates: {
-      canonical: tagCanonical('https://blog.frank2025.com', locale, 'blog', tag),
+      canonical: tagCanonical('https://blog.frank2025.com', locale, 'blog', decoded),
     },
   }
 }
@@ -59,8 +64,9 @@ export default async function TagFilteredBlogPage({ params }: PageProps) {
   const { locale, tag } = await params
   setRequestLocale(locale as Locale)
 
+  const decoded = decodeTagParam(tag)
   const allPosts = getAllPosts(locale as Locale)
-  const posts = allPosts.filter((p) => p.tags?.includes(tag))
+  const posts = allPosts.filter((p) => p.tags?.includes(decoded))
   if (posts.length === 0) notFound()
 
   const t = titleByLocale[locale as keyof typeof titleByLocale]
@@ -78,7 +84,7 @@ export default async function TagFilteredBlogPage({ params }: PageProps) {
         </div>
 
         <section className="py-12 border-b border-[var(--border)]">
-          <h1 className="font-serif text-4xl font-medium mb-4">{t.heading(tag)}</h1>
+          <h1 className="font-serif text-4xl font-medium mb-4">{t.heading(decoded)}</h1>
           <p className="text-[var(--muted)]">
             {locale === 'ja' ? `${posts.length} 記事を収録` : locale === 'zh' ? `共 ${posts.length} 篇文章` : `${posts.length} posts`}
           </p>

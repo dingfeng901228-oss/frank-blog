@@ -157,15 +157,25 @@ export default function HeroSection({ locale }: { locale: string }) {
                   →
                 </span>
               </Link>
-              <Link
-                href={`/${locale}/notes`}
+              {/*
+                Item 8: this button said 「制作物を見る」 / "View Projects" but
+                pointed at /{locale}/notes — the same address as the notes
+                link, so the name did not match the destination. It now
+                goes to the actual project list on the CV site.
+
+                It is a plain <a>, not a <Link>: it leaves the site.
+              */}
+              <a
+                href="https://cv.frank2025.com/#projects"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="hero-cta-secondary group"
               >
                 {t.cta2}
                 <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
                   →
                 </span>
-              </Link>
+              </a>
             </div>
           </div>
 

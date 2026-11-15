@@ -3,9 +3,44 @@ import path from 'path'
 import matter from 'gray-matter'
 import type { Post, PostFrontmatter } from './types'
 import type { Locale } from '@/i18n/config'
+import { readingTimeFor } from './reading-time'
+import { normalizeTags } from './tags'
 
 const notesDirectory = (locale: Locale) =>
   path.join(process.cwd(), 'src', 'content', locale, 'notes')
+
+/**
+ * Every tag the site knows about, across all locales.
+ *
+ * Shared with src/lib/blog.ts, but the two content trees are separate, so
+ * the notes tree is scanned on its own.
+ */
+let knownTagsCache: Set<string> | null = null
+
+function knownTags(): Set<string> {
+  if (knownTagsCache) return knownTagsCache
+
+  const set = new Set<string>()
+  for (const locale of ['ja', 'zh', 'en'] as Locale[]) {
+    const dir = notesDirectory(locale)
+    if (!fs.existsSync(dir)) continue
+    for (const file of fs.readdirSync(dir)) {
+      if (!/\.(mdx|md)$/.test(file)) continue
+      const raw = fs.readFileSync(path.join(dir, file), 'utf8')
+      const block = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw)
+      if (!block) continue
+      const line = /^tags:\s*\[(.*)\]\s*$/m.exec(block[1])
+      if (!line) continue
+      for (const entry of line[1].split(',')) {
+        const tag = entry.trim().replace(/^["']|["']$/g, '').trim()
+        if (tag) set.add(tag)
+      }
+    }
+  }
+
+  knownTagsCache = set
+  return set
+}
 
 export function getNoteSlugs(locale: Locale): string[] {
   const dir = notesDirectory(locale)
@@ -37,8 +72,12 @@ export function getNoteBySlug(locale: Locale, slug: string): Post | null {
   return {
     slug,
     content,
-    readingTime: '',
+    // Notes used to carry no reading time at all, which is why the reading
+    // time only appeared on articles. It is computed from the content,
+    // exactly like a post's, so the two list pages agree.
+    readingTime: readingTimeFor(content, locale),
     ...frontmatter,
+    tags: normalizeTags(frontmatter.tags, knownTags()),
   }
 }
 

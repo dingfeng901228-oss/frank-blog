@@ -238,7 +238,7 @@ export default async function NotePage({ params }: PageProps) {
           <div className="article-three-col">
             {/* Left: TOC */}
             <div className="article-toc-col">
-              <ArticleTOC />
+              <ArticleTOC locale={locale as Locale} />
             </div>
 
             {/* Center: Content */}

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { formatDate, formatDateParts } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import type { Locale } from '@/i18n/config'
 import { tagHref } from '@/lib/tags'
 
@@ -51,7 +51,9 @@ export const postLabels: Record<
  *
  * `variant="inline"` puts the reading time directly after the date (the
  * home card). `variant="stack"` puts date+reading on one line and the
- * tags below (the list cards).
+ * tags below (the article page). `variant="card"` leaves the date and
+ * reading time out entirely — the list cards show those in their own
+ * date column, and repeating them here would read as a duplication.
  */
 export function PostMeta({
   locale,
@@ -67,7 +69,7 @@ export function PostMeta({
   readingTime?: string
   tags?: string[]
   collection: 'posts' | 'notes'
-  variant?: 'inline' | 'stack'
+  variant?: 'inline' | 'stack' | 'card'
   linkTags?: boolean
 }) {
   const t = postLabels[locale] ?? postLabels.ja
@@ -115,6 +117,19 @@ export function PostMeta({
     </div>
   ) : null
 
+  if (variant === 'card') {
+    return (
+      <div className="flex items-center gap-3 flex-wrap">
+        <span
+          className={`text-xs font-mono ${kindColor} border border-current/20 rounded-full px-2 py-0.5`}
+        >
+          {kindLabel}
+        </span>
+        {tagList}
+      </div>
+    )
+  }
+
   if (variant === 'stack') {
     return (
       <div className="flex flex-col gap-2">
@@ -151,8 +166,9 @@ export function PostMeta({
  * blog list had a big left-hand date column, the notes list had a plain
  * stacked list). This component is the single card style both use.
  *
- * The date is rendered as THREE separate lines (year / month / day) rather
- * than one "2026年8月／19日" string, so it can never wrap mid-date.
+ * Item 3: the date is ONE string in the site-wide format ("2026年9月30日")
+ * with `whitespace-nowrap`, so it can never wrap mid-date the way the old
+ * "2026年8月／19日" block did.
  */
 export function PostCard({
   locale,
@@ -175,28 +191,21 @@ export function PostCard({
 }) {
   const base = collection === 'notes' ? 'notes' : 'blog'
   const href = `/${locale}/${base}/${slug}`
-  const parts = formatDateParts(publishedAt, locale)
 
   return (
-    <article className="group grid grid-cols-1 md:grid-cols-[160px_1fr] gap-6 md:gap-10 py-10 border-b border-[var(--border)] last:border-b-0">
-      {/* Left: big date block (year / month / day on separate lines) */}
+    <article className="group grid grid-cols-1 md:grid-cols-[180px_1fr] gap-6 md:gap-10 py-10 border-b border-[var(--border)] last:border-b-0">
+      {/* Left: the date, in the site-wide format, on one line */}
       <div className="flex flex-col gap-1 md:items-start">
         <time
           dateTime={publishedAt}
-          className="font-serif text-3xl font-medium tabular-nums leading-none whitespace-nowrap"
+          className="text-sm font-mono whitespace-nowrap"
           style={{ color: 'var(--foreground-strong)' }}
         >
-          {parts.day}
+          {formatDate(publishedAt, locale)}
         </time>
-        <span
-          className="text-xs font-mono whitespace-nowrap"
-          style={{ color: 'var(--muted)' }}
-        >
-          {parts.year} {parts.month}
-        </span>
         {readingTime && (
           <span
-            className="text-xs font-mono whitespace-nowrap md:mt-1"
+            className="text-xs font-mono whitespace-nowrap"
             style={{ color: 'var(--muted)' }}
           >
             {readingTime}
@@ -222,7 +231,7 @@ export function PostCard({
           readingTime={readingTime}
           tags={tags}
           collection={collection}
-          variant="stack"
+          variant="card"
         />
       </div>
     </article>

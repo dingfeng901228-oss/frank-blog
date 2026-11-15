@@ -38,11 +38,20 @@ export async function GET(
     <lastBuildDate>${allItems.length > 0 ? new Date(allItems[0].publishedAt).toUTCString() : new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${BASE_URL}/${locale}/rss.xml" rel="self" type="application/rss+xml"/>
     ${allItems
-      .slice(0, 20)
+      /*
+       * Item 10: the feed was capped at the newest 20 entries, so the six
+       * oldest articles never reached any reader's reader. The feed now
+       * carries EVERY published article — there are only a few dozen, and
+       * a feed that silently drops the tail is worse than a long one.
+       *
+       * The "✏️ " prefix on note titles is gone too: it duplicated the
+       * <category>Note</category> element and made the title look like
+       * a different kind of entry than it was.
+       */
       .map(
         (item) => `
     <item>
-      <title><![CDATA[${item.kind === 'note' ? '✏️ ' : ''}${item.title}]]></title>
+      <title><![CDATA[${item.title}]]></title>
       <link>${BASE_URL}/${item.href}</link>
       <description><![CDATA[${item.description ?? ''}]]></description>
       <pubDate>${new Date(item.publishedAt).toUTCString()}</pubDate>

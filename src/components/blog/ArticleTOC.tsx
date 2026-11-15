@@ -1,11 +1,26 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import type { Locale } from '@/i18n/config'
 
 interface TocItem {
   id: string
   text: string
   level: number
+}
+
+/**
+ * The table-of-contents heading.
+ *
+ * Item 7: this used to read "On this page" (desktop) and "Table of
+ * Contents" (mobile) in every language. The Japanese page is the
+ * reference, so the Japanese text is the default and the other locales
+ * get their own wording.
+ */
+const tocLabels: Record<Locale, { desktop: string; mobile: string }> = {
+  ja: { desktop: '目次', mobile: '目次' },
+  zh: { desktop: '目录', mobile: '目录' },
+  en: { desktop: 'On this page', mobile: 'Table of Contents' },
 }
 
 /** Extract heading ids + text from the rendered article. */
@@ -20,11 +35,12 @@ function buildToc(container: HTMLElement): TocItem[] {
   return items
 }
 
-export default function ArticleTOC() {
+export default function ArticleTOC({ locale = 'ja' }: { locale?: Locale }) {
   const [items, setItems] = useState<TocItem[]>([])
   const [activeId, setActiveId] = useState('')
   const [open, setOpen] = useState(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
+  const t = tocLabels[locale] ?? tocLabels.ja
 
   useEffect(() => {
     // Find the article container
@@ -74,7 +90,7 @@ export default function ArticleTOC() {
         <svg className={`w-3 h-3 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="9 18 15 12 9 6" />
         </svg>
-        Table of Contents
+        {t.mobile}
       </button>
 
       {open && (
@@ -102,7 +118,7 @@ export default function ArticleTOC() {
       {/* Desktop: sticky sidebar */}
       <nav className="hidden lg:block sticky" style={{ top: '100px' }}>
         <div className="text-[10px] uppercase font-mono tracking-[0.15em] mb-5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-          On this page
+          {t.desktop}
         </div>
         <div className="relative">
           {/* Active line indicator */}
