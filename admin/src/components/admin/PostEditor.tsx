@@ -18,7 +18,14 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import Markdown from '@/components/Markdown';
 import { useToast } from '@/components/ui/Toast';
 import { extractImageFile, uploadImageFile, buildImageMarkdown, insertAtCursor } from '@/lib/image-upload';
-import { apiGet, apiPatch, apiPost, apiPut, apiDelete } from '@/lib/cms/api-client';
+import { apiGet, apiPatch, apiPost, apiPut, apiDelete, errorMessage } from '@/lib/cms/api-client';
+import {
+  countWords,
+  estimateReadingMinutes,
+  formatDateTime,
+  toDateTimeLocal,
+} from '@/lib/cms/format';
+import { normalizeTagInput } from '@/lib/cms/tags';
 import { CoverImagePicker } from '@/components/admin/CoverImagePicker';
 
 type Tab = 'write' | 'preview';
@@ -108,6 +115,29 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
   const [locale, setLocale] = useState<Locale>(initialPost?.locale || 'ja');
   const [status, setStatus] = useState<Status>(initialPost?.status || 'draft');
 
+  // ── Item 5 — the tag system ──
+  // Every tag the site already knows about. The editor offers them for
+  // picking, and the text field still accepts free text; everything is
+  // normalized (trimmed, full-width comma split, de-duplicated) before
+  // it reaches the database.
+  const [knownTags, setKnownTags] = useState<string[]>([]);
+  // The free-text box for a tag that does not exist yet.
+  const [tagPickerQuery, setTagPickerQuery] = useState('');
+  // ── Item 6 — the article's category ──
+  const [categories, setCategories] = useState<Array<{ id: number; name: string; collection: string }>>([]);
+  const [categoryId, setCategoryId] = useState<number | null>(
+    (initialPost as any)?.category_id ?? null
+  );
+  // ── Item 9 — scheduled publishing ──
+  const [scheduledAt, setScheduledAt] = useState<string>(
+    toDateTimeLocal((initialPost as any)?.scheduled_at ?? null)
+  );
+  // ── Item 13 — SEO title and OG image ──
+  const [seoTitle, setSeoTitle] = useState<string>((initialPost as any)?.seo_title ?? '');
+  const [ogImage, setOgImage] = useState<string>(
+    (initialPost as any)?.og_image ?? initialPost?.cover_image ?? ''
+  );
+
   // Auto-translation on publish. Default ON: Frank writes one language and
   // the Worker generates the other two. Turn it off for a post that should
   // only exist in the language it was written in.
@@ -182,9 +212,9 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       } else {
         setContent((c) => c + md);
       }
-      toast.show('Image uploaded', 'success');
+      toast.show('图片已上传', 'success');
     } catch (e: any) {
-      toast.show(e.message || 'Upload failed', 'error');
+      toast.show(errorMessage(e, '上传失败'), 'error');
     } finally {
       setUploadingImage(false);
     }
@@ -282,13 +312,18 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       setStatus(data.status);
       setPublishedAt(data.published_at);
       setUpdatedAt(data.updated_at);
+      // Item 6 + 9 + 13 — the fields the editor added.
+      setCategoryId(data.category_id ?? null);
+      setScheduledAt(toDateTimeLocal(data.scheduled_at ?? null));
+      setSeoTitle(data.seo_title ?? '');
+      setOgImage(data.og_image ?? data.cover_image ?? '');
       // Remember what the server gave us so the locale-switch effect can
       // distinguish a user-driven switch from an internal re-sync.
       lastLoadedLocale.current = data.locale as Locale;
       setLoadedCollection((data.collection as Collection) ?? null);
       setLoadedSlug(data.slug);
     } catch (e: any) {
-      setError(e.message || 'Reload failed');
+      setError(errorMessage(e, '重新加载文章失败，请稍后重试。'));
     }
   }
 
@@ -451,13 +486,84 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, slug, content, description, effectiveIsEdit, postId]);
 
+  // ── Item 5 + 6 — load the tag list and the categories ──
+  // The editor offers the tags the site already knows about, so a tag
+  // is picked rather than retyped (and a typo cannot create a second
+  // spelling of the same tag).
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<{ items?: Array<{ name: string }> }>('/api/admin/tags')
+      .then((data) => {
+        if (cancelled) return;
+        setKnownTags(
+          Array.isArray(data.items) ? data.items.map((t) => t.name).filter(Boolean) : []
+        );
+      })
+      .catch(() => {
+        /* the tag picker degrades to free text */
+      });
+    apiGet<{ items?: Array<{ id: number; name: string; collection: string }> }>('/api/admin/categories')
+      .then((data) => {
+        if (cancelled) return;
+        setCategories(Array.isArray(data.items) ? data.items : []);
+      })
+      .catch(() => {
+        /* the category select stays empty */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function parseTags(): string[] {
-    return tagsInput.split(',').map((t) => t.trim()).filter(Boolean);
+    // Item 5 — the same normalization the Worker applies: split on the
+    // half-width AND the full-width comma, trim every tag, drop the
+    // empty ones and de-duplicate (case-insensitively) so the same tag
+    // can never appear in two spellings.
+    return normalizeTagInput(tagsInput, new Set(knownTags));
+  }
+
+  /**
+   * Add a tag to the field (from the picker or the free-text box).
+   *
+   * The value goes through the same normalization as a save, so the
+   * field always shows the canonical spelling.
+   */
+  function addTag(value: string) {
+    const name = value.trim();
+    if (!name) return;
+    const current = parseTags();
+    const exists = current.some((t) => t.toLowerCase() === name.toLowerCase());
+    if (exists) {
+      setTagPickerQuery('');
+      return;
+    }
+    setTagsInput([...current, name].join(', '));
+    setTagPickerQuery('');
+  }
+
+  function removeTag(value: string) {
+    const current = parseTags().filter((t) => t !== value);
+    setTagsInput(current.join(', '));
+  }
+
+  /**
+   * Rewrite the tag field in its canonical form.
+   *
+   * Item 5 — a full-width comma becomes a half-width one, every tag is
+   * trimmed and the same tag can never appear twice. The field shows
+   * what will actually be saved.
+   */
+  function commitTags() {
+    const normalized = normalizeTagInput(tagsInput, new Set(knownTags));
+    if (normalized.join(', ') !== tagsInput) {
+      setTagsInput(normalized.join(', '));
+    }
   }
 
   async function save(targetStatus: Status) {
     if (!title.trim() || !slug.trim() || !content.trim()) {
-      setError('Title, slug, and content are required.');
+      setError('标题、slug 和正文不能为空。');
       return;
     }
     setSaving(true);
@@ -483,6 +589,15 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
           is_featured: isFeatured,
           status: targetStatus,
           loaded_updated_at: updatedAt,
+          // Item 6 — the article's category.
+          category_id: categoryId,
+          // Item 9 — a future date means "publish it then". The Worker
+          // keeps it a draft until its cron trigger reaches that time.
+          scheduled_at: scheduledAt || null,
+          // Item 13 — independent SEO title and OG image (the OG image
+          // falls back to the cover image).
+          seo_title: seoTitle || null,
+          og_image: ogImage || coverImage || null,
           // Auto-translate the sibling locales when this publish moves the
           // post from draft → published. The Worker skips locales that
           // already have a row, so hand-written translations are never
@@ -492,6 +607,10 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
         await refetchPost();
         setStatus(targetStatus);
         reportTranslation(res, targetStatus);
+        // Item 10 — the save just wrote a new version, so the history
+        // count has to be refreshed. Without this the button still
+        // showed the old number until the page was reloaded.
+        fetchRevisions();
         // The publish may have created sibling locales — refresh the
         // machine-translation badges so they show up right away.
         if (targetStatus === 'published') {
@@ -514,6 +633,13 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
           tags,
           is_featured: isFeatured,
           status: targetStatus,
+          // Item 6 — the article's category.
+          category_id: categoryId,
+          // Item 9 — a future date means "publish it then".
+          scheduled_at: scheduledAt || null,
+          // Item 13 — independent SEO title and OG image.
+          seo_title: seoTitle || null,
+          og_image: ogImage || coverImage || null,
           auto_translate: targetStatus === 'published' && autoTranslate,
         });
         // Transition into edit mode in-place — URL stays the same, revisions
@@ -527,7 +653,9 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
         router.replace(`${editBase}/edit?id=${data.id}`);
       }
     } catch (e: any) {
-      const msg = e?.message || 'Save failed';
+      // Item 1 — the raw JS error never reaches the screen; the
+      // api-client already turned it into a readable message.
+      const msg = errorMessage(e, '保存失败，请稍后重试。');
       if (e?.code === 'CONFLICT') {
         setConflictMessage(msg);
         setConflictOpen(true);
@@ -739,8 +867,12 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
           )}
           {effectiveIsEdit && (
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>
-              {updatedAt && <div>更新时间 {updatedAt}</div>}
-              {publishedAt && <div>发布时间 {publishedAt}</div>}
+              {/* Item 9 + 11 — one date format everywhere: YYYY-MM-DD HH:mm.
+                  The raw ISO string ("2026-08-11T00:00:00.000Z") used to be
+                  printed straight from the database. */}
+              {updatedAt && <div>更新时间 {formatDateTime(updatedAt)}</div>}
+              {publishedAt && <div>发布时间 {formatDateTime(publishedAt)}</div>}
+              {scheduledAt && <div style={{ color: 'var(--color-warning)' }}>定时发布 {formatDateTime(scheduledAt)}</div>}
               {effectiveIsEdit && autoSaving && (
                 <div style={{ color: '#F59E0B' }}>保存中…</div>
               )}
@@ -752,9 +884,18 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
         </div>
       </div>
 
-      {error && <ErrorState title="Cannot save" description={error} />}
+      {error && <ErrorState title="保存失败" description={error} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
+      {/*
+        Item 3 — the editor used a fixed `1fr 320px` grid. A grid item's
+        default `min-width: auto` means the first column cannot shrink
+        below its content's intrinsic width, so on a wide screen the
+        right-hand column was pushed off the page and the page grew a
+        horizontal scrollbar. `.admin-editor-grid` uses
+        `minmax(0, 1fr)` + `min-width: 0` on the children, and collapses
+        to a single column below 1200px.
+      */}
+      <div className="admin-editor-grid">
         {/* Main column */}
         <div>
           {/* Title */}
@@ -938,6 +1079,21 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
               onChange={(e) => setDescription(e.target.value)}
               style={{ ...inputStyle, minHeight: 80 }}
             />
+            {/* Item 13 — the word count and the estimated reading time. */}
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 11,
+                color: 'var(--color-text-muted)',
+                fontFamily: 'var(--font-mono)',
+                display: 'flex',
+                gap: 12,
+              }}
+            >
+              <span>字数 {countWords(content)}</span>
+              <span>预计阅读 {estimateReadingMinutes(content)} 分钟</span>
+              <span>描述 {countWords(description)} 字</span>
+            </div>
           </div>
         </div>
 
@@ -1089,15 +1245,134 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
                 </div>
               )}
             </div>
+            {/*
+              Item 5 — the tag system. The editor no longer takes free
+              text only: the tags the site already has are offered for
+              picking, and a new tag can be typed (a full-width comma
+              separates tags too). Everything is normalized before it
+              reaches the database — trimmed, de-duplicated, and never
+              two spellings of the same tag.
+            */}
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>标签</label>
               <input
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="逗号分隔，例如：AI, Cloudflare, 随笔"
+                onBlur={commitTags}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    commitTags();
+                  }
+                }}
+                placeholder="输入标签后按回车，可用中文或英文逗号分隔"
                 style={inputStyle}
+                aria-label="标签"
               />
+              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                {parseTags().length > 0
+                  ? `已选 ${parseTags().length} 个：${parseTags().join('、')}`
+                  : '还没有标签。可以从下面已有的标签里选，或直接输入新标签。'}
+              </div>
+              {knownTags.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>
+                    从已有标签中选择
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', maxHeight: 132, overflowY: 'auto' }}>
+                    {knownTags.map((t) => {
+                      const active = parseTags().some((x) => x.toLowerCase() === t.toLowerCase());
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => (active ? removeTag(t) : addTag(t))}
+                          aria-pressed={active}
+                          style={{
+                            padding: '2px 8px',
+                            fontSize: 11,
+                            fontFamily: 'inherit',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            border: '1px solid var(--color-border)',
+                            background: active ? 'var(--color-primary)' : 'var(--color-surface-elevated)',
+                            color: active ? 'var(--color-bg)' : 'var(--color-text-secondary)',
+                          }}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Item 6 — the article's category. */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>分类</label>
+              <select
+                value={categoryId === null ? '' : String(categoryId)}
+                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
+                style={inputStyle}
+                aria-label="分类"
+              >
+                <option value="">（未分类）</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {categories.length === 0 && (
+                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-text-muted)' }}>
+                  还没有分类，可先到「整理 → 分类」新建。
+                </div>
+              )}
+            </div>
+
+            {/* Item 9 — scheduled publishing. */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>定时发布</label>
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                style={inputStyle}
+                aria-label="定时发布时间"
+              />
+              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+                填入将来的时间后，这篇文章会保持草稿，到点自动发布（每 5 分钟检查一次）。
+                清空即取消定时。
+              </div>
+            </div>
+
+            {/* Item 13 — SEO title and OG image. */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>SEO 标题</label>
+              <input
+                type="text"
+                value={seoTitle}
+                onChange={(e) => setSeoTitle(e.target.value)}
+                placeholder={title || '（留空则使用文章标题）'}
+                style={inputStyle}
+                aria-label="SEO 标题"
+              />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>OG 图（分享卡片图片）</label>
+              <input
+                type="text"
+                value={ogImage}
+                onChange={(e) => setOgImage(e.target.value)}
+                placeholder={coverImage || '（留空则使用封面图）'}
+                style={inputStyle}
+                aria-label="OG 图"
+              />
+              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-text-muted)' }}>
+                留空时自动使用封面图。
+              </div>
             </div>
             <div>
               <label style={labelStyle}>精选</label>

@@ -76,21 +76,61 @@ export function splitTag(tag: string, known: Set<string>): string[] {
 export function normalizeTags(tags: unknown, known: Set<string>): string[] {
   if (!Array.isArray(tags)) return []
 
-  const out: string[] = []
-  const seen = new Set<string>()
+  const out: string[] = [];
+  const seen = new Set<string>();
 
   for (const entry of tags) {
-    if (typeof entry !== 'string') continue
+    if (typeof entry !== 'string') continue;
     for (const part of splitTag(entry, known)) {
-      const key = part.trim()
-      if (!key) continue
+      const key = part.trim();
+      if (!key) continue;
       // Case-insensitive de-duplication, but keep the FIRST spelling.
-      const dedupeKey = key.toLowerCase()
-      if (seen.has(dedupeKey)) continue
-      seen.add(dedupeKey)
-      out.push(key)
+      const dedupeKey = key.toLowerCase();
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      out.push(key);
     }
   }
 
-  return out
+  return out;
+}
+
+/**
+ * The separator characters a human can type between tags.
+ *
+ * Item 5 — the editor's tag field used to split on the half-width comma
+ * only, so a full-width comma ("，") typed on a Japanese IME became part
+ * of the tag name and produced a tag that could never match the public
+ * site's tag pages.
+ */
+const TAG_INPUT_SEPARATORS = /[,，、]/;
+
+/**
+ * Turn the editor's free-text tag field into a canonical tag list.
+ *
+ * The rules, all of them applied before the tags reach the database:
+ *
+ *   1. Split on both the half-width and the full-width comma (and the
+ *      ideographic comma), so an IME-typed "，" separates tags.
+ *   2. Trim every tag — a leading or trailing space is invisible in the
+ *      UI but makes "AI" and " AI" two different tags.
+ *   3. Replace a full-width comma INSIDE a tag with a half-width one, so
+ *      a tag can never carry a character the URL builder would encode
+ *      differently from the one the tag page is generated from.
+ *   4. Drop empty tags.
+ *   5. De-duplicate case-insensitively, keeping the first spelling, so
+ *      the same tag can never appear in two spellings.
+ *   6. Split a joined tag ("AIエージェント.AI Agent") using the known-tag
+ *      rule from splitTag().
+ *
+ * @param input the raw text from the editor's tag field
+ * @param known every tag the site already knows about
+ */
+export function normalizeTagInput(input: string, known: Set<string> = new Set()): string[] {
+  if (!input || typeof input !== 'string') return [];
+  const raw = input
+    .split(TAG_INPUT_SEPARATORS)
+    .map((part) => part.trim().replace(/，/g, ','))
+    .filter(Boolean);
+  return normalizeTags(raw, known);
 }

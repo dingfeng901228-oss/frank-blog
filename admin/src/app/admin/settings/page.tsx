@@ -1,19 +1,22 @@
 'use client';
 
 // src/app/admin/settings/page.tsx
-// Real Settings page — replaces the PlaceholderPage stub. Two actions:
-//   - Change password (calls POST /api/admin/auth/change-password)
-//   - Show current account info (read-only)
 //
-// We deliberately don't try to be a full preferences UI yet. Adding the
-// password change is the only piece Frank actually needs today; everything
-// else can grow from here.
+// Three sections:
+//   - 站点设置 (item 16): the site title, description, default language
+//     and timezone. They live in the `settings` table and are read and
+//     written through GET/PUT /api/admin/settings.
+//   - 导出全部数据 (item 16): downloads every article, tag and category
+//     as JSON or Markdown.
+//   - 账户: the account info and the password change that were already
+//     here.
 
 import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { apiGet, apiPut, errorMessage } from '@/lib/cms/api-client';
 
 interface Me {
   id: number;
@@ -22,9 +25,31 @@ interface Me {
   role: string;
 }
 
+const DEFAULT_SETTINGS: Record<string, string> = {
+  site_title: 'Frank Ding',
+  site_description: 'IT 基础设施运维与日本 IT 职业转型记录',
+  default_locale: 'ja',
+  timezone: 'Asia/Tokyo',
+};
+
+const TIMEZONES = [
+  'Asia/Tokyo',
+  'Asia/Shanghai',
+  'Asia/Seoul',
+  'Asia/Singapore',
+  'Europe/London',
+  'Europe/Berlin',
+  'UTC',
+];
+
 export default function SettingsPage() {
   const [me, setMe] = useState<Me | null>(null);
   const [loadingMe, setLoadingMe] = useState(true);
+
+  // Item 16 — the site settings.
+  const [settings, setSettings] = useState<Record<string, string>>(DEFAULT_SETTINGS);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -40,14 +65,75 @@ export default function SettingsPage() {
         if (!res.ok) throw new Error('Failed to load account info');
         const data = await res.json();
         if (!cancelled) setMe(data.data?.user ?? null);
-      } catch (e: any) {
-        if (!cancelled) toast.show(e.message || '加载账户信息失败', 'error');
+      } catch (e: unknown) {
+        if (!cancelled) toast.show(errorMessage(e, '加载账户信息失败'), 'error');
       } finally {
         if (!cancelled) setLoadingMe(false);
       }
     })();
     return () => { cancelled = true; };
   }, [toast]);
+
+  // Item 16 — load the site settings.
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<{ settings?: Record<string, string> }>('/api/admin/settings')
+      .then((data) => {
+        if (cancelled) return;
+        setSettings({ ...DEFAULT_SETTINGS, ...(data.settings ?? {}) });
+      })
+      .catch(() => {
+        /* the defaults stay in place */
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  async function handleSaveSettings() {
+    setSavingSettings(true);
+    try {
+      await apiPut('/api/admin/settings', { settings });
+      toast.show('站点设置已保存', 'success');
+    } catch (e: unknown) {
+      toast.show(errorMessage(e, '保存失败'), 'error');
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
+  /**
+   * Item 16 — export everything the CMS owns.
+   *
+   * The API builds the file (articles + tags + categories), so the
+   * download is a plain link to a generated file.
+   */
+  async function handleExport(format: 'json' | 'markdown') {
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/admin/export?format=${format}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        throw new Error(`导出失败（HTTP ${res.status}）`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download =
+        format === 'json'
+          ? 'frank-blog-export.json'
+          : 'frank-blog-export.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.show('导出已开始', 'success');
+    } catch (e: unknown) {
+      toast.show(errorMessage(e, '导出失败'), 'error');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -94,8 +180,8 @@ export default function SettingsPage() {
       setCurrentPw('');
       setNewPw('');
       setNewPw2('');
-    } catch (e: any) {
-      toast.show(e.message || '修改失败', 'error');
+    } catch (e: unknown) {
+      toast.show(errorMessage(e, '修改失败'), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -138,6 +224,82 @@ export default function SettingsPage() {
       <h1 style={{ fontSize: 28, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 24 }}>
         设置
       </h1>
+
+      {/* Item 16 — the site settings. */}
+      <Card padding="md">
+        <h2 style={sectionTitle}>站点设置</h2>
+        <div style={fieldRow}>
+          <label style={labelStyle}>站点标题</label>
+          <input
+            type="text"
+            value={settings.site_title ?? ''}
+            onChange={(e) => setSettings((s) => ({ ...s, site_title: e.target.value }))}
+            style={inputStyle}
+          />
+        </div>
+        <div style={fieldRow}>
+          <label style={labelStyle}>站点描述</label>
+          <textarea
+            value={settings.site_description ?? ''}
+            onChange={(e) => setSettings((s) => ({ ...s, site_description: e.target.value }))}
+            style={{ ...inputStyle, minHeight: 72, resize: 'vertical' }}
+          />
+          <div style={helpStyle}>用于 SEO 的摘要描述。</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div>
+            <label style={labelStyle}>默认语言</label>
+            <select
+              value={settings.default_locale ?? 'ja'}
+              onChange={(e) => setSettings((s) => ({ ...s, default_locale: e.target.value }))}
+              style={inputStyle}
+            >
+              <option value="ja">日文</option>
+              <option value="zh">中文</option>
+              <option value="en">英文</option>
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>时区</label>
+            <select
+              value={settings.timezone ?? 'Asia/Tokyo'}
+              onChange={(e) => setSettings((s) => ({ ...s, timezone: e.target.value }))}
+              style={inputStyle}
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button onClick={handleSaveSettings} disabled={savingSettings} variant="primary">
+            {savingSettings ? '保存中…' : '保存站点设置'}
+          </Button>
+        </div>
+      </Card>
+
+      <div style={{ height: 16 }} />
+
+      {/* Item 16 — export everything. */}
+      <Card padding="md">
+        <h2 style={sectionTitle}>导出全部数据</h2>
+        <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+          导出全部文章（含各语言版本）、标签和分类。JSON 适合备份，Markdown 适合阅读和迁移。
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Button onClick={() => handleExport('json')} disabled={exporting}>
+            {exporting ? '导出中…' : '导出 JSON'}
+          </Button>
+          <Button onClick={() => handleExport('markdown')} disabled={exporting}>
+            导出 Markdown
+          </Button>
+        </div>
+      </Card>
+
+      <div style={{ height: 16 }} />
 
       <Card padding="md">
         <h2 style={sectionTitle}>账户信息</h2>

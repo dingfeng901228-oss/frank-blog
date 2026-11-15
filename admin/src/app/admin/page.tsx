@@ -3,13 +3,23 @@
 // src/app/admin/page.tsx — Phase 1d
 // New Dashboard per docs/CMS V2.md §五 (Blog/Notes stats) + §九 (no big Welcome card) + §三十四 (final structure)
 // Real D1 counts via existing /api/admin/posts endpoint (collection + status filters)
+//
+// Item 2 — the "最近活动" panel read `data.data.activities` while the
+// API returns `data.data.items`, so the panel always fell through to
+// the empty state even though the activity log had 30 records. It now
+// reads the same field the activity page reads.
+//
+// Item 11 — dates use the admin's one format (YYYY-MM-DD HH:mm) and the
+// event names come from the shared Chinese label map, so the dashboard
+// and the activity log say the same thing.
 
 import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
-import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { apiGet, errorMessage } from '@/lib/cms/api-client';
+import { formatAction, formatDateTime } from '@/lib/cms/format';
 
 interface Count {
   total: number;
@@ -23,6 +33,7 @@ interface ActivityItem {
   action: string;
   resource_type: string | null;
   resource_id: number | null;
+  message?: string | null;
   created_at: string;
 }
 
@@ -31,33 +42,6 @@ const greeting = () => {
   if (h < 12) return '早上好';
   if (h < 18) return '下午好';
   return '晚上好';
-};
-
-const formatRelativeTime = (createdAt: string): string => {
-  // admin_logs uses SQLite datetime('now') format: "YYYY-MM-DD HH:MM:SS" (UTC)
-  const iso = createdAt.includes('T') ? createdAt : createdAt.replace(' ', 'T') + 'Z';
-  const ms = Date.now() - new Date(iso).getTime();
-  const min = Math.floor(ms / 60000);
-  if (min < 1) return '刚刚';
-  if (min < 60) return `${min} 分钟前`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} 小时前`;
-  const day = Math.floor(hr / 24);
-  if (day < 7) return `${day} 天前`;
-  return new Date(iso).toLocaleDateString();
-};
-
-const formatAction = (item: ActivityItem): string => {
-  switch (item.action) {
-    case 'login': return '登录';
-    case 'logout': return '退出登录';
-    case 'login_failed': return '登录失败';
-    case 'publish_post': return '发布了文章';
-    case 'unpublish_post': return '取消发布文章';
-    case 'publish_post_failed': return '发布文章失败';
-    case 'unpublish_post_failed': return '取消发布失败';
-    default: return item.action;
-  }
 };
 
 export default function DashboardPage() {
@@ -74,21 +58,17 @@ export default function DashboardPage() {
       setError(null);
       try {
         const fetchCount = async (params: string): Promise<number> => {
-          const res = await fetch(`/api/admin/posts?${params}`, { credentials: 'include' });
-          const data = await res.json();
-          if (!res.ok || !data.success) {
-            throw new Error(data.error?.message || 'Failed to fetch');
-          }
-          return data.data.total as number;
+          const data = await apiGet<{ total: number }>(`/api/admin/posts?${params}`);
+          return data.total;
         };
 
+        // Item 2 — the same endpoint and the same field the activity
+        // page uses: { items: [...] }.
         const fetchActivity = async (): Promise<ActivityItem[]> => {
-          // /api/admin/activity/recent will be added in Phase 6; return [] for now
-          const res = await fetch('/api/admin/activity/recent?limit=5', { credentials: 'include' });
-          if (res.status === 404) return [];
-          const data = await res.json();
-          if (!res.ok || !data.success) return [];
-          return data.data.activities;
+          const data = await apiGet<{ items: ActivityItem[] }>(
+            '/api/admin/activity/recent?limit=5'
+          );
+          return Array.isArray(data.items) ? data.items : [];
         };
 
         const [
@@ -114,8 +94,8 @@ export default function DashboardPage() {
         setNotes({ total: notesTotal, published: notesPub, drafts: notesDraft });
         setDrafts(blogDraft + notesDraft);
         setActivity(recentActs);
-      } catch (e: any) {
-        setError(e.message || 'Unknown error');
+      } catch (e: unknown) {
+        setError(errorMessage(e, '仪表盘数据加载失败，请稍后重试。'));
       } finally {
         setLoading(false);
       }
@@ -123,7 +103,7 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  if (loading) return <LoadingState message="加载中…" />;
+  if (loading) return <DashboardSkeleton />;
   if (error) return <ErrorState title="加载仪表盘失败" description={error} />;
 
   const sectionTitle: CSSProperties = {
@@ -234,14 +214,32 @@ export default function DashboardPage() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                gap: 12,
               }}
             >
-              <span style={{ color: 'var(--color-text-secondary)' }}>{formatAction(item)}</span>
-              <span style={{ color: 'var(--color-text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
-                {formatRelativeTime(item.created_at)}
+              <span style={{ color: 'var(--color-text-secondary)' }}>
+                {formatAction(item.action)}
+                {item.message ? (
+                  <span style={{ color: 'var(--color-danger)', marginLeft: 8 }}>{item.message}</span>
+                ) : null}
+              </span>
+              <span
+                style={{
+                  color: 'var(--color-text-muted)',
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {formatDateTime(item.created_at)}
               </span>
             </div>
           ))}
+          <div style={{ paddingTop: 'var(--space-sm)' }}>
+            <Link href="/admin/activity" style={{ fontSize: 12 }}>
+              查看全部活动 →
+            </Link>
+          </div>
         </Card>
       ) : (
         <EmptyState
@@ -253,17 +251,31 @@ export default function DashboardPage() {
   );
 }
 
-const disabledButtonStyle: CSSProperties = {
-  padding: 'var(--space-md) var(--space-lg)',
-  background: 'var(--color-surface)',
-  color: 'var(--color-text-muted)',
-  border: '1px solid var(--color-border)',
-  borderRadius: 'var(--radius-md)',
-  cursor: 'not-allowed',
-  opacity: 0.5,
-  fontFamily: 'inherit',
-  fontSize: 'var(--font-size-base)',
-};
+/**
+ * Item 17 — the dashboard used to show a blank "加载中…" page while the
+ * counts loaded. This keeps the layout stable.
+ */
+function DashboardSkeleton() {
+  return (
+    <div style={{ maxWidth: 960 }}>
+      <div className="skeleton" style={{ height: 34, width: 240, marginBottom: 12 }} />
+      <div className="skeleton" style={{ height: 16, width: 320, marginBottom: 32 }} />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 16,
+          marginBottom: 32,
+        }}
+      >
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="skeleton" style={{ height: 150, borderRadius: 'var(--radius-md)' }} />
+        ))}
+      </div>
+      <div className="skeleton" style={{ height: 180, borderRadius: 'var(--radius-md)' }} />
+    </div>
+  );
+}
 
 const primaryButtonStyle: CSSProperties = {
   padding: 'var(--space-md) var(--space-lg)',

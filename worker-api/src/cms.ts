@@ -650,7 +650,14 @@ export function mediaPublicUrl(r2Key: string, env: Env): string {
 
 export async function listMedia(
   env: Env,
-  options: { limit?: number; offset?: number; search?: string } = {}
+  options: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    // Item 14 — filter the library by upload date.
+    from?: string;
+    to?: string;
+  } = {}
 ): Promise<{ items: MediaRecord[]; total: number }> {
   const limit = Math.min(100, Math.max(1, options.limit ?? 20));
   const offset = Math.max(0, options.offset ?? 0);
@@ -659,8 +666,23 @@ export async function listMedia(
   const where: string[] = [];
   const params: unknown[] = [];
   if (search) {
-    where.push('(filename LIKE ? OR alt LIKE ?)');
-    params.push(`%${search}%`, `%${search}%`);
+    // instr() instead of LIKE: a literal substring search with no
+    // wildcard semantics (a "_" in a file name is not a wildcard).
+    where.push('(instr(filename, ?) > 0 OR instr(alt, ?) > 0)');
+    params.push(search, search);
+  }
+  // Item 14 — 按日期筛选. The dates are plain "YYYY-MM-DD" strings and
+  // the column is a SQLite datetime, so the end date is extended to the
+  // end of that day.
+  const from = options.from?.trim();
+  if (from) {
+    where.push('created_at >= ?');
+    params.push(from);
+  }
+  const to = options.to?.trim();
+  if (to) {
+    where.push('created_at <= ?');
+    params.push(to.length === 10 ? `${to} 23:59:59` : to);
   }
   const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 
@@ -810,13 +832,177 @@ export async function listCategories(
 ): Promise<CategoryRecord[]> {
   const where = collection ? 'WHERE collection = ?' : '';
   const params = collection ? [collection] : [];
-  return queryAll<CategoryRecord>(
+  try {
+    return await queryAll<CategoryRecord>(
+      env,
+      `SELECT id, name, slug, collection, created_at
+       FROM categories ${where}
+       ORDER BY collection, name`,
+      params
+    );
+  } catch (e: any) {
+    // The `collection` column is added by migration 0007. If that migration
+    // has not been applied yet the query throws and /admin/categories/
+    // breaks — so fall back to the pre-0007 shape instead of 500-ing.
+    if (String(e?.message || '').includes('no such column: collection')) {
+      return await queryAll<CategoryRecord>(
+        env,
+        `SELECT id, name, slug, 'posts' AS collection, created_at
+         FROM categories ${where.replace('collection = ?', '1 = 1')}
+         ORDER BY name`,
+        []
+      );
+    }
+    throw e;
+  }
+}
+
+/**
+ * Every tag with the number of articles that carry it.
+ *
+ * Item 5 — the tag page used to show "共 0 个标签" because the tag
+ * system was never populated. The usage count is what makes the list
+ * useful (and what makes deleting a tag safe to offer).
+ */
+export async function listTagsWithUsage(
+  env: Env
+): Promise<Array<TagRecord & { post_count: number }>> {
+  return queryAll<TagRecord & { post_count: number }>(
     env,
-    `SELECT id, name, slug, collection, created_at
-     FROM categories ${where}
-     ORDER BY collection, name`,
-    params
+    `SELECT t.id, t.name, t.slug, t.created_at,
+            (SELECT COUNT(*) FROM post_tags pt WHERE pt.tag_id = t.id) AS post_count
+     FROM tags t
+     ORDER BY post_count DESC, t.name`
   );
+}
+
+/**
+ * Keep the tag master table and the post_tags join in step with a
+ * post's tag list.
+ *
+ * The tag's slug is the tag NAME — deliberately. The public site builds
+ * its tag pages as /<locale>/<collection>/tag/<encodeURIComponent(name)>,
+ * so the path segment IS the encoded name. Storing a different slug here
+ * would make the two systems disagree about the URL and every tag
+ * created in the admin would 404 on the public site.
+ */
+export async function syncPostTags(
+  env: Env,
+  postId: number,
+  tags: string[]
+): Promise<void> {
+  if (!Array.isArray(tags)) return;
+  for (const tag of tags) {
+    const name = String(tag).trim();
+    if (!name) continue;
+    await execute(
+      env,
+      `INSERT OR IGNORE INTO tags (name, slug) VALUES (?, ?)`,
+      [name, name]
+    );
+    const row = await queryFirst<{ id: number }>(
+      env,
+      `SELECT id FROM tags WHERE name = ?`,
+      [name]
+    );
+    if (row) {
+      await execute(env, `INSERT OR IGNORE INTO post_tags (post_id, tag_id) VALUES (?, ?)`, [
+        postId,
+        row.id,
+      ]);
+    }
+  }
+  // Remove the join rows for tags this post no longer has. The tag row
+  // itself stays — other posts may still use it.
+  const names = tags.map((t) => String(t).trim()).filter(Boolean);
+  if (names.length === 0) {
+    await execute(env, `DELETE FROM post_tags WHERE post_id = ?`, [postId]);
+  } else {
+    const placeholders = names.map(() => '?').join(',');
+    await execute(
+      env,
+      `DELETE FROM post_tags WHERE post_id = ? AND tag_id NOT IN (
+         SELECT id FROM tags WHERE name IN (${placeholders})
+       )`,
+      [postId, ...names]
+    );
+  }
+}
+
+/**
+ * Point a post at a category (or clear it). The `post_category` table
+ * holds one category per post; `posts.category_id` is the indexed copy
+ * the list query reads.
+ */
+export async function setPostCategory(
+  env: Env,
+  postId: number,
+  categoryId: number | null
+): Promise<void> {
+  await execute(env, `UPDATE posts SET category_id = ? WHERE id = ?`, [categoryId, postId]);
+  await syncPostCategoryJoin(env, postId, categoryId);
+}
+
+/**
+ * Refresh only the post_category join row.
+ *
+ * updatePost already writes `posts.category_id` as part of the same
+ * UPDATE, so calling setPostCategory() afterwards would issue a second
+ * UPDATE and bump `updated_at` — which would break the optimistic-lock
+ * token the client holds. This variant touches the join table only.
+ */
+export async function syncPostCategoryJoin(
+  env: Env,
+  postId: number,
+  categoryId: number | null
+): Promise<void> {
+  await execute(env, `DELETE FROM post_category WHERE post_id = ?`, [postId]);
+  if (categoryId !== null) {
+    await execute(
+      env,
+      `INSERT OR REPLACE INTO post_category (post_id, category_id) VALUES (?, ?)`,
+      [postId, categoryId]
+    );
+  }
+}
+
+/**
+ * The signed-in user for a request, or null.
+ *
+ * Lives here (not in the router) so the admin-ext handlers can share it.
+ */
+export async function getCurrentUser(request: Request, env: Env): Promise<User | null> {
+  const cookies = parseCookies(request.headers.get('Cookie') || '');
+  const sessionToken = cookies[SESSION_COOKIE_NAME];
+  if (!sessionToken) return null;
+  const tokenHash = await sha256Hex(sessionToken);
+  return getSessionUser(env, tokenHash);
+}
+
+/**
+ * Escape the LIKE wildcards in a value.
+ *
+ * "_" IS a LIKE wildcard, and so is "%". A search for "a_b" would
+ * otherwise match "axb", and a long URL with several underscores made
+ * SQLite refuse the pattern outright ("LIKE or GLOB pattern too
+ * complex").
+ */
+export function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (m) => `\\${m}`);
+}
+
+/**
+ * The site-level settings (key/value). Item 16 — the admin's settings
+ * page edits the site title, description, default language and timezone.
+ */
+export async function listSettings(env: Env): Promise<Record<string, string>> {
+  const rows = await queryAll<{ key: string; value: string }>(
+    env,
+    `SELECT key, value FROM settings ORDER BY key`
+  );
+  const out: Record<string, string> = {};
+  for (const r of rows) out[r.key] = r.value;
+  return out;
 }
 
 export async function createCategory(

@@ -52,6 +52,15 @@ zone_name = "frank2025.com"
 [vars]
 ENVIRONMENT = "production"
 
+# Item 9 — scheduled publishing.
+#
+# Every 5 minutes the Worker publishes every draft whose scheduled_at
+# has passed. The status column has a CHECK constraint that only allows
+# draft/published/archived, so a scheduled post is a draft with a
+# future scheduled_at until this trigger picks it up.
+[triggers]
+crons = ["*/5 * * * *"]
+
 # Secrets (set via `wrangler secret put <NAME> --project-name=frank-blog-cms-api`):
 #   SESSION_SECRET                — 64-char hex; cookie signing / ip hash salt
 #   CLOUDFLARE_DEPLOY_HOOK_URL    — triggers Pages SSG rebuild on publish/unpublish

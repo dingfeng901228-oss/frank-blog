@@ -5,6 +5,12 @@
 
 import type { Env, User, Post, MediaRecord, CategoryRecord, TagRecord, PostCollection, ActivityEntry, PostRevision } from './cms';
 import { autoTranslateSiblings, type TranslationOutcome } from './autotranslate';
+// normalizeTags / normalizeTagInput / splitTag live in ./tags.
+// They were USED in index.ts without ever being imported — so every
+// save that carried a tag list died with a ReferenceError inside the
+// request handler. The admin SPA showed that as "保存失败" and no
+// version was ever written.
+import { normalizeTags, normalizeTagInput, splitTag } from './tags';
 import {
   queryFirst,
   queryAll,
@@ -40,9 +46,13 @@ import {
   updateCategory,
   deleteCategory,
   listTags,
+  listTagsWithUsage,
   createTag,
   updateTag,
   deleteTag,
+  syncPostTags,
+  setPostCategory,
+  syncPostCategoryJoin,
   listRecentActivity,
   listRevisions,
   restoreRevision,
@@ -54,7 +64,20 @@ import {
   validateContent,
   validateDescriptionText,
   validateName,
+  getCurrentUser,
+  listKnownTags,
+  escapeLike,
 } from './cms';
+import {
+  handleBulk,
+  handleExport,
+  handleSettings,
+  handleActivity,
+  handleRedeploy,
+  handleMediaUpdate,
+  handleMediaUsage,
+  publishScheduledPosts,
+} from './admin-ext';
 
 const SESSION_TTL_DAYS = 7;
 
@@ -154,7 +177,64 @@ async function refreshCsrf(request: Request, env: Env): Promise<Response> {
 // ────────────────────────────────────────────────────
 
 export default {
+  /**
+   * Every API call goes through here.
+   *
+   * A handler that throws (a D1 query against a column that does not
+   * exist, a bug, a malformed request) used to escape the Worker and
+   * reach the browser as an HTML error page or a bare 500. The admin SPA
+   * then read `data.error.message` off a response that had no `error`
+   * object and threw "Cannot read properties of undefined (reading
+   * 'message')" — which is what the user saw on /admin/categories/.
+   *
+   * So: catch everything here, log the raw error to the activity log
+   * and the console, and answer with the standard envelope carrying a
+   * human-readable message. The admin SPA never sees a stack trace.
+   */
   async fetch(request: Request, env: Env, _ctx: any): Promise<Response> {
+    try {
+      return await route(request, env);
+    } catch (e: any) {
+      const detail = String(e?.message || e);
+      console.error('[api] unhandled error:', detail, e?.stack || '');
+      try {
+        await execute(
+          env,
+          `INSERT INTO admin_logs (action, resource_type, message) VALUES ('api_error', ?, ?)`,
+          [new URL(request.url).pathname, detail]
+        );
+      } catch {
+        /* logging must never mask the original error */
+      }
+      return json(
+        {
+          success: false,
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: '服务器内部错误，请稍后重试。如果持续出现，请联系管理员。',
+          },
+        },
+        500
+      );
+    }
+  },
+
+  /**
+   * Cron trigger — publishes every draft whose scheduled time has come.
+   * Every 5 minutes (see wrangler.toml).
+   */
+  async scheduled(_event: any, env: Env, _ctx: any): Promise<void> {
+    try {
+      const n = await publishScheduledPosts(env);
+      if (n > 0) console.log(`[cron] published ${n} scheduled post(s)`);
+    } catch (e: any) {
+      console.error('[cron] scheduled publish failed:', e?.message || e);
+    }
+  },
+};
+
+async function route(request: Request, env: Env): Promise<Response> {
+  {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
@@ -269,15 +349,41 @@ export default {
     // /api/admin/activity/recent (Phase 6)
     if (path === '/api/admin/activity/recent' && method === 'GET') return listRecentActivityHandler(request, env);
 
+    // /api/admin/posts/:id/redeploy — retry a failed deploy (item 15).
+    m = path.match(/^\/api\/admin\/posts\/(\d+)\/redeploy$/);
+    if (m && method === 'POST') return handleRedeploy(request, env, parseInt(m[1], 10));
+
+    // /api/admin/posts/bulk — batch publish / archive / delete / move.
+    if (path === '/api/admin/posts/bulk' && method === 'POST') return handleBulk(request, env);
+
+    // /api/admin/export — the full data export (item 16).
+    if (path === '/api/admin/export' && method === 'GET') return handleExport(request, env);
+
+    // /api/admin/settings — site settings (item 16).
+    if (path === '/api/admin/settings') return handleSettings(request, env);
+
+    // /api/admin/activity — the filtered activity log (items 2 + 15).
+    if (path === '/api/admin/activity' && method === 'GET') return handleActivity(request, env);
+    m = path.match(/^\/api\/admin\/activity\/(\d+)$/);
+    if (m && method === 'GET') return handleActivity(request, env, parseInt(m[1], 10));
+
+    // /api/admin/media/usage — which articles reference an asset (item 14).
+    if (path === '/api/admin/media/usage' && method === 'GET') return handleMediaUsage(request, env);
+    m = path.match(/^\/api\/admin\/media\/(\d+)$/);
+    if (m && method === 'PUT') return handleMediaUpdate(request, env, parseInt(m[1], 10));
+
     // /api/admin/posts/:id/revisions + restore (Phase 6)
     m = path.match(/^\/api\/admin\/posts\/(\d+)\/revisions$/);
     if (m && method === 'GET') return listRevisionsHandler(request, env, parseInt(m[1], 10));
     m = path.match(/^\/api\/admin\/posts\/(\d+)\/revisions\/(\d+)\/restore$/);
     if (m && method === 'POST') return restoreRevisionHandler(request, env, parseInt(m[2], 10));
 
-    return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
-  },
-};
+    return json(
+      { success: false, error: { code: 'NOT_FOUND', message: '接口不存在' } },
+      404
+    );
+  }
+}
 
 // ────────────────────────────────────────────────────
 // /api/admin/auth/* handlers
@@ -474,14 +580,6 @@ async function changePassword(request: Request, env: Env): Promise<Response> {
 // /api/admin/media handlers (Phase 4 — Media Library)
 // ────────────────────────────────────────────────────
 
-async function getCurrentUser(request: Request, env: Env): Promise<User | null> {
-  const cookies = parseCookies(request.headers.get('Cookie') || '');
-  const sessionToken = cookies[SESSION_COOKIE_NAME];
-  if (!sessionToken) return null;
-  const tokenHash = await sha256Hex(sessionToken);
-  return getSessionUser(env, tokenHash);
-}
-
 async function listMediaHandler(request: Request, env: Env): Promise<Response> {
   const user = await getCurrentUser(request, env);
   if (!user) {
@@ -491,7 +589,10 @@ async function listMediaHandler(request: Request, env: Env): Promise<Response> {
   const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
   const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
   const search = url.searchParams.get('search') ?? undefined;
-  const result = await listMedia(env, { limit, offset, search });
+  // Item 14 — 按日期筛选.
+  const from = url.searchParams.get('from') ?? undefined;
+  const to = url.searchParams.get('to') ?? undefined;
+  const result = await listMedia(env, { limit, offset, search, from, to });
   return json({ success: true, data: result });
 }
 
@@ -621,7 +722,9 @@ async function listTagsHandler(request: Request, env: Env): Promise<Response> {
   if (!user) {
     return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
   }
-  const items = await listTags(env);
+  // Item 5 — the list carries a usage count so the admin can see how many
+  // articles carry each tag, and so "delete" can refuse to orphan them.
+  const items = await listTagsWithUsage(env);
   return json({ success: true, data: { items } });
 }
 
@@ -632,15 +735,20 @@ async function createTagHandler(request: Request, env: Env): Promise<Response> {
   }
   try {
     const body = await request.json() as { name?: string; slug?: string };
-    if (!body.name || !body.slug) {
-      return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug required' } }, 400);
+    if (!body.name) {
+      return json({ success: false, error: { code: 'INVALID_REQUEST', message: '标签名称不能为空' } }, 400);
     }
-    validateSlug(body.slug);
-    validateName(body.name, 'name');
-    const tag = await createTag(env, body.name, body.slug);
+    const name = validateName(body.name, 'name');
+    // Item 5 — the tag's URL segment is the tag NAME, encoded once.
+    // The public site builds its tag pages as
+    //   /<locale>/<collection>/tag/<encodeURIComponent(name)>
+    // so the CMS has to use the same string, otherwise a tag created here
+    // would 404 on the public site. The slug therefore mirrors the name.
+    const slug = body.slug && body.slug !== name ? validateSlug(body.slug) : name;
+    const tag = await createTag(env, name, slug);
     return json({ success: true, data: tag }, 201);
   } catch (e: any) {
-    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Create failed' } }, 400);
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || '创建失败' } }, 400);
   }
 }
 
@@ -651,15 +759,49 @@ async function updateTagHandler(request: Request, env: Env, id: number): Promise
   }
   try {
     const body = await request.json() as { name?: string; slug?: string };
-    if (!body.name || !body.slug) {
-      return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'name, slug required' } }, 400);
+    if (!body.name) {
+      return json({ success: false, error: { code: 'INVALID_REQUEST', message: '标签名称不能为空' } }, 400);
     }
-    validateSlug(body.slug);
-    validateName(body.name, 'name');
-    await updateTag(env, id, body.name, body.slug);
+    const name = validateName(body.name, 'name');
+    const slug = body.slug && body.slug !== name ? validateSlug(body.slug) : name;
+    await updateTag(env, id, name, slug);
+    // A rename has to follow through to the articles that carry it,
+    // otherwise the tag page and the articles disagree.
+    await renameTagInPosts(env, id, name);
     return json({ success: true });
   } catch (e: any) {
-    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Update failed' } }, 400);
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || '更新失败' } }, 400);
+  }
+}
+
+/**
+ * Rename a tag everywhere it is used.
+ *
+ * `posts.tags` is a JSON array, so the rename has to be done row by row
+ * in JS rather than in SQL.
+ */
+async function renameTagInPosts(env: Env, tagId: number, newName: string): Promise<void> {
+  const tag = await queryFirst<{ name: string }>(env, `SELECT name FROM tags WHERE id = ?`, [tagId]);
+  if (!tag || tag.name === newName) return;
+  const rows = await queryAll<{ id: number; tags: string | null }>(
+    env,
+    `SELECT id, tags FROM posts WHERE tags LIKE ?`,
+    [`%${tag.name}%`]
+  );
+  for (const row of rows) {
+    let list: string[] = [];
+    try {
+      const parsed = JSON.parse(row.tags ?? '[]');
+      if (Array.isArray(parsed)) list = parsed.map(String);
+    } catch {
+      continue;
+    }
+    if (!list.includes(tag.name)) continue;
+    const next = list.map((t) => (t === tag.name ? newName : t));
+    await execute(env, `UPDATE posts SET tags = ?, updated_at = datetime('now') WHERE id = ?`, [
+      JSON.stringify(next),
+      row.id,
+    ]);
   }
 }
 
@@ -760,7 +902,7 @@ async function saveDraftHandler(request: Request, env: Env, id: number): Promise
 }
 
 const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 100;
+const MAX_LIMIT = 200;
 
 async function listPosts(request: Request, env: Env): Promise<Response> {
   // SECURITY: any authenticated user can list posts (admins only per ADR-004).
@@ -774,6 +916,13 @@ async function listPosts(request: Request, env: Env): Promise<Response> {
   const status = url.searchParams.get('status');
   const collection = url.searchParams.get('collection');
   const search = url.searchParams.get('search');
+  const categoryId = url.searchParams.get('category_id');
+  const tag = url.searchParams.get('tag');
+  // Item 7 — one row per article, with the language versions nested.
+  const grouped = url.searchParams.get('group') === 'article';
+  // Item 12 — sorting.
+  const sort = url.searchParams.get('sort') || 'updated_at';
+  const order = (url.searchParams.get('order') || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
   const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10));
   const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10)));
   const offset = (page - 1) * limit;
@@ -781,37 +930,138 @@ async function listPosts(request: Request, env: Env): Promise<Response> {
   const where: string[] = [];
   const params: unknown[] = [];
 
-  if (locale) { where.push('locale = ?'); params.push(locale); }
-  if (status) { where.push('status = ?'); params.push(status); }
-  if (collection) { where.push('collection = ?'); params.push(collection); }
+  if (locale) { where.push('p.locale = ?'); params.push(locale); }
+  if (status) { where.push('p.status = ?'); params.push(status); }
+  if (collection) { where.push('p.collection = ?'); params.push(collection); }
+  if (categoryId) {
+    where.push('p.category_id = ?');
+    params.push(Number(categoryId));
+  }
+  if (tag) {
+    where.push('EXISTS (SELECT 1 FROM post_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.post_id = p.id AND t.name = ?)');
+    params.push(tag);
+  }
   if (search) {
-    where.push('(title LIKE ? OR slug LIKE ?)');
-    const wildcard = `%${search}%`;
-    params.push(wildcard, wildcard);
+    // instr() instead of LIKE: a literal substring search, so a "_" in
+    // a title or slug is not treated as a wildcard.
+    where.push('(instr(p.title, ?) > 0 OR instr(p.slug, ?) > 0)');
+    params.push(search, search);
   }
 
   const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
 
+  // Item 12 — only allow the columns we actually sort by.
+  const sortColumn =
+    sort === 'published_at'
+      ? 'published_at'
+      : sort === 'title'
+        ? 'title'
+        : sort === 'created_at'
+          ? 'created_at'
+          : 'updated_at';
+
+  if (grouped) {
+    // One row per article. The language versions are nested in `locales`.
+    const totalRow = await queryFirst<{ n: number }>(
+      env,
+      `SELECT COUNT(DISTINCT p.collection || '|' || p.slug) as n FROM posts p ${whereClause}`,
+      params
+    );
+    const total = totalRow?.n ?? 0;
+
+    const rows = await queryAll<any>(
+      env,
+      `SELECT p.collection AS collection,
+              p.slug AS slug,
+              MAX(p.updated_at) AS updated_at,
+              MAX(COALESCE(p.published_at, '')) AS published_at,
+              MAX(p.created_at) AS created_at,
+              MAX(p.category_id) AS category_id,
+              MAX(c.name) AS category_name,
+              json_group_array(json_object(
+                'id', p.id,
+                'locale', p.locale,
+                'title', p.title,
+                'status', p.status,
+                'updated_at', p.updated_at,
+                'published_at', p.published_at,
+                'cover_image', p.cover_image,
+                'auto_translated', p.auto_translated,
+                'scheduled_at', p.scheduled_at
+              )) AS locales
+       FROM posts p
+       LEFT JOIN categories c ON c.id = p.category_id
+       ${whereClause}
+       GROUP BY p.collection, p.slug
+       ORDER BY MAX(p.${sortColumn}) ${order}, p.slug ASC
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    const articles = rows.map((row: any) => {
+      let locales: any[] = [];
+      try {
+        const parsed = JSON.parse(row.locales || '[]');
+        if (Array.isArray(parsed)) locales = parsed;
+      } catch {
+        locales = [];
+      }
+      locales.sort((a, b) => String(a.locale).localeCompare(String(b.locale)));
+      // The article's status is the "best" of its versions: published
+      // beats draft beats archived.
+      const rank: Record<string, number> = { published: 3, draft: 2, archived: 1 };
+      const status = locales.reduce(
+        (best: string, l: any) => ((rank[l.status] ?? 0) > (rank[best] ?? 0) ? l.status : best),
+        'draft'
+      );
+      const primary = locales.find((l) => l.locale === 'ja') || locales[0] || null;
+      return {
+        id: primary?.id ?? null,
+        collection: row.collection,
+        slug: row.slug,
+        title: primary?.title ?? '',
+        status,
+        updated_at: row.updated_at,
+        published_at: row.published_at || null,
+        created_at: row.created_at,
+        category_id: row.category_id,
+        category_name: row.category_name,
+        cover_image: primary?.cover_image ?? null,
+        locales,
+      };
+    });
+
+    return json({
+      success: true,
+      data: { posts: articles, total, page, limit, has_more: offset + articles.length < total, grouped: true },
+    });
+  }
+
   const totalRow = await queryFirst<{ n: number }>(
     env,
-    `SELECT COUNT(*) as n FROM posts ${whereClause}`,
+    `SELECT COUNT(*) as n FROM posts p ${whereClause}`,
     params
   );
   const total = totalRow?.n ?? 0;
 
+  // Item 6 — the list carries the category, so the table can show a
+  // 分类 column without a second request.
   const posts = await queryAll<Post>(
     env,
-    `SELECT id, collection, locale, slug, title, status, published_at, updated_at, created_at, cover_image, is_featured, auto_translated
-     FROM posts
+    `SELECT p.id, p.collection, p.locale, p.slug, p.title, p.status, p.published_at,
+            p.updated_at, p.created_at, p.cover_image, p.is_featured, p.auto_translated,
+            p.category_id, p.scheduled_at, c.name AS category_name
+     FROM posts p
+     LEFT JOIN categories c ON c.id = p.category_id
      ${whereClause}
-     ORDER BY updated_at DESC
+     ORDER BY p.${sortColumn} ${order}, p.id DESC
      LIMIT ? OFFSET ?`,
     [...params, limit, offset]
   );
 
   return json({
     success: true,
-    data: { posts, total, page, limit, has_more: offset + posts.length < total },
+    data: { posts, total, page, limit, has_more: offset + posts.length < total, grouped: false },
   });
 }
 
@@ -872,22 +1122,55 @@ async function createPost(request: Request, env: Env): Promise<Response> {
   const knownTags = await listKnownTags(env);
   const normalizedTags = normalizeTags(body.tags, knownTags);
 
+  // Item 6 — the category the article belongs to.
+  const categoryId =
+    body.category_id === undefined || body.category_id === null ? null : Number(body.category_id);
+  // Item 9 — a future scheduled time means "publish it at that time",
+  // so the row starts as a draft.
+  let scheduledAt: string | null = null;
+  if (body.scheduled_at) {
+    scheduledAt = String(body.scheduled_at).replace('T', ' ').slice(0, 16).padEnd(19, ':00');
+  }
+  const scheduledInFuture =
+    scheduledAt !== null && scheduledAt > new Date().toISOString().replace('T', ' ').slice(0, 19);
+  const initialStatus =
+    scheduledInFuture && body.status === 'published' ? 'draft' : (body.status ?? 'draft');
+
   const result = await execute(
     env,
     `INSERT INTO posts
        (collection, locale, slug, title, description_raw, description_text, content, content_format,
-        excerpt, cover_image, status, published_at, author_id, reading_time, is_featured, tags)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        excerpt, cover_image, status, published_at, author_id, reading_time, is_featured, tags,
+        category_id, scheduled_at, seo_title, og_image)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       body.collection, body.locale, body.slug, body.title,
       description_raw, body.description_text, body.content, body.content_format ?? 'mdx',
-      body.excerpt ?? null, body.cover_image ?? null, body.status ?? 'draft',
+      body.excerpt ?? null, body.cover_image ?? null, initialStatus,
       publishedAt, null, body.reading_time ?? null, body.is_featured ? 1 : 0,
       normalizedTags.length > 0 ? JSON.stringify(normalizedTags) : null,
+      Number.isFinite(categoryId as number) ? categoryId : null,
+      scheduledAt,
+      body.seo_title ? String(body.seo_title).slice(0, 200) : null,
+      body.og_image ?? body.cover_image ?? null,
     ]
   );
 
   const newId = result.meta?.last_row_id;
+
+  // Item 5 + 6 — register the tags and the category for the new article.
+  if (newId) {
+    try {
+      await syncPostTags(env, newId, normalizedTags);
+    } catch {
+      /* best-effort */
+    }
+    try {
+      await syncPostCategoryJoin(env, newId, Number.isFinite(categoryId as number) ? categoryId : null);
+    } catch {
+      /* best-effort */
+    }
+  }
 
   // Auto-translate a newly-created post that goes straight to published.
   // The same "create the missing sibling locales" logic as updatePost.
@@ -979,7 +1262,18 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     published_at: 'published_at',
     reading_time: 'reading_time',
     tags: 'tags',
+    // Item 6 — the article's category.
+    category_id: 'category_id',
+    // Item 9 — scheduled publishing.
+    scheduled_at: 'scheduled_at',
+    // Item 13 — independent SEO title and OG image.
+    seo_title: 'seo_title',
+    og_image: 'og_image',
   };
+
+  // The tags the post ends up with — used to refresh the tag system
+  // (item 5) after the row itself has been written.
+  let newTags: string[] | null = null;
 
   for (const [bodyKey, dbColumn] of Object.entries(fields)) {
     if (body[bodyKey] !== undefined) {
@@ -988,13 +1282,39 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
         // Split joined tags back apart before they are stored, so every
         // tag on the site has a working tag page.
         const knownTags = await listKnownTags(env);
-        value = JSON.stringify(normalizeTags(value, knownTags));
+        const normalized = normalizeTags(value, knownTags);
+        newTags = normalized;
+        value = JSON.stringify(normalized);
       }
       if (bodyKey === 'status' && !['draft', 'published', 'archived'].includes(value as string)) {
         return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid status' } }, 400);
       }
+      if (bodyKey === 'scheduled_at') {
+        // The editor sends "YYYY-MM-DD HH:mm". SQLite's datetime('now')
+        // returns "YYYY-MM-DD HH:mm:ss", so the two have to be comparable.
+        const raw = value === null || value === '' ? null : String(value);
+        value = raw === null ? null : raw.replace('T', ' ').slice(0, 16).padEnd(19, ':00');
+      }
+      if (bodyKey === 'seo_title' && value !== null && value !== undefined) {
+        value = String(value).slice(0, 200);
+      }
       updates.push(`${dbColumn} = ?`);
       params.push(value);
+    }
+  }
+
+  // A post scheduled for the future must not be published straight away —
+  // it stays a draft until the cron trigger reaches its scheduled time.
+  const scheduledRaw =
+    body.scheduled_at !== undefined ? String(body.scheduled_at ?? '').replace('T', ' ') : null;
+  if (scheduledRaw) {
+    const scheduledAt = scheduledRaw.slice(0, 16).padEnd(19, ':00');
+    const isFuture = scheduledAt > new Date().toISOString().replace('T', ' ').slice(0, 19);
+    if (isFuture && body.status === 'published') {
+      // `updates` and `params` were pushed in lockstep, so the index of
+      // the status assignment is the index of its value.
+      const statusIdx = updates.findIndex((u) => u === 'status = ?');
+      if (statusIdx >= 0) params[statusIdx] = 'draft';
     }
   }
 
@@ -1030,6 +1350,30 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
 
   updates.push('updated_at = datetime(\'now\')');
   params.push(id);
+
+  // Item 5 + 6 — keep the tag system and the category join in step with
+  // the article that was just written. The join tables are refreshed
+  // AFTER the row update so the optimistic-lock token stays valid.
+  const refreshTaxonomy = async () => {
+    if (newTags) {
+      try {
+        await syncPostTags(env, id, newTags);
+      } catch {
+        /* the tag system is best-effort — never block the save */
+      }
+    }
+    if (body.category_id !== undefined) {
+      try {
+        await syncPostCategoryJoin(
+          env,
+          id,
+          body.category_id === null ? null : Number(body.category_id)
+        );
+      } catch {
+        /* best-effort */
+      }
+    }
+  };
 
   // Phase C1 §27 — Optimistic Lock: if client sent loaded_updated_at, require
   // current row.updated_at to match. If 0 rows changed, another session wrote
@@ -1077,6 +1421,7 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
         /* revision history is best-effort — never block the save */
       }
     }
+    await refreshTaxonomy();
 
     // Phase 11f — If the post is already published and we just edited its
     // body / title / etc. (without changing status), the MDX files out
@@ -1101,11 +1446,13 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
       try {
         await execute(
           env,
-          `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, ?, 'post', ?)`,
+          `INSERT INTO admin_logs (user_id, action, resource_type, resource_id, message) VALUES (?, ?, 'post', ?, ?)`,
           [
             user.id,
             deploy.triggered ? 'update_post_deploy_ok' : 'update_post_deploy_failed',
             id,
+            // Item 15 — a failed deploy has to say WHY it failed.
+            deploy.triggered ? null : `站点部署失败：${deploy.error ?? '未知错误'}`,
           ]
         );
       } catch {
@@ -1158,6 +1505,7 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
       /* revision history is best-effort — never block the save */
     }
   }
+  await refreshTaxonomy();
 
   // Phase 11f — same deploy-on-edit rationale as above. This branch runs
   // when the client didn't send loaded_updated_at (the optimistic-lock
@@ -1172,11 +1520,13 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     try {
       await execute(
         env,
-        `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, ?, 'post', ?)`,
+        `INSERT INTO admin_logs (user_id, action, resource_type, resource_id, message) VALUES (?, ?, 'post', ?, ?)`,
         [
           user.id,
           deploy.triggered ? 'update_post_deploy_ok' : 'update_post_deploy_failed',
           id,
+          // Item 15 — a failed deploy has to say WHY it failed.
+          deploy.triggered ? null : `站点部署失败：${deploy.error ?? '未知错误'}`,
         ]
       );
     } catch {

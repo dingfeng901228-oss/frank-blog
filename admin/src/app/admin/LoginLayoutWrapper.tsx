@@ -28,6 +28,7 @@ export function LoginLayoutWrapper({ children }: { children: ReactNode }) {
   const isLogin = pathname === '/admin/login' || pathname === '/admin/login/';
 
   const [authChecked, setAuthChecked] = useState(isLogin);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (isLogin) {
@@ -69,6 +70,11 @@ export function LoginLayoutWrapper({ children }: { children: ReactNode }) {
     };
   }, [isLogin, router]);
 
+  // Close the drawer whenever the route changes.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   if (isLogin) {
     // Unauthenticated: center the login card, no nav chrome at all.
     return (
@@ -86,33 +92,83 @@ export function LoginLayoutWrapper({ children }: { children: ReactNode }) {
     );
   }
 
-  // Authenticated gate — show a thin loading state while we verify, render
-  // the full layout once confirmed. Avoids the brief Sidebar flash for
-  // unauthenticated users.
+  // Authenticated gate — show a skeleton in the shape of the admin shell
+  // while we verify, render the full layout once confirmed. Avoids the
+  // brief Sidebar flash for unauthenticated users.
+  //
+  // Item 17 — this used to be a blank page with the text "加载中…",
+  // which flashed on every route change.
   if (!authChecked) {
-    return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--color-text-muted)',
-          fontSize: 14,
-        }}
-      >
-        加载中…
-      </div>
-    );
+    return <ShellSkeleton />;
   }
 
   // Authenticated: Sidebar + main content flex layout.
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar />
-      <main style={{ flex: 1, padding: 'var(--space-2xl) var(--space-xl)', minWidth: 0 }}>
-        {children}
-      </main>
+    <div className="admin-shell">
+      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <div
+        className={`admin-backdrop${menuOpen ? ' admin-backdrop-visible' : ''}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Item 17 — the hamburger that opens the sidebar on a phone. */}
+        <div className="admin-mobile-bar">
+          <button
+            type="button"
+            className="admin-hamburger"
+            aria-label="打开菜单"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            ☰
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.1em' }}>FRANK CMS</span>
+        </div>
+        <main className="admin-main">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The placeholder shown while the session is verified.
+ *
+ * It mirrors the shape of the admin so the layout does not jump when
+ * the real content arrives.
+ */
+function ShellSkeleton() {
+  return (
+    <div className="admin-shell">
+      <div className="admin-sidebar" aria-hidden="true">
+        <div className="skeleton" style={{ height: 18, width: 120, marginBottom: 40 }} />
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="skeleton"
+            style={{ height: 30, marginBottom: 8, opacity: 1 - i * 0.08 }}
+          />
+        ))}
+      </div>
+      <div className="admin-main">
+        <div className="skeleton" style={{ height: 34, width: '38%', marginBottom: 28 }} />
+        <div className="skeleton" style={{ height: 16, width: '55%', marginBottom: 32 }} />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: 16,
+          }}
+        >
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="skeleton"
+              style={{ height: 140, borderRadius: 'var(--radius-md)' }}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

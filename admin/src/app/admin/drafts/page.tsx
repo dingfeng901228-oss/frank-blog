@@ -3,12 +3,5 @@
 import { PostsList } from '@/components/admin/PostsList';
 
 export default function DraftsPage() {
-  return (
-    <PostsList
-      title="草稿箱"
-      defaultStatus="draft"
-      newHref="/admin/posts/new"
-      newLabel="+ 新建"
-    />
-  );
+  return <PostsList collection="drafts" title="草稿箱" showStatusFilter={false} />;
 }

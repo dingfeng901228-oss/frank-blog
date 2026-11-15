@@ -7,10 +7,9 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useToast } from '@/components/ui/Toast';
-import { apiDelete, apiGet, apiPost } from '@/lib/cms/api-client';
+import { apiDelete, apiGet, apiPost, errorMessage } from '@/lib/cms/api-client';
 
 interface Category {
   id: number;
@@ -45,9 +44,11 @@ export default function CategoriesPage() {
     setError(null);
     try {
       const data = await apiGet<{ items: Category[] }>('/api/admin/categories');
-      setItems(data.items);
-    } catch (e: any) {
-      setError(e.message || 'Unknown error');
+      setItems(Array.isArray(data.items) ? data.items : []);
+    } catch (e: unknown) {
+      // Item 1 — the raw JS error ("Cannot read properties of undefined")
+      // is logged by the api-client; the page shows a readable message.
+      setError(errorMessage(e, '分类加载失败，请稍后重试。'));
     } finally {
       setLoading(false);
     }
@@ -74,8 +75,8 @@ export default function CategoriesPage() {
       setFormName('');
       setFormSlug('');
       fetchCategories();
-    } catch (e: any) {
-      toast.show(e.message || '创建失败', 'error');
+    } catch (e: unknown) {
+      toast.show(errorMessage(e, '创建失败'), 'error');
     }
   }
 
@@ -85,8 +86,8 @@ export default function CategoriesPage() {
       await apiDelete(`/api/admin/categories/${id}`);
       toast.show('分类已删除', 'success');
       fetchCategories();
-    } catch (e: any) {
-      toast.show(e.message || '删除失败', 'error');
+    } catch (e: unknown) {
+      toast.show(errorMessage(e, '删除失败'), 'error');
     }
   }
 
@@ -142,10 +143,25 @@ export default function CategoriesPage() {
         </Card>
       )}
 
-      {error && <ErrorState title="加载分类失败" description={error} />}
-
-      {loading ? (
-        <LoadingState message="加载分类中…" />
+      {/*
+        Item 1 — the error state and the empty state used to be shown at
+        the same time: the page printed "加载分类失败 / Cannot read
+        properties of undefined" AND "暂无分类". Now an error means
+        "we do not know what is there", so only the error (with a retry
+        button) is shown — never a false empty state.
+      */}
+      {error ? (
+        <ErrorState
+          title="加载分类失败"
+          description={error}
+          action={
+            <Button variant="primary" onClick={fetchCategories}>
+              重试
+            </Button>
+          }
+        />
+      ) : loading ? (
+        <CategorySkeleton />
       ) : items.length === 0 ? (
         <EmptyState
           title="暂无分类"
@@ -179,6 +195,24 @@ export default function CategoriesPage() {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Item 17 — a skeleton in the shape of the category table instead of
+ * the full-page "加载分类中…".
+ */
+function CategorySkeleton() {
+  return (
+    <Card padding="md">
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="skeleton"
+          style={{ height: 18, width: `${70 - i * 8}%`, marginBottom: 14 }}
+        />
+      ))}
+    </Card>
   );
 }
 

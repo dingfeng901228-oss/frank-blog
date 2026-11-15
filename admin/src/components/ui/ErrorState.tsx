@@ -29,9 +29,10 @@ interface ErrorStateProps {
   action?: ReactNode;
 }
 
+// Item 11 — the whole admin speaks Chinese, including these defaults.
 export function ErrorState({
-  title = 'Something went wrong',
-  description = 'Please try again.',
+  title = '出了点问题',
+  description = '请稍后重试。',
   action,
 }: ErrorStateProps) {
   return (

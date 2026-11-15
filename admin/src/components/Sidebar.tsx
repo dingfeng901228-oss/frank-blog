@@ -18,6 +18,9 @@ interface NavItem {
   // the sidebar instead of having to drill into the list page first.
   newHref?: string;
   newLabel?: string;
+  // Only this exact path highlights the entry. Used by the dashboard,
+  // which is a single page rather than a section.
+  exact?: boolean;
 }
 
 interface NavSection {
@@ -26,7 +29,10 @@ interface NavSection {
 }
 
 const navSections: NavSection[] = [
-  { items: [{ label: '概览', href: '/admin' }] },
+  // Item 4 — the dashboard is a single page, not a section: it is
+  // highlighted ONLY on /admin itself. Without `exact`, the old
+  // startsWith('/admin/') rule lit it up on every sub-page.
+  { items: [{ label: '概览', href: '/admin', exact: true }] },
   {
     title: '内容',
     items: [
@@ -52,8 +58,21 @@ const navSections: NavSection[] = [
   },
 ];
 
-export function Sidebar() {
-  const pathname = usePathname();
+/**
+ * Is this nav entry the page the user is on?
+ *
+ * Exact entries (the dashboard) match only themselves. Section entries
+ * match their own path and everything below it — but "/admin/blog"
+ * must not light up for "/admin/blogger".
+ */
+export function isNavItemActive(pathname: string, item: NavItem): boolean {
+  const normalized = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  if (item.exact) return normalized === item.href;
+  return normalized === item.href || normalized.startsWith(item.href + '/');
+}
+
+export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: () => void }) {
+  const pathname = usePathname() ?? '';
   const router = useRouter();
   const toast = useToast();
 
@@ -74,15 +93,7 @@ export function Sidebar() {
   }
 
   const sidebarStyle = {
-    width: '240px',
-    minHeight: '100vh',
     background: 'var(--color-surface)',
-    borderRight: '1px solid var(--color-border)',
-    padding: 'var(--space-lg)',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    position: 'sticky' as const,
-    top: 0,
   };
 
   const headerStyle = {
@@ -91,6 +102,9 @@ export function Sidebar() {
     color: 'var(--color-text-primary)',
     letterSpacing: '0.1em',
     marginBottom: 'var(--space-xl)',
+    display: 'flex' as const,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   };
 
   const sectionTitleStyle = {
@@ -122,17 +136,42 @@ export function Sidebar() {
   };
 
   return (
-    <aside style={sidebarStyle}>
-      <div style={headerStyle}>FRANK CMS</div>
+    <aside className={`admin-sidebar${open ? ' admin-sidebar-open' : ''}`} style={sidebarStyle}>
+      <div style={headerStyle}>
+        <span>FRANK CMS</span>
+        {/* Shown only on phones, where the drawer covers the page. */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="关闭菜单"
+          className="admin-sidebar-close"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--color-text-secondary)',
+            fontSize: 20,
+            lineHeight: 1,
+            cursor: 'pointer',
+            padding: '0 4px',
+          }}
+        >
+          ×
+        </button>
+      </div>
 
       {navSections.map((section, i) => (
         <div key={i}>
           {section.title && <div style={sectionTitleStyle}>{section.title}</div>}
           {section.items.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+            const active = isNavItemActive(pathname, item);
             return (
               <div key={item.href} style={{ display: 'flex', alignItems: 'stretch', gap: 4 }}>
-                <Link href={item.href} style={{ ...linkStyle(active), flex: 1, marginBottom: 0 }}>
+                <Link
+                  href={item.href}
+                  onClick={onClose}
+                  aria-current={active ? 'page' : undefined}
+                  style={{ ...linkStyle(active), flex: 1, marginBottom: 0 }}
+                >
                   {item.label}
                 </Link>
                 {item.newHref && (

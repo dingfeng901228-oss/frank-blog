@@ -96,3 +96,180 @@ code, pre, kbd, samp {
   font-family: var(--font-mono);
   font-size: 0.9em;
 }
+
+/* ────────────────────────────────────────────────────
+   Admin shell — responsive sidebar + skeleton screens
+   ──────────────────────────────────────────────────── */
+
+/*
+ * Item 17 — the sidebar used to be a fixed 240px flex column, so on a
+ * phone it pushed the content off screen. It is now a drawer that is
+ * off-canvas below 900px and opened by the hamburger in the top bar.
+ */
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 240px;
+  min-width: 240px;
+  min-height: 100vh;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  max-height: 100vh;
+  overflow-y: auto;
+  z-index: 60;
+}
+
+.admin-main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2xl) var(--space-xl);
+}
+
+.admin-mobile-bar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 55;
+}
+
+.admin-hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  line-height: 1;
+}
+
+@media (max-width: 900px) {
+  .admin-shell {
+    display: block;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .admin-sidebar.admin-sidebar-open {
+    transform: translateX(0);
+  }
+
+  .admin-backdrop.admin-backdrop-visible {
+    display: block;
+  }
+
+  .admin-mobile-bar {
+    display: flex;
+  }
+
+  .admin-main {
+    padding: var(--space-lg) var(--space-md);
+  }
+}
+
+/* The drawer's close button only exists on phones. */
+.admin-sidebar-close {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .admin-sidebar-close {
+    display: inline-flex;
+  }
+}
+
+/*
+ * Item 17 — skeleton screens. The old loading state was a full-page
+ * "加载中…" that blanked the page for 1–2 seconds on every route
+ * change; these placeholders keep the layout stable while the data
+ * arrives.
+ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-elevated) 25%,
+    var(--color-border) 37%,
+    var(--color-surface-elevated) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* Item 3 — the editor's two-column grid must never push the page
+   sideways. `minmax(0, 1fr)` lets the first column shrink below its
+   content width, and `min-width: 0` on the children lets the flex
+   items shrink too. */
+.admin-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.admin-editor-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .admin-editor-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The tables in the admin must scroll inside their own box instead of
+   widening the page. */
+.admin-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
