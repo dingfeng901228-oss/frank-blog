@@ -313,3 +313,11 @@
 /zh/notes/tag/AI%25E5%258A%25A9%25E6%2589%258B    /zh/notes/tag/AI%E5%8A%A9%E6%89%8B    301
 /ja/blog/tag/%E5%BD%92%E5%B1%9E    /ja/blog/tag/アイデンティティ    301
 /ja/blog/tag/%25E5%25BD%2592%25E5%25B1%259E    /ja/blog/tag/アイデンティティ    301
+
+# ────────────────────────────────────────────────────────────────────
+# The tag 「面接」 was briefly published with its two kanji in the
+# wrong order (面 + 接). The misspelled URL is redirected to the
+# correct one so any link picked up in that window still lands.
+# ────────────────────────────────────────────────────────────────────
+/ja/notes/tag/%E9%9D%A2%E6%8E%A5    /ja/notes/tag/%E6%8E%A5%E5%8F%A3    301
+/ja/notes/tag/%25E9%259D%25A2%25E6%258E%25A5    /ja/notes/tag/%E6%8E%A5%E5%8F%A3    301
