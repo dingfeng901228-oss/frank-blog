@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { getAllPosts, getFeaturedPosts } from '@/lib/blog'
 import { getAllNotes } from '@/lib/notes'
-import { formatDate } from '@/lib/utils'
+import { formatDate, truncate } from '@/lib/utils'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import HeroSection from '@/components/home/HeroSection'
 import TimelineSection from '@/components/home/TimelineSection'
+import { PostMeta } from '@/components/blog/PostCard'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import type { Post } from '@/lib/types'
@@ -14,18 +15,20 @@ interface PageProps {
   params: Promise<{ locale: string }>
 }
 
+/**
+ * How much of a summary the homepage cards show.
+ *
+ * Item 13: the cards used `line-clamp-2`, which cut the text in the
+ * middle of a sentence and — on the first card especially — showed no
+ * ellipsis at all, so it looked like the summary simply ended there.
+ * The truncation is now done in text, at a sentence boundary, and always
+ * ends with "…".
+ */
+const SUMMARY_LENGTH = 120
+
 export default async function HomePage({ params }: PageProps) {
   const { locale } = await params
   setRequestLocale(locale as Locale)
-
-  const topicColors: Record<string, string> = {
-  Tech: 'text-cyan-400',
-  AI: 'text-violet-400',
-  Life: 'text-emerald-400',
-  Japan: 'text-rose-400',
-  Notes: 'text-amber-400',
-}
-
 
   const allPosts = getAllPosts(locale as Locale)
   const allNotes = getAllNotes(locale as Locale)
@@ -65,8 +68,8 @@ export default async function HomePage({ params }: PageProps) {
                   <h3 className="font-serif text-2xl mb-3 group-hover:text-[var(--accent)] transition-colors">
                     {post.title}
                   </h3>
-                  <p className="text-[var(--muted)] text-sm mb-4 line-clamp-2">
-                    {post.description}
+                  <p className="text-[var(--muted)] text-sm mb-4">
+                    {truncate(post.description, SUMMARY_LENGTH)}
                   </p>
                   <div className="flex items-center gap-4 text-xs text-[var(--muted)] font-mono">
                     <span>{formatDate(post.publishedAt, locale)}</span>
@@ -90,50 +93,36 @@ export default async function HomePage({ params }: PageProps) {
                 item.kind === 'note'
                   ? `/${locale}/notes/${item.slug}`
                   : `/${locale}/blog/${item.slug}`
-              const kindLabel =
-                locale === 'ja'
-                  ? item.kind === 'note' ? '随笔' : '記事'
-                  : locale === 'zh'
-                    ? item.kind === 'note' ? '随笔' : '文章'
-                    : item.kind === 'note' ? 'Note' : 'Post'
-              const kindColor =
-                item.kind === 'note' ? 'text-amber-400/80' : 'text-cyan-400/80'
               return (
                 <article key={`${item.kind}-${item.slug}`} className="group">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <span
-                          className={`text-xs font-mono ${kindColor} border border-current/20 rounded-full px-2 py-0.5`}
-                        >
-                          {kindLabel}
-                        </span>
-                        {item.tags?.slice(0, 2).map((tag) => (
-                          <span
-                            key={tag}
-                            className={`text-xs font-mono ${topicColors[tag] || 'text-[var(--muted)]'}`}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        <span className="text-xs text-[var(--muted)] font-mono">
-                          {formatDate(item.publishedAt, locale)}
-                        </span>
-                      </div>
+                      {/*
+                       * Item 4: the home cards now use the SAME PostMeta
+                       * component as the list pages and the article pages,
+                       * so all four surfaces show the same four fields —
+                       * category, date, tags, reading time — generated from
+                       * the same source. The reading time used to be
+                       * parked at the far right of the row, detached from
+                       * the date it belongs next to.
+                       */}
+                      <PostMeta
+                        locale={locale as Locale}
+                        publishedAt={item.publishedAt}
+                        readingTime={item.readingTime}
+                        tags={item.tags?.slice(0, 3)}
+                        collection={item.kind === 'note' ? 'notes' : 'posts'}
+                        variant="inline"
+                      />
                       <Link href={href}>
-                        <h3 className="font-serif text-xl mb-2 group-hover:text-[var(--accent)] transition-colors">
+                        <h3 className="font-serif text-xl mt-2 mb-2 group-hover:text-[var(--accent)] transition-colors">
                           {item.title}
                         </h3>
                       </Link>
-                      <p className="text-[var(--muted)] text-sm line-clamp-2">
-                        {item.description}
+                      <p className="text-[var(--muted)] text-sm">
+                        {truncate(item.description, SUMMARY_LENGTH)}
                       </p>
                     </div>
-                    {item.readingTime && (
-                      <span className="text-xs text-[var(--muted)] font-mono whitespace-nowrap">
-                        {item.readingTime}
-                      </span>
-                    )}
                   </div>
                 </article>
               )
@@ -152,7 +141,7 @@ export default async function HomePage({ params }: PageProps) {
               href={`/${locale}/notes`}
               className="inline-block text-sm font-mono text-[var(--muted)] hover:text-[var(--foreground)] transition-colors tracking-wide"
             >
-              {locale === 'ja' ? 'すべての随笔 →' : locale === 'zh' ? '查看所有随笔 →' : 'View all notes →'}
+              {locale === 'ja' ? 'すべてのノート →' : locale === 'zh' ? '查看所有随笔 →' : 'View all notes →'}
             </Link>
           </div>
         </section>

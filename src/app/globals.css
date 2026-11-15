@@ -16,6 +16,16 @@
     --accent-soft: rgba(59, 130, 246, 0.18);
     --muted: #B4B6C5;
     --muted-2: #8A8DA0;
+    /*
+     * --card is the surface behind the small chips (tags, archive
+     * buttons, search filters). It was referenced in nine places but
+     * never defined, so every one of those chips rendered with NO
+     * background at all — they looked like bare text. The value below
+     * is the same translucent white the rest of the site already uses
+     * for its panels (rgba(255,255,255,0.03–0.04)), so it restores the
+     * intended look without changing the palette.
+     */
+    --card: rgba(255, 255, 255, 0.04);
     --border: rgba(255, 255, 255, 0.08);
     --border-strong: rgba(255, 255, 255, 0.14);
     --font-sans: 'Noto Sans JP', sans-serif;

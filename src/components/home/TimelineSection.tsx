@@ -123,8 +123,15 @@ export default function TimelineSection({ locale }: { locale: string }) {
     return item.description
   }
 
+  /*
+   * Item 13: the gap between the last timeline entry and the footer was
+   * over 500px — the timeline's own bottom padding, the page container's
+   * bottom padding and the footer's top margin all stacked up. The
+   * timeline now keeps its generous top padding (it needs the room for
+   * the heading) but ends tight, and the footer sits closer to it.
+   */
   return (
-    <section ref={ref} className="py-20 md:py-24">
+    <section ref={ref} className="pt-20 md:pt-24 pb-12 md:pb-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={isInView ? { opacity: 1, y: 0 } : {}}

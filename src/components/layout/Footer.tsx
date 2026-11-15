@@ -59,8 +59,13 @@ export default function Footer({ locale }: FooterProps) {
     { label: t.about, href: `/${locale}/about` },
   ]
 
+  /*
+   * Item 13: the margin above the footer was 8rem (128px) on top of the
+   * page container's own bottom padding, which left a large empty band
+   * above the footer on the homepage. A normal section gap.
+   */
   return (
-    <footer className="border-t border-[var(--border)] py-16 mt-32">
+    <footer className="border-t border-[var(--border)] py-16 mt-16">
       <div className="mx-auto max-w-5xl px-6">
         {/* Site map */}
         <nav

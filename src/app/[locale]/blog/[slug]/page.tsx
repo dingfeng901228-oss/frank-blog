@@ -9,9 +9,9 @@ import Markdown from '@/components/Markdown'
 import ArticleTOC from '@/components/blog/ArticleTOC'
 import ArticleSidebar from '@/components/blog/ArticleSidebar'
 import ShareBar from '@/components/blog/ShareBar'
+import { PostMeta } from '@/components/blog/PostCard'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
-import { tagHref } from '@/lib/tags'
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>
@@ -203,25 +203,37 @@ export default async function PostPage({ params }: PageProps) {
 
           {/* Header */}
           <header className="mb-10 lg:mb-12 lg:col-span-3">
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex items-center gap-3 mb-5 flex-wrap">
-                {post.tags.map((tag) => (
-                  // Tags are now clickable → /${locale}/blog/tag/${tag}.
-                  // This route filters the post list by tag. Previously tags
-                  // were inert <span>s.
-                  <Link
-                    key={tag}
-                    href={tagHref(locale, 'blog', tag)}
-                    className="text-[10px] font-mono px-2.5 py-0.5 rounded-full transition-colors hover:border-[var(--accent)]"
-                    style={{
-                      background: 'rgba(59,130,246,0.10)',
-                      border: '1px solid rgba(59,130,246,0.15)',
-                      color: 'rgba(147,197,253,0.9)',
-                    }}
-                  >
-                    {tag}
-                  </Link>
-                ))}
+            {/*
+              Item 4: the article header now uses the SAME PostMeta
+              component as the home card and the two list pages, so all
+              four surfaces show the same four fields — category, date,
+              reading time and clickable tags — generated from the same
+              source. Before this, the article page had a separate
+              hand-written tags row and date line, and the notes page
+              had no reading time at all.
+            */}
+            <div className="mb-5">
+              <PostMeta
+                locale={locale as Locale}
+                publishedAt={post.publishedAt}
+                readingTime={post.readingTime}
+                tags={post.tags}
+                collection="posts"
+                variant="stack"
+              />
+            </div>
+            {post.updatedAt && post.updatedAt !== post.publishedAt && (
+              // Only show "updated" when the article has been edited after
+              // publish — gives readers a freshness signal without
+              // cluttering first-published articles.
+              <div
+                className="flex items-center gap-2 text-xs font-mono mb-5"
+                style={{ color: 'rgba(255,255,255,0.35)' }}
+              >
+                <span>
+                  {locale === 'ja' ? '更新 ' : locale === 'zh' ? '更新 ' : 'Updated '}
+                  {formatDate(post.updatedAt, locale)}
+                </span>
               </div>
             )}
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white">
@@ -232,27 +244,6 @@ export default async function PostPage({ params }: PageProps) {
                 {post.description}
               </p>
             )}
-            <div className="flex items-center gap-4 text-xs font-mono flex-wrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
-              {post.readingTime && (
-                <>
-                  <span>·</span>
-                  <span>{post.readingTime}</span>
-                </>
-              )}
-              {post.updatedAt && post.updatedAt !== post.publishedAt && (
-                // Only show "updated" when the article has been edited after
-                // publish — gives readers a freshness signal without
-                // cluttering first-published articles.
-                <>
-                  <span>·</span>
-                  <span>
-                    {locale === 'ja' ? '更新 ' : locale === 'zh' ? '更新 ' : 'Updated '}
-                    {formatDate(post.updatedAt, locale)}
-                  </span>
-                </>
-              )}
-            </div>
 
             {/* Cover image — shown only when the post declares one. The
                 og:image already uses this same URL, so we are not adding
@@ -305,6 +296,7 @@ export default async function PostPage({ params }: PageProps) {
                 publishedAt={post.publishedAt}
                 readingTime={post.readingTime}
                 tags={post.tags}
+                collection="posts"
               />
             </div>
           </div>

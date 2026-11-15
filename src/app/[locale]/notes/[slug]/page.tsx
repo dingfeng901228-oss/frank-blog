@@ -10,9 +10,9 @@ import Markdown from '@/components/Markdown'
 import ArticleTOC from '@/components/blog/ArticleTOC'
 import ArticleSidebar from '@/components/blog/ArticleSidebar'
 import ShareBar from '@/components/blog/ShareBar'
+import { PostMeta } from '@/components/blog/PostCard'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
-import { tagHref } from '@/lib/tags'
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>
@@ -176,22 +176,33 @@ export default async function NotePage({ params }: PageProps) {
 
           {/* Header */}
           <header className="mb-10 lg:mb-12 lg:col-span-3">
-            {note.tags && note.tags.length > 0 && (
-              <div className="flex items-center gap-3 mb-5 flex-wrap">
-                {note.tags.map((tag) => (
-                  <Link
-                    key={tag}
-                    href={tagHref(locale, 'notes', tag)}
-                    className="text-[10px] font-mono px-2.5 py-0.5 rounded-full transition-colors hover:border-[var(--accent)]"
-                    style={{
-                      background: 'rgba(59,130,246,0.10)',
-                      border: '1px solid rgba(59,130,246,0.15)',
-                      color: 'rgba(147,197,253,0.9)',
-                    }}
-                  >
-                    {tag}
-                  </Link>
-                ))}
+            {/*
+              Item 4: the note header now uses the SAME PostMeta component
+              as the home card, the blog list and the blog article page, so
+              every surface shows the same four fields — category, date,
+              reading time and clickable tags — from the same source. The
+              note page used to have no reading time at all and its own
+              hand-written tags row.
+            */}
+            <div className="mb-5">
+              <PostMeta
+                locale={locale as Locale}
+                publishedAt={note.publishedAt}
+                readingTime={note.readingTime}
+                tags={note.tags}
+                collection="notes"
+                variant="stack"
+              />
+            </div>
+            {note.updatedAt && note.updatedAt !== note.publishedAt && (
+              <div
+                className="flex items-center gap-2 text-xs font-mono mb-5"
+                style={{ color: 'rgba(255,255,255,0.35)' }}
+              >
+                <span>
+                  {locale === 'ja' ? '更新 ' : locale === 'zh' ? '更新 ' : 'Updated '}
+                  {formatDate(note.updatedAt, locale)}
+                </span>
               </div>
             )}
             <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium leading-tight mb-5 text-white">
@@ -202,18 +213,6 @@ export default async function NotePage({ params }: PageProps) {
                 {note.description}
               </p>
             )}
-            <div className="flex items-center gap-4 text-xs font-mono flex-wrap" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              <time dateTime={note.publishedAt}>{formatDate(note.publishedAt, locale)}</time>
-              {note.updatedAt && note.updatedAt !== note.publishedAt && (
-                <>
-                  <span>·</span>
-                  <span>
-                    {locale === 'ja' ? '更新 ' : locale === 'zh' ? '更新 ' : 'Updated '}
-                    {formatDate(note.updatedAt, locale)}
-                  </span>
-                </>
-              )}
-            </div>
 
             {note.coverImage && (
               <figure className="mt-8 lg:mt-10 -mx-2 lg:mx-0">
@@ -251,7 +250,9 @@ export default async function NotePage({ params }: PageProps) {
               <ArticleSidebar
                 locale={locale}
                 publishedAt={note.publishedAt}
+                readingTime={note.readingTime}
                 tags={note.tags}
+                collection="notes"
               />
             </div>
           </div>

@@ -1,12 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { formatDate } from '@/lib/utils'
+import { tagHref } from '@/lib/tags'
 
 interface ArticleSidebarProps {
   locale: string
   publishedAt: string
   readingTime?: string
   tags?: string[]
+  /** 'posts' or 'notes' — decides which tag pages the chips link to. */
+  collection?: 'posts' | 'notes'
 }
 
 const authorInfo: Record<string, { name: string; title: string; location: string }> = {
@@ -21,23 +26,18 @@ const labels: Record<string, { reading: string; published: string; tags: string;
   en: { reading: 'Reading Time', published: 'Published', tags: 'Tags', related: 'Related' },
 }
 
-export default function ArticleSidebar({ locale, publishedAt, readingTime, tags }: ArticleSidebarProps) {
+export default function ArticleSidebar({
+  locale,
+  publishedAt,
+  readingTime,
+  tags,
+  collection = 'posts',
+}: ArticleSidebarProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
   const info = authorInfo[locale] ?? authorInfo.ja
   const t = labels[locale] ?? labels.ja
-
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString(
-        locale === 'ja' ? 'ja-JP' : locale === 'zh' ? 'zh-CN' : 'en-US',
-        { year: 'numeric', month: 'long', day: 'numeric' }
-      )
-    } catch {
-      return dateStr
-    }
-  }
 
   return (
     <aside className="hidden lg:block sticky" style={{ top: '100px' }}>
@@ -84,7 +84,9 @@ export default function ArticleSidebar({ locale, publishedAt, readingTime, tags 
           <div className="text-[10px] uppercase font-mono tracking-[0.12em] mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
             {t.published}
           </div>
-          <time className="text-xs text-white/70 font-mono">{formatDate(publishedAt)}</time>
+          <time dateTime={publishedAt} className="text-xs text-white/70 font-mono">
+            {formatDate(publishedAt, locale)}
+          </time>
         </div>
 
         {/* Tags */}
@@ -95,9 +97,12 @@ export default function ArticleSidebar({ locale, publishedAt, readingTime, tags 
             </div>
             <div className="flex flex-wrap gap-1.5">
               {tags.map((tag) => (
-                <span
+                // The sidebar tags are clickable too — they point at the
+                // same tag pages as the chips in the article header.
+                <Link
                   key={tag}
-                  className="text-[10px] font-mono px-2 py-0.5 rounded-full"
+                  href={tagHref(locale, collection === 'notes' ? 'notes' : 'blog', tag)}
+                  className="text-[10px] font-mono px-2 py-0.5 rounded-full transition-colors hover:border-[var(--accent)]"
                   style={{
                     background: 'rgba(59,130,246,0.10)',
                     border: '1px solid rgba(59,130,246,0.15)',
@@ -105,7 +110,7 @@ export default function ArticleSidebar({ locale, publishedAt, readingTime, tags 
                   }}
                 >
                   {tag}
-                </span>
+                </Link>
               ))}
             </div>
           </div>
