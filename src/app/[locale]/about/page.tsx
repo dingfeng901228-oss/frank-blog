@@ -6,7 +6,8 @@ import type { Locale } from '@/i18n/config'
 
 const aboutContent = {
   ja: {
-    title: 'About',
+    // Item 7: the Japanese page heading used to be the English "About".
+    title: 'プロフィール',
     intro: `Frank Ding / 東京都在住 / エンジニア`,
     description: `このサイトは、静かに観察し思索したことを記録するための場所。日々の技術メモ、AIと自動化の実践、日本での生活、そして人生についての考察を残す。`,
     philosophy: `技術は問題を解決する手段であり、目的ではない。複雑なシステムをシンプルに保ち、読む人にとって価値ある情報だけを届けることを大切にしている。`,
@@ -35,7 +36,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params
   const meta = {
-    ja: { title: 'About', description: '東京都在住のエンジニア Frank Ding について。' },
+    ja: { title: 'プロフィール', description: '東京都在住のエンジニア Frank Ding について。' },
     zh: { title: '关于我', description: '关于 Frank Ding — 东京的工程师。' },
     en: { title: 'About', description: 'About Frank Ding — Engineer in Tokyo.' },
   }

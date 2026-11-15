@@ -6,12 +6,23 @@
  *
  * It is mounted once, in the locale layout, so it works on every page
  * (home, lists, article pages, archives, search).
+ *
+ * Item 7: the button's aria-label and title used to be the English
+ * "Back to top" in every language — the only piece of English chrome
+ * left on the Japanese pages. It now follows the reader's language.
  */
 
 import { useEffect, useState } from 'react'
 
-export default function BackToTop() {
+const labels = {
+  ja: 'ページ上部へ戻る',
+  zh: '回到顶部',
+  en: 'Back to top',
+} as const
+
+export default function BackToTop({ locale = 'ja' }: { locale?: string }) {
   const [visible, setVisible] = useState(false)
+  const label = labels[locale as keyof typeof labels] ?? labels.ja
 
   useEffect(() => {
     function onScroll() {
@@ -29,8 +40,8 @@ export default function BackToTop() {
     <button
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      aria-label="Back to top"
-      title="Back to top"
+      aria-label={label}
+      title={label}
       className="fixed bottom-6 right-5 md:right-8 z-40 flex items-center justify-center rounded-full transition-all duration-300"
       style={{
         width: 42,

@@ -14,6 +14,7 @@ import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import type { Metadata } from 'next'
 import { decodeTagParam, tagCanonical } from '@/lib/tags'
+import { formatDate } from '@/lib/utils'
 
 interface PageProps {
   params: Promise<{ locale: string; tag: string }>
@@ -97,8 +98,14 @@ export default async function TagFilteredNotesPage({ params }: PageProps) {
                 {note.description && (
                   <p className="text-[var(--muted)] mb-3 leading-relaxed">{note.description}</p>
                 )}
+                {/*
+                  Item 3: the date was the raw frontmatter value, so this
+                  page showed "2026-09-30" while every other surface showed
+                  "2026年9月30日". The one shared formatter is used here
+                  too.
+                */}
                 <div className="flex items-center gap-4 text-sm text-[var(--muted)]">
-                  <time>{note.publishedAt}</time>
+                  <time dateTime={note.publishedAt}>{formatDate(note.publishedAt, locale)}</time>
                 </div>
               </article>
             ))}

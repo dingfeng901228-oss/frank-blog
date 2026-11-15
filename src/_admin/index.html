@@ -194,7 +194,11 @@
             html += '<div class="post-info"><div class="post-title">' + slug + '</div>';
             html += '<div class="post-meta"><span>' + f.name + '</span><span>' + dateStr + '</span></div></div>';
             html += '<div class="post-actions">';
-            html += '<a href="/admin/edit.html?lang=' + CURRENT_LANG + '&slug=' + slug + '&type=' + CURRENT_TYPE + '" class="btn btn-edit">Edit</a>';
+            // The new CMS (the Next.js SPA at /admin) has no /admin/edit.html,
+            // and its edit route needs the D1 row id (?id=…), which this
+            // legacy page does not have. Pointing at the new list page keeps
+            // the link alive instead of 404-ing.
+            html += '<a href="/admin/blog" class="btn btn-edit">Edit</a>';
             html += '<button class="btn btn-delete" onclick="deletePost(\'' + CURRENT_LANG + '\',\'' + slug + '\',\'' + CURRENT_TYPE + '\')">Delete</button>';
             html += '</div></div>';
           });

@@ -175,7 +175,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen antialiased">
         {children}
-        <BackToTop />
+        <BackToTop locale={locale} />
       </body>
     </html>
   )
