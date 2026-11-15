@@ -319,5 +319,5 @@
 # wrong order (面 + 接). The misspelled URL is redirected to the
 # correct one so any link picked up in that window still lands.
 # ────────────────────────────────────────────────────────────────────
-/ja/notes/tag/%E9%9D%A2%E6%8E%A5    /ja/notes/tag/%E6%8E%A5%E5%8F%A3    301
-/ja/notes/tag/%25E9%259D%25A2%25E6%258E%25A5    /ja/notes/tag/%E6%8E%A5%E5%8F%A3    301
+/ja/notes/tag/%E9%9D%A2%E6%8E%A5    /ja/notes/tag/%E6%8E%A5%E9%9D%A2    301
+/ja/notes/tag/%25E9%259D%25A2%25E6%258E%25A5    /ja/notes/tag/%E6%8E%A5%E9%9D%A2    301
