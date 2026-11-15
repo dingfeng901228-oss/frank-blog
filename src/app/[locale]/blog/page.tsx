@@ -1,11 +1,10 @@
 import { getAllPosts } from '@/lib/blog'
-import { formatDate } from '@/lib/utils'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { PostCard } from '@/components/blog/PostCard'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -65,60 +64,34 @@ export default async function BlogPage({ params }: PageProps) {
             {locale === 'ja'
               ? `${posts.length} 記事を収録`
               : locale === 'zh'
-              ? `共 ${posts.length} 篇文章`
-              : `${posts.length} posts`}
+                ? `共 ${posts.length} 篇文章`
+                : `${posts.length} posts`}
           </p>
         </section>
 
-        {/* Posts List */}
+        {/* Posts list — same card style as the notes list */}
         <section className="py-10">
-          <div className="space-y-0">
-            {posts.map((post, i) => (
-              <article
-                key={post.slug}
-                className="group grid grid-cols-1 md:grid-cols-[160px_1fr] gap-6 md:gap-10 py-10 border-b border-[var(--border)] last:border-b-0"
-              >
-                {/* Left: big date + reading time */}
-                <div className="flex flex-col gap-2">
-                  <time
-                    className="font-serif text-3xl font-medium tabular-nums leading-none"
-                    style={{ color: 'var(--foreground-strong)' }}
-                  >
-                    {formatDate(post.publishedAt, locale)}
-                  </time>
-                  <span className="text-xs font-mono" style={{ color: 'var(--muted)' }}>
-                    {post.readingTime}
-                  </span>
-                </div>
-
-                {/* Right: title + description + tags */}
-                <div className="min-w-0">
-                  <Link href={`/${locale}/blog/${post.slug}`}>
-                    <h2 className="font-serif text-2xl md:text-3xl font-medium mb-4 leading-snug group-hover:text-[var(--accent)] transition-colors">
-                      {post.title}
-                    </h2>
-                  </Link>
-                  <p className="text-[var(--muted)] leading-relaxed text-[15px]">
-                    {post.description}
-                  </p>
-                  {post.tags && post.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {post.tags.map((tag) => (
-                        <Link
-                          key={tag}
-                          href={`/${locale}/blog/tag/${encodeURIComponent(tag)}`}
-                          className="px-2 py-0.5 bg-[var(--card)] rounded text-xs transition-colors hover:text-[var(--accent)]"
-                          style={{ color: 'var(--muted)' }}
-                        >
-                          {tag}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
+          {posts.length === 0 ? (
+            <p className="text-[var(--muted)] text-center py-20">
+              {locale === 'ja' ? 'まだ記事がありません。' : locale === 'zh' ? '暂无内容。' : 'No posts yet.'}
+            </p>
+          ) : (
+            <div className="space-y-0">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.slug}
+                  locale={locale as Locale}
+                  slug={post.slug}
+                  title={post.title}
+                  description={post.description}
+                  publishedAt={post.publishedAt}
+                  readingTime={post.readingTime}
+                  tags={post.tags}
+                  collection="posts"
+                />
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

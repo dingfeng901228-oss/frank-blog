@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import { getNotes } from '@/lib/notes'
-import Link from 'next/link'
+import { PostCard } from '@/components/blog/PostCard'
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -45,9 +45,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 const notesLabels = {
-  ja: { title: 'Notes', description: '日常の思考、整理されたメモ、考察の断片。', readMore: '読む' },
-  zh: { title: '随笔', description: '日常思考、整理的笔记、考察的片段。', readMore: '阅读' },
-  en: { title: 'Notes', description: 'Daily thoughts, organized notes, fragments of reflection.', readMore: 'Read' },
+  ja: { title: 'ノート', description: '日常の思考、整理されたメモ、考察の断片。' },
+  zh: { title: '随笔', description: '日常思考、整理的笔记、考察的片段。' },
+  en: { title: 'Notes', description: 'Daily thoughts, organized notes, fragments of reflection.' },
 }
 
 export default async function NotesPage({ params }: PageProps) {
@@ -62,41 +62,38 @@ export default async function NotesPage({ params }: PageProps) {
       <Navbar locale={locale as Locale} />
 
       <main className="mx-auto max-w-[1480px] px-6 lg:px-16 xl:px-20 pt-20 pb-16">
+        {/* Header — same shape as the blog list, including the count */}
         <section className="py-16 border-b border-[var(--border)]">
           <h1 className="font-serif text-4xl font-medium mb-4">{t.title}</h1>
-          <p className="text-[var(--muted)]">{t.description}</p>
+          <p className="text-[var(--muted)]">
+            {locale === 'ja'
+              ? `${notes.length} 件のノートを収録`
+              : locale === 'zh'
+                ? `共 ${notes.length} 篇随笔`
+                : `${notes.length} notes`}
+          </p>
         </section>
 
-        <section className="py-12">
+        {/* Notes list — same card style as the blog list */}
+        <section className="py-10">
           {notes.length === 0 ? (
-            <p className="text-[var(--muted)] text-center py-20">暂无内容。</p>
+            <p className="text-[var(--muted)] text-center py-20">
+              {locale === 'ja' ? 'まだノートがありません。' : locale === 'zh' ? '暂无内容。' : 'No notes yet.'}
+            </p>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-0">
               {notes.map((note) => (
-                <article key={note.slug} className="border-b border-[var(--border)] pb-8">
-                  <Link href={`/${locale}/notes/${note.slug}`}>
-                    <h2 className="font-serif text-2xl font-medium mb-3 hover:text-[var(--accent)] transition-colors">{note.title}</h2>
-                  </Link>
-                  {note.description && (
-                    <p className="text-[var(--muted)] mb-3 leading-relaxed">{note.description}</p>
-                  )}
-                  <div className="flex items-center gap-4 text-sm text-[var(--muted)]">
-                    <time>{note.publishedAt}</time>
-                    {note.tags && note.tags.length > 0 && (
-                      <div className="flex gap-2 flex-wrap">
-                        {note.tags.map((tag) => (
-                          <Link
-                            key={tag}
-                            href={`/${locale}/notes/tag/${encodeURIComponent(tag)}`}
-                            className="px-2 py-0.5 bg-[var(--card)] rounded text-xs transition-colors hover:text-[var(--accent)]"
-                          >
-                            {tag}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </article>
+                <PostCard
+                  key={note.slug}
+                  locale={locale as Locale}
+                  slug={note.slug}
+                  title={note.title}
+                  description={note.description}
+                  publishedAt={note.publishedAt}
+                  readingTime={note.readingTime}
+                  tags={note.tags}
+                  collection="notes"
+                />
               ))}
             </div>
           )}

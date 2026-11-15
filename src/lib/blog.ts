@@ -77,3 +77,35 @@ export function getPostsByTag(locale: Locale, tag: string): Post[] {
 export function getAllLocales(): Locale[] {
   return ['ja', 'zh', 'en']
 }
+
+/**
+ * Find up to `limit` other posts that share at least one tag with the
+ * given post, ranked by how many tags they share and then by recency.
+ *
+ * Used for the 「同じタグの記事」 block at the bottom of an article.
+ */
+export function getRelatedPosts(
+  locale: Locale,
+  currentSlug: string,
+  limit: number = 3
+): Post[] {
+  const all = getAllPosts(locale)
+  const current = all.find((p) => p.slug === currentSlug)
+  if (!current || !current.tags || current.tags.length === 0) return []
+
+  const scored = all
+    .filter((p) => p.slug !== currentSlug)
+    .map((post) => {
+      const shared = (post.tags ?? []).filter((t) => current.tags?.includes(t)).length
+      return { post, shared }
+    })
+    .filter((x) => x.shared > 0)
+    .sort((a, b) => {
+      if (b.shared !== a.shared) return b.shared - a.shared
+      return (
+        new Date(b.post.publishedAt).getTime() - new Date(a.post.publishedAt).getTime()
+      )
+    })
+
+  return scored.slice(0, limit).map((x) => x.post)
+}

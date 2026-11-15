@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import type { Locale } from '@/i18n/config'
+import SearchBox from './SearchBox'
 
 /* ── 3-language nav labels ── */
 const navLabels: Record<Locale, { label: string; href: string }[]> = {
@@ -70,8 +71,19 @@ export default function Navbar({ locale }: NavbarProps) {
         setDropdownOpen(false)
       }
     }
+    // Escape closes the language dropdown (and the mobile nav panel).
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setDropdownOpen(false)
+        setMobileNavOpen(false)
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKey)
+    }
   }, [])
 
   const getLocalePath = (newLocale: Locale) => {
@@ -177,6 +189,9 @@ export default function Navbar({ locale }: NavbarProps) {
             </span>
             {statusLabels[locale]}
           </div>
+
+          {/* ── Search entry point ── */}
+          <SearchBox locale={locale} />
 
           {/* ── Language dropdown ── */}
           <div className="relative" ref={dropdownRef}>
@@ -294,6 +309,10 @@ export default function Navbar({ locale }: NavbarProps) {
                 </Link>
               )
             })}
+            {/* Mobile search */}
+            <div className="px-4 py-3">
+              <SearchBox locale={locale} />
+            </div>
             {/* Mobile status */}
             <div className="flex items-center gap-1.5 px-4 py-3 mt-2 text-xs font-mono"
               style={{ color: 'rgba(147, 197, 253, 0.8)' }}

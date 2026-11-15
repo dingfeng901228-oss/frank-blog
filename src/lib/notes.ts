@@ -66,3 +66,35 @@ export function getAllNoteTags(locale: Locale): string[] {
   })
   return Array.from(tagSet).sort()
 }
+
+/**
+ * Find up to `limit` other notes that share at least one tag with the
+ * given note, ranked by shared-tag count and then recency.
+ *
+ * Used for the 「同じタグの記事」 block at the bottom of a note.
+ */
+export function getRelatedNotes(
+  locale: Locale,
+  currentSlug: string,
+  limit: number = 3
+): Post[] {
+  const all = getAllNotes(locale)
+  const current = all.find((n) => n.slug === currentSlug)
+  if (!current || !current.tags || current.tags.length === 0) return []
+
+  const scored = all
+    .filter((n) => n.slug !== currentSlug)
+    .map((note) => {
+      const shared = (note.tags ?? []).filter((t) => current.tags?.includes(t)).length
+      return { note, shared }
+    })
+    .filter((x) => x.shared > 0)
+    .sort((a, b) => {
+      if (b.shared !== a.shared) return b.shared - a.shared
+      return (
+        new Date(b.note.publishedAt).getTime() - new Date(a.note.publishedAt).getTime()
+      )
+    })
+
+  return scored.slice(0, limit).map((x) => x.note)
+}

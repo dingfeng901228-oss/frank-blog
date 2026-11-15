@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import '../globals.css'
 import { locales } from '@/i18n/config'
+import BackToTop from '@/components/layout/BackToTop'
 
 // Viewport (App Router separate export — themeColor belongs here, not in metadata)
 export const viewport: Viewport = {
@@ -174,6 +175,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen antialiased">
         {children}
+        <BackToTop />
       </body>
     </html>
   )

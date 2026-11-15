@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getNoteBySlug, getAllNotes } from '@/lib/notes'
+import { getNoteBySlug, getAllNotes, getRelatedNotes } from '@/lib/notes'
 import { getAllLocales } from '@/lib/blog'
 import { formatDate } from '@/lib/utils'
 import Navbar from '@/components/layout/Navbar'
@@ -9,8 +9,10 @@ import Giscus from '@/components/blog/Giscus'
 import Markdown from '@/components/Markdown'
 import ArticleTOC from '@/components/blog/ArticleTOC'
 import ArticleSidebar from '@/components/blog/ArticleSidebar'
+import ShareBar from '@/components/blog/ShareBar'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
+import { tagHref } from '@/lib/tags'
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>
@@ -31,9 +33,9 @@ export async function generateStaticParams() {
 }
 
 const navLabels = {
-  ja: { back: '← ノート一覧', prev: '← 前の記事', next: '次の記事 →' },
-  zh: { back: '← 返回随笔', prev: '← 上一篇', next: '下一篇 →' },
-  en: { back: '← Back to Notes', prev: '← Previous', next: 'Next →' },
+  ja: { back: '← ノート一覧', prev: '← 前の記事', next: '次の記事 →', related: '同じタグの記事' },
+  zh: { back: '← 返回随笔', prev: '← 上一篇', next: '下一篇 →', related: '相同标签的文章' },
+  en: { back: '← Back to Notes', prev: '← Previous', next: 'Next →', related: 'Related posts' },
 } as const
 
 export async function generateMetadata({ params }: PageProps) {
@@ -86,6 +88,7 @@ export default async function NotePage({ params }: PageProps) {
   const currentIndex = allNotes.findIndex((n) => n.slug === slug)
   const prevNote = currentIndex < allNotes.length - 1 ? allNotes[currentIndex + 1] : null
   const nextNote = currentIndex > 0 ? allNotes[currentIndex - 1] : null
+  const relatedPosts = getRelatedNotes(locale as Locale, slug, 3)
 
   const nav = navLabels[locale as keyof typeof navLabels]
   const renderedContent = <Markdown>{note.content}</Markdown>
@@ -178,7 +181,7 @@ export default async function NotePage({ params }: PageProps) {
                 {note.tags.map((tag) => (
                   <Link
                     key={tag}
-                    href={`/${locale}/notes/tag/${encodeURIComponent(tag)}`}
+                    href={tagHref(locale, 'notes', tag)}
                     className="text-[10px] font-mono px-2.5 py-0.5 rounded-full transition-colors hover:border-[var(--accent)]"
                     style={{
                       background: 'rgba(59,130,246,0.10)',
@@ -222,8 +225,9 @@ export default async function NotePage({ params }: PageProps) {
                   className="w-full h-auto rounded-lg"
                   style={{
                     border: '1px solid rgba(255,255,255,0.06)',
-                    maxHeight: '480px',
-                    objectFit: 'cover',
+                    maxHeight: '720px',
+                    objectFit: 'contain',
+                    background: 'rgba(255,255,255,0.02)',
                   }}
                 />
               </figure>
@@ -257,8 +261,8 @@ export default async function NotePage({ params }: PageProps) {
             <div className="mt-16 mb-12 h-px w-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
           )}
 
-          {/* Prev / Next nav */}
-          <nav className="grid grid-cols-2 gap-8 mb-16">
+          {/* Prev / Next nav — symmetric (item 9⑤) */}
+          <nav className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-16">
             <div>
               {prevNote && (
                 <Link href={`/${locale}/notes/${prevNote.slug}`} className="block group">
@@ -276,6 +280,49 @@ export default async function NotePage({ params }: PageProps) {
               )}
             </div>
           </nav>
+
+          {/* Related posts — the three notes that share the most tags with
+              this one (item 9④). */}
+          {relatedPosts.length > 0 && (
+            <section className="pt-12 mb-16" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <h2
+                className="text-[10px] font-mono tracking-[0.18em] mb-8 uppercase"
+                style={{ color: 'rgba(255,255,255,0.35)' }}
+              >
+                {nav.related}
+              </h2>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {relatedPosts.map((rp) => (
+                  <Link
+                    key={rp.slug}
+                    href={`/${locale}/notes/${rp.slug}`}
+                    className="group block p-5 rounded-lg transition-colors"
+                    style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                    }}
+                  >
+                    <h3 className="font-serif text-base leading-snug mb-2 group-hover:text-[var(--accent)] transition-colors text-white/90">
+                      {rp.title}
+                    </h3>
+                    <div className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                      {formatDate(rp.publishedAt, locale)}
+                      {rp.readingTime ? ` · ${rp.readingTime}` : ''}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Share */}
+          <section className="pt-12 mb-16" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <ShareBar
+              locale={locale}
+              title={note.title}
+              url={`https://blog.frank2025.com/${locale}/notes/${slug}`}
+            />
+          </section>
 
           {/* Comments */}
           <section className="pt-12 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>

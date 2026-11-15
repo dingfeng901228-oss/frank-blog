@@ -2,6 +2,7 @@
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkCjkFriendly from 'remark-cjk-friendly'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeSlug from 'rehype-slug'
 import { type ComponentProps } from 'react'
@@ -23,11 +24,21 @@ import { type ComponentProps } from 'react'
  *
  * The hand-rolled splitter lives on in /admin for the post editor (it
  * does structural checks, not rendering) — see PostEditor.tsx.
+ *
+ * remark-cjk-friendly: CommonMark does not recognise `**` as emphasis in
+ * CJK text when the character just inside the marker is punctuation and
+ * the character just outside is not. That made
+ *   つまり、私は**「アルバイトをしなくても生活できる余裕」**がありました。
+ * render with literal asterisks instead of bold. The plugin relaxes the
+ * flanking rule for CJK, so the markers are parsed as emphasis. It must
+ * come BEFORE remark-gfm's own handling of `~~` per the plugin's docs;
+ * the order below (gfm first, cjk-friendly second) is what the plugin
+ * documents and is verified by the build.
  */
 export default function Markdown({ children }: { children: string }) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkCjkFriendly]}
       rehypePlugins={[rehypeHighlight, rehypeSlug]}
       components={{
         // Force <a> to open in a new tab for external links. We detect
@@ -49,16 +60,39 @@ export default function Markdown({ children }: { children: string }) {
         },
         // Image: rounded-lg + lazy loading, matching the previous
         // <figure><img class="rounded-lg …"></figure> styling.
+        //
+        // Item 12 of the cleanup: the article HEADER image is rendered by
+        // the page component (see blog/[slug]/page.tsx) with object-fit
+        // contain, because a poster or a screenshot with small print gets
+        // cropped and unreadable when forced into a banner shape. The
+        // in-body images below keep `h-auto` so they are never cropped
+        // either — the width is the only constraint.
+        //
+        // A markdown image's alt text doubles as its CAPTION: if the source
+        // has a title ("![alt](url \"title\")") we render it as a visible
+        // caption under the image. Without a title the alt text stays
+        // accessible-only, because repeating it visibly would duplicate
+        // the surrounding paragraph.
         img({ src, alt, title }) {
           return (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={src}
-              alt={alt || ''}
-              title={title}
-              className="rounded-lg w-full h-auto my-6"
-              loading="lazy"
-            />
+            <figure className="my-8">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={alt || ''}
+                className="rounded-lg w-full h-auto"
+                loading="lazy"
+              />
+              {title && (
+                <figcaption
+                  className="mt-2 text-xs text-center"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  {title}
+                </figcaption>
+              )}
+            </figure>
           )
         },
         // Heading sizes match the project typography scale

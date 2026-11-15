@@ -867,6 +867,33 @@ export async function listTags(env: Env): Promise<TagRecord[]> {
   );
 }
 
+/**
+ * Every tag the site knows about, across all locales and collections.
+ *
+ * Used by the tag normalizer to decide whether a dotted tag really is
+ * two tags pasted together: only a part that already exists as a tag
+ * counts, which is what keeps legitimate names like "Node.js" intact.
+ */
+export async function listKnownTags(env: Env): Promise<Set<string>> {
+  const rows = await queryAll<{ tags: string | null }>(
+    env,
+    `SELECT tags FROM posts WHERE tags IS NOT NULL`
+  );
+  const known = new Set<string>();
+  for (const row of rows) {
+    try {
+      const parsed = JSON.parse(row.tags ?? '[]');
+      if (!Array.isArray(parsed)) continue;
+      for (const tag of parsed) {
+        if (typeof tag === 'string' && tag.trim()) known.add(tag.trim());
+      }
+    } catch {
+      // A malformed JSON blob is skipped; it must not break the request.
+    }
+  }
+  return known;
+}
+
 export async function createTag(env: Env, name: string, slug: string): Promise<TagRecord> {
   const result = await queryFirst<TagRecord>(
     env,

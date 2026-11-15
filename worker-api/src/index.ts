@@ -866,6 +866,12 @@ async function createPost(request: Request, env: Env): Promise<Response> {
   const description_raw = buildDescriptionRaw(body.description_text);
   const publishedAt = body.published_at ?? new Date().toISOString().split('T')[0];
 
+  // Tags are normalized before they are stored: two tags pasted together
+  // with a period are split back apart, so every tag on the site has a
+  // working tag page. See worker-api/src/tags.ts for the rule.
+  const knownTags = await listKnownTags(env);
+  const normalizedTags = normalizeTags(body.tags, knownTags);
+
   const result = await execute(
     env,
     `INSERT INTO posts
@@ -877,7 +883,7 @@ async function createPost(request: Request, env: Env): Promise<Response> {
       description_raw, body.description_text, body.content, body.content_format ?? 'mdx',
       body.excerpt ?? null, body.cover_image ?? null, body.status ?? 'draft',
       publishedAt, null, body.reading_time ?? null, body.is_featured ? 1 : 0,
-      body.tags ? JSON.stringify(body.tags) : null,
+      normalizedTags.length > 0 ? JSON.stringify(normalizedTags) : null,
     ]
   );
 
@@ -979,7 +985,10 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
     if (body[bodyKey] !== undefined) {
       let value: unknown = body[bodyKey];
       if (bodyKey === 'tags' && Array.isArray(value)) {
-        value = JSON.stringify(value);
+        // Split joined tags back apart before they are stored, so every
+        // tag on the site has a working tag page.
+        const knownTags = await listKnownTags(env);
+        value = JSON.stringify(normalizeTags(value, knownTags));
       }
       if (bodyKey === 'status' && !['draft', 'published', 'archived'].includes(value as string)) {
         return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid status' } }, 400);

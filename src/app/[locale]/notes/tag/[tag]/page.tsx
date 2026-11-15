@@ -13,6 +13,7 @@ import Footer from '@/components/layout/Footer'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import type { Metadata } from 'next'
+import { tagCanonical } from '@/lib/tags'
 
 interface PageProps {
   params: Promise<{ locale: string; tag: string }>
@@ -31,7 +32,9 @@ export async function generateStaticParams() {
   for (const locale of locales) {
     const tags = getAllNoteTags(locale as Locale)
     for (const tag of tags) {
-      params.push({ locale, tag: encodeURIComponent(tag) })
+      // The raw tag name goes in — see the blog tag page for why
+      // pre-encoding it made every non-ASCII tag 404.
+      params.push({ locale, tag })
     }
   }
   return params
@@ -39,11 +42,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, tag } = await params
-  const decoded = decodeURIComponent(tag)
   return {
-    title: titleByLocale[locale as keyof typeof titleByLocale].heading(decoded),
+    title: titleByLocale[locale as keyof typeof titleByLocale].heading(tag),
     alternates: {
-      canonical: `https://blog.frank2025.com/${locale}/notes/tag/${encodeURIComponent(decoded)}`,
+      canonical: tagCanonical('https://blog.frank2025.com', locale, 'notes', tag),
     },
   }
 }
@@ -52,9 +54,8 @@ export default async function TagFilteredNotesPage({ params }: PageProps) {
   const { locale, tag } = await params
   setRequestLocale(locale as Locale)
 
-  const decoded = decodeURIComponent(tag)
   const allNotes = getAllNotes(locale as Locale)
-  const notes = allNotes.filter((n) => n.tags?.includes(decoded))
+  const notes = allNotes.filter((n) => n.tags?.includes(tag))
   if (notes.length === 0) notFound()
 
   const t = titleByLocale[locale as keyof typeof titleByLocale]
@@ -72,7 +73,7 @@ export default async function TagFilteredNotesPage({ params }: PageProps) {
         </div>
 
         <section className="py-12 border-b border-[var(--border)]">
-          <h1 className="font-serif text-4xl font-medium mb-4">{t.heading(decoded)}</h1>
+          <h1 className="font-serif text-4xl font-medium mb-4">{t.heading(tag)}</h1>
           <p className="text-[var(--muted)]">
             {locale === 'ja' ? `${notes.length} 件のノート` : locale === 'zh' ? `共 ${notes.length} 篇随笔` : `${notes.length} notes`}
           </p>

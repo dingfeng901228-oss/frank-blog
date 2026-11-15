@@ -46,3 +46,6 @@ tsconfig.tsbuildinfo
 
 # Next.js auto-generated
 admin/next-env.d.ts
+
+# Local audit scratch (audit subagent output, throwaway probes)
+.tmp-audit/

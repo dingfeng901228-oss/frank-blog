@@ -15,6 +15,7 @@ import Footer from '@/components/layout/Footer'
 import { setRequestLocale } from 'next-intl/server'
 import type { Locale } from '@/i18n/config'
 import type { Metadata } from 'next'
+import { tagCanonical } from '@/lib/tags'
 
 interface PageProps {
   params: Promise<{ locale: string; tag: string }>
@@ -34,8 +35,11 @@ export async function generateStaticParams() {
   for (const locale of locales) {
     const tags = getAllTags(locale as Locale)
     for (const tag of tags) {
-      // URL-encode once so build-time paths and runtime requests agree.
-      params.push({ locale, tag: encodeURIComponent(tag) })
+      // The raw tag name goes in. Next.js encodes the path segment
+      // itself when it writes the file and when it resolves the URL, so
+      // pre-encoding it here produced a file whose name was encoded
+      // TWICE and every non-ASCII or spaced tag 404'd.
+      params.push({ locale, tag })
     }
   }
   return params
@@ -43,11 +47,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, tag } = await params
-  const decoded = decodeURIComponent(tag)
   return {
-    title: titleByLocale[locale as keyof typeof titleByLocale].heading(decoded),
+    title: titleByLocale[locale as keyof typeof titleByLocale].heading(tag),
     alternates: {
-      canonical: `https://blog.frank2025.com/${locale}/blog/tag/${encodeURIComponent(decoded)}`,
+      canonical: tagCanonical('https://blog.frank2025.com', locale, 'blog', tag),
     },
   }
 }
@@ -56,9 +59,8 @@ export default async function TagFilteredBlogPage({ params }: PageProps) {
   const { locale, tag } = await params
   setRequestLocale(locale as Locale)
 
-  const decoded = decodeURIComponent(tag)
   const allPosts = getAllPosts(locale as Locale)
-  const posts = allPosts.filter((p) => p.tags?.includes(decoded))
+  const posts = allPosts.filter((p) => p.tags?.includes(tag))
   if (posts.length === 0) notFound()
 
   const t = titleByLocale[locale as keyof typeof titleByLocale]
@@ -76,7 +78,7 @@ export default async function TagFilteredBlogPage({ params }: PageProps) {
         </div>
 
         <section className="py-12 border-b border-[var(--border)]">
-          <h1 className="font-serif text-4xl font-medium mb-4">{t.heading(decoded)}</h1>
+          <h1 className="font-serif text-4xl font-medium mb-4">{t.heading(tag)}</h1>
           <p className="text-[var(--muted)]">
             {locale === 'ja' ? `${posts.length} 記事を収録` : locale === 'zh' ? `共 ${posts.length} 篇文章` : `${posts.length} posts`}
           </p>

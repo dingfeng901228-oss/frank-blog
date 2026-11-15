@@ -1,0 +1,364 @@
+---
+title: "I Finally Switched from OpenClaw to Hermes"
+description: "After using OpenClaw for more than six months, I finally switched to Hermes. This is my personal experience with AI Agents, including task reliability, progress reporting, GitHub CI monitoring, automation, and why I decided it was time for a change."
+publishedAt: "2026-09-07"
+tags: ["OpenClaw", "Hermes", "AI Agent", "AI Assistant"]
+coverImage: "https://images.frank2025.com/media/1788695477970-1ae9c72c-0b7c-4b01-80c9-ec159e95e4c0.jpg"
+featured: false
+---
+
+![photo_2026-09-06_20-25-38](https://images.frank2025.com/media/1788695477970-1ae9c72c-0b7c-4b01-80c9-ec159e95e4c0.jpg)
+Today, I finally made the decision to switch from **OpenClaw to Hermes**.
+
+To be honest, I really don't want to keep tinkering with OpenClaw anymore.
+
+I've been using OpenClaw for more than half a year. During that time, it helped me with quite a few things and also introduced me to the idea of using an AI Agent as something more than just a chatbot.
+
+So this isn't an article saying that OpenClaw is a bad product.
+
+Quite the opposite.
+
+I'm genuinely grateful for the time I spent using it.
+
+But after using it for this long, I've gradually realized that what I need from an AI Agent has changed.
+
+And eventually, I decided it was time to try something else.
+
+## One More Upgrade, One More Problem
+
+A few days ago, OpenClaw released version `2026.9.1`.
+
+I had been using version `7.1`, so I decided to upgrade.
+
+To be honest, I was already a little nervous before doing it.
+
+I've upgraded OpenClaw several times before, and the process hasn't always gone smoothly.
+
+Sometimes the program simply wouldn't start.
+
+Sometimes it would start normally, run for a while, and then suddenly shut down.
+
+So every time I see a new version, I have this strange feeling:
+
+**Am I upgrading the software, or am I creating another project for myself?**
+
+Still, I decided to give it another chance.
+
+The result?
+
+Pretty much the same story.
+
+The upgrade completed successfully.
+
+The program started normally.
+
+And then, less than three minutes later...
+
+**It stopped again.**
+
+I spent several hours troubleshooting the logs with ChatGPT and Claude.
+
+We tried different approaches, checked different possibilities, and went through the usual debugging process.
+
+But the problem remained.
+
+At that point, I simply didn't want to spend any more time on it.
+
+So I thought:
+
+**Why not try Hermes?**
+
+## I Don't Want an AI Agent That Needs to Be Watched
+
+The crashes weren't actually the biggest reason I became frustrated with OpenClaw.
+
+What bothered me more was **task reliability**.
+
+When I give an AI Agent a task, I don't really care if it immediately tells me:
+
+> "Sure, I'll take care of it."
+
+What I actually want is:
+
+> **"Give me the goal, and I'll keep working until it's done."**
+
+But sometimes my experience with OpenClaw was different.
+
+I'd give it a task.
+
+It would confidently reply:
+
+> "Sure."
+
+> "No problem."
+
+> "I'll continue working on it."
+
+And then...
+
+Nothing.
+
+Eventually, I'd have to go back and ask:
+
+> "How's it going?"
+
+Only then would it say something like:
+
+> "Sorry, I didn't report the progress earlier."
+
+So I even started asking it to report its progress every 30 minutes.
+
+But even that wasn't always reliable.
+
+It reminded me of a certain kind of coworker:
+
+**If you don't keep an eye on them, they might quietly stop working.**
+
+Of course, that's a somewhat unfair comparison.
+
+But the underlying point is serious.
+
+For me, one of the most important qualities of an AI Agent is:
+
+**I need to be able to trust it with a task.**
+
+## Then I Tried Hermes
+
+So I decided to give Hermes a try.
+
+And honestly, I was pleasantly surprised.
+
+The biggest difference I noticed was that Hermes seemed much more focused on **actually completing the task**.
+
+If it encountered a problem, it would try to figure it out.
+
+If something needed to be changed, it would make the change.
+
+If another attempt was necessary, it would try again.
+
+And throughout the process, it would keep me informed about what it was doing.
+
+That changed the feeling of using an AI Agent.
+
+I don't need an AI that simply gives me answers.
+
+What I really want is:
+
+**An AI that can take responsibility for a task.**
+
+That's a completely different experience.
+
+## The Biggest Difference: GitHub CI
+
+One of the clearest differences for me has been GitHub.
+
+Previously, my workflow with OpenClaw often looked something like this:
+
+```
+Modify the code
+        ↓
+Commit
+        ↓
+Push to GitHub
+        ↓
+Task finished
+```
+
+Except the task wasn't necessarily finished.
+
+The GitHub CI pipeline might still be running.
+
+Or it might fail.
+
+And OpenClaw wouldn't necessarily continue monitoring what happened.
+
+So I'd have to check GitHub myself.
+
+Then I'd discover:
+
+```
+❌ Build failed
+```
+
+I'd copy the error message and send it back to the Agent:
+
+> "The build failed. Please fix this."
+
+Then it would continue working.
+
+With Hermes, the workflow feels more like:
+
+```
+Modify the code
+        ↓
+Commit
+        ↓
+Push to GitHub
+        ↓
+Monitor CI
+        ↓
+Check the result
+        ↓
+Failed?
+   ↓
+Analyze the error
+   ↓
+Fix the code
+   ↓
+Push again
+   ↓
+Check again
+   ↓
+Until it passes
+```
+
+And I don't necessarily have to intervene.
+
+That's exactly the kind of behavior I expect from an AI Agent.
+
+## I Finally Realized What I Actually Need
+
+After more than half a year of using OpenClaw, I've become much clearer about what I want from an AI Agent.
+
+I don't necessarily need the "most powerful" AI.
+
+I need a **reliable** one.
+
+I don't care if it occasionally needs another attempt.
+
+I care whether it can:
+
+- Keep working on a task
+- Handle problems by itself
+- Report progress
+- Maintain context
+- Complete tasks instead of stopping halfway
+- Continue working even when I'm not watching
+
+Because the real value of an AI Agent isn't simply saving me a few minutes.
+
+It's allowing me to **delegate work**.
+
+If I have to stand next to the Agent and supervise every step, then I'm still doing a lot of the work myself.
+
+I've simply changed from being the person doing the work to being:
+
+**the AI's project manager.**
+
+And that's not what I want.
+
+## I'm Not Rejecting OpenClaw
+
+I don't want this article to sound like I'm simply attacking OpenClaw.
+
+I'm genuinely grateful for what it has given me.
+
+Without OpenClaw, I probably wouldn't have started exploring AI Agents so deeply.
+
+It made me realize that AI doesn't have to be just a chatbot.
+
+It can be something that:
+
+- Executes commands
+- Uses tools
+- Remembers context
+- Runs automated tasks
+- Works with code
+- Interacts with GitHub
+- Continues working toward a goal
+
+That experience was valuable.
+
+But my expectations have changed.
+
+What used to feel impressive to me was:
+
+> "It can execute commands for me."
+
+Now I expect more:
+
+> **"Can you take this task and finish it without me watching you?"**
+
+That's a much higher standard.
+
+## Software Doesn't Deserve Permanent Loyalty
+
+I've also realized something else.
+
+There is no reason to keep using software forever just because you've used it for a long time.
+
+Something can be useful today and unsuitable tomorrow.
+
+Your needs change.
+
+Your workflow changes.
+
+The technology changes.
+
+And when that happens, switching tools isn't betrayal.
+
+It's simply making a different choice.
+
+OpenClaw was the right tool for me for a long time.
+
+Maybe Hermes will be the right tool for me now.
+
+And maybe, a few months from now, I'll switch again.
+
+Who knows?
+
+The AI Agent ecosystem is evolving incredibly quickly.
+
+Today's favorite tool might look completely different six months from now.
+
+## Goodbye, OpenClaw
+
+So today, I've finally made my decision:
+
+**OpenClaw, I really don't want to keep tinkering with you anymore.**
+
+I've used you for more than half a year.
+
+There were frustrating moments.
+
+There were failed upgrades.
+
+There were crashes.
+
+There were plenty of times when I wondered why I was still messing around with this thing.
+
+But there were also many moments when I thought:
+
+**"This is actually pretty damn useful."**
+
+So I don't want to say:
+
+> "Goodbye, OpenClaw. You were terrible."
+
+I'd rather say:
+
+**Thank you for accompanying me this far.**
+
+You've been part of my journey into AI Agents, and that experience won't disappear just because I've switched tools.
+
+Now I want to try something different.
+
+A different Agent.
+
+A different workflow.
+
+A different way of working with AI.
+
+Maybe Hermes will eventually disappoint me too.
+
+Maybe I'll eventually switch back to OpenClaw.
+
+That's possible.
+
+But for now, I want something simple:
+
+**I want to give the task to Hermes, walk away, and let it work.**
+
+As for whether it can really prove itself...
+
+**I'll let time decide.**
