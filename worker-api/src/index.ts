@@ -1066,6 +1066,17 @@ async function listPosts(request: Request, env: Env): Promise<Response> {
 }
 
 async function createPost(request: Request, env: Env): Promise<Response> {
+  // SECURITY — this endpoint used to have NO session check at all.
+  // The CSRF check is a double-submit check (header vs cookie), which
+  // an attacker can satisfy with their own values, so an unauthenticated
+  // caller could create and publish articles on the live site. Every
+  // other write path (update / delete / publish / bulk) checks the
+  // session; this one did not.
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+
   let body: any;
   try {
     body = await request.json();
@@ -1114,7 +1125,23 @@ async function createPost(request: Request, env: Env): Promise<Response> {
   }
 
   const description_raw = buildDescriptionRaw(body.description_text);
-  const publishedAt = body.published_at ?? new Date().toISOString().split('T')[0];
+  /*
+   * The publication DATE, not a timestamp.
+   *
+   * It used to be `new Date().toISOString().split('T')[0]` — the UTC
+   * date. The site is written for a Tokyo audience and the front end
+   * renders the date as a plain calendar day, so an article published at
+   * 08:30 JST (23:30 UTC the day before) was stamped with the PREVIOUS
+   * day. Format the date in the site's own timezone instead.
+   */
+  const publishedAt =
+    body.published_at ??
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
 
   // Tags are normalized before they are stored: two tags pasted together
   // with a period are split back apart, so every tag on the site has a
@@ -1182,13 +1209,52 @@ async function createPost(request: Request, env: Env): Promise<Response> {
     }
   }
 
+  /*
+   * Trigger the Pages rebuild.
+   *
+   * This path used to do NOTHING here — only updatePost / publishPost /
+   * bulkPublish fired the deploy hook. So a BRAND NEW article that was
+   * created straight into "published" state (which is exactly what the
+   * editor's 发布 button does on a new note) was written to D1 and then
+   * never built into the static site. The admin said "发布成功" while the
+   * article stayed invisible on the public site until someone else
+   * happened to push a commit.
+   *
+   * The hook fires ONCE for the whole create, which also covers the
+   * sibling locales the translation step just created.
+   */
+  let deployTriggered = false;
+  let deployError: string | null = null;
+  if (initialStatus === 'published') {
+    const deploy = await triggerDeployHook(env);
+    deployTriggered = deploy.triggered;
+    deployError = deploy.error;
+    try {
+      await execute(
+        env,
+        `INSERT INTO admin_logs (user_id, action, resource_type, resource_id, message) VALUES (?, ?, 'post', ?, ?)`,
+        [
+          user.id,
+          deploy.triggered ? 'create_post_deploy_ok' : 'create_post_deploy_failed',
+          newId ?? null,
+          deploy.triggered ? null : `站点部署失败：${deploy.error ?? '未知错误'}`,
+        ]
+      );
+    } catch {
+      /* the log write is best-effort — never block the response */
+    }
+  }
+
   return json(
     {
       success: true,
       data: {
         id: newId,
         slug: body.slug,
-        status: body.status ?? 'draft',
+        status: initialStatus,
+        // The admin shows this: "发布成功" must not hide a failed rebuild.
+        deploy_triggered: deployTriggered,
+        deploy_error: deployError,
         translations,
         translated_count: translations.filter((t) => t.status === 'created').length,
         translation_errors: translations
@@ -1485,6 +1551,8 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
           id,
           updated: true,
           updated_at: loadedUpdatedAt,
+          deploy_triggered: true,
+          deploy_error: null,
           translations,
           translated_count: translations.filter((t) => t.status === 'created').length,
           translation_errors: translationErrors,
@@ -1537,6 +1605,10 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
       data: {
         id,
         updated: true,
+        // The rebuild result — the admin tells the user whether the
+        // article is live on the site or only in the database.
+        deploy_triggered: deploy.triggered,
+        deploy_error: deploy.error,
         translations,
         translated_count: translations.filter((t) => t.status === 'created').length,
         translation_errors: translations

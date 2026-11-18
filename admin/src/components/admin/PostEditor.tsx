@@ -718,6 +718,8 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       translations?: TranslationOutcome[];
       translated_count?: number;
       translation_errors?: Array<{ locale: string; error?: string }>;
+      deploy_triggered?: boolean;
+      deploy_error?: string | null;
     },
     targetStatus: Status
   ) {
@@ -725,10 +727,24 @@ export function PostEditor({ collection, initialPost }: PostEditorProps) {
       toast.show('草稿已保存', 'success');
       return;
     }
+
+    // The site is a static build: the article only goes live when the
+    // Pages rebuild fires. Saying "已发布" while the rebuild failed is
+    // exactly how the 2026-11-19 note stayed invisible, so the deploy
+    // result is part of the message now.
+    const deployFailed = res.deploy_triggered === false;
+
     const created = (res.translations ?? []).filter((t) => t.status === 'created');
     const failed = res.translation_errors ?? [];
     const skipped = (res.translations ?? []).filter((t) => t.status === 'skipped');
 
+    if (deployFailed) {
+      toast.show(
+        `已保存到数据库，但站点重建失败，文章暂时还看不到：${res.deploy_error ?? '未知错误'}`,
+        'error'
+      );
+      return;
+    }
     if (failed.length > 0) {
       toast.show(
         `已发布，但翻译失败：${failed.map((f) => LOCALE_LABEL[f.locale] ?? f.locale).join('、')}`,
