@@ -16,13 +16,30 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { apiGet, apiPut, errorMessage } from '@/lib/cms/api-client';
+import { apiGet, apiPost, apiPut, errorMessage } from '@/lib/cms/api-client';
+import { formatDateTime } from '@/lib/cms/format';
 
 interface Me {
   id: number;
   email: string;
   display_name: string | null;
   role: string;
+}
+
+/**
+ * The state of the published site versus the database.
+ *
+ * The site is a static build: every content change needs a Cloudflare
+ * Pages build to reach the public pages. This panel shows whether the
+ * live site is in sync, and offers a manual check.
+ */
+interface SiteStatus {
+  in_sync: boolean;
+  reason: string;
+  content_synced_at: string | null;
+  latest_update: string | null;
+  site_urls: number;
+  db_urls: number;
 }
 
 const DEFAULT_SETTINGS: Record<string, string> = {
@@ -55,6 +72,10 @@ export default function SettingsPage() {
   const [newPw, setNewPw] = useState('');
   const [newPw2, setNewPw2] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // The published site versus the database.
+  const [siteStatus, setSiteStatus] = useState<SiteStatus | null>(null);
+  const [checkingSite, setCheckingSite] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -87,6 +108,44 @@ export default function SettingsPage() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  // The published site versus the database.
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<SiteStatus>('/api/admin/site/status')
+      .then((data) => {
+        if (!cancelled) setSiteStatus(data);
+      })
+      .catch(() => {
+        /* the panel simply stays empty */
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  /** Check the site, and rebuild it if it is behind. */
+  async function handleCheckSite() {
+    setCheckingSite(true);
+    try {
+      const result = await apiPost<{
+        stale: boolean;
+        reason: string;
+        triggered: boolean;
+      }>('/api/admin/site/reconcile', {});
+      if (result.triggered) {
+        toast.show('站点落后于数据库，已触发重建（约 2–3 分钟）', 'success');
+      } else if (result.stale) {
+        toast.show(`站点仍然落后：${result.reason}`, 'error');
+      } else {
+        toast.show('站点与数据库一致', 'success');
+      }
+      const status = await apiGet<SiteStatus>('/api/admin/site/status');
+      setSiteStatus(status);
+    } catch (e: unknown) {
+      toast.show(errorMessage(e, '检查失败'), 'error');
+    } finally {
+      setCheckingSite(false);
+    }
+  }
 
   async function handleSaveSettings() {
     setSavingSettings(true);
@@ -297,6 +356,74 @@ export default function SettingsPage() {
             导出 Markdown
           </Button>
         </div>
+      </Card>
+
+      <div style={{ height: 16 }} />
+
+      {/* The published site versus the database. */}
+      <Card padding="md">
+        <h2 style={sectionTitle}>站点同步状态</h2>
+        {siteStatus ? (
+          <>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 13,
+                marginBottom: 12,
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: siteStatus.in_sync ? 'var(--color-success)' : 'var(--color-warning)',
+                }}
+              />
+              <span style={{ color: 'var(--color-text-primary)' }}>
+                {siteStatus.in_sync ? '前台与数据库一致' : '前台落后于数据库'}
+              </span>
+              <span style={{ color: 'var(--color-text-muted)' }}>{siteStatus.reason}</span>
+            </div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '120px 1fr',
+                rowGap: 8,
+                columnGap: 16,
+                fontSize: 12,
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              <span style={{ color: 'var(--color-text-muted)' }}>站点内容时间</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>
+                {siteStatus.content_synced_at ? formatDateTime(siteStatus.content_synced_at) : '—'}
+              </span>
+              <span style={{ color: 'var(--color-text-muted)' }}>数据库最新更新</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>
+                {siteStatus.latest_update ? formatDateTime(siteStatus.latest_update) : '—'}
+              </span>
+              <span style={{ color: 'var(--color-text-muted)' }}>文章数量</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>
+                站点 {siteStatus.site_urls} 篇 / 数据库 {siteStatus.db_urls} 篇
+              </span>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <Button onClick={handleCheckSite} disabled={checkingSite}>
+                {checkingSite ? '检查中…' : '立即检查并在需要时重建'}
+              </Button>
+            </div>
+            <div style={helpStyle}>
+              前台是静态构建，内容改动需要一次构建才会生效。后台每 5 分钟自动核对一次，
+              发现前台落后就会自动重建。
+            </div>
+          </>
+        ) : (
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>正在检查…</p>
+        )}
       </Card>
 
       <div style={{ height: 16 }} />

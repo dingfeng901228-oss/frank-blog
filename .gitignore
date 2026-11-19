@@ -49,3 +49,6 @@ admin/next-env.d.ts
 
 # Local audit scratch (audit subagent output, throwaway probes)
 .tmp-audit/
+
+# The D1 → MDX content snapshot timestamp (written by the build)
+.d1-sync-time

@@ -116,7 +116,15 @@ export async function handleBulk(request: Request, env: Env): Promise<Response> 
   // Publishing changes the public site, so it needs a rebuild.
   let deploy_triggered = false;
   let deploy_error: string | null = null;
-  if (action === 'publish' && done.length > 0) {
+  // Every action here changes what the public site shows:
+  //   publish  → the article goes live
+  //   archive  → the article disappears from the site
+  //   delete   → the article disappears from the site
+  // The site is a static build, so all of them need a rebuild. This
+  // path used to rebuild ONLY for publish, which meant an archived or
+  // deleted article kept showing up on the front end.
+  const needsDeploy = action === 'publish' || action === 'archive' || action === 'delete';
+  if (needsDeploy && done.length > 0) {
     const deploy = await triggerDeployHook(env);
     deploy_triggered = deploy.triggered;
     deploy_error = deploy.error;
@@ -125,9 +133,13 @@ export async function handleBulk(request: Request, env: Env): Promise<Response> 
       `INSERT INTO admin_logs (user_id, action, resource_type, resource_id, message) VALUES (?, ?, 'post', ?, ?)`,
       [
         user.id,
-        deploy.triggered ? 'bulk_publish_deploy_ok' : 'bulk_publish_deploy_failed',
+        deploy.triggered
+          ? `bulk_${action}_deploy_ok`
+          : `bulk_${action}_deploy_failed`,
         done[0] ?? null,
-        deploy.triggered ? null : `批量发布 ${done.length} 篇：${deploy.error ?? '未知错误'}`,
+        deploy.triggered
+          ? `批量${action === 'publish' ? '发布' : action === 'archive' ? '归档' : '删除'} ${done.length} 篇`
+          : `批量${action === 'publish' ? '发布' : action === 'archive' ? '归档' : '删除'} ${done.length} 篇：站点部署失败（${deploy.error ?? '未知错误'}）`,
       ]
     );
   } else if (action === 'delete' && done.length > 0) {
@@ -459,7 +471,14 @@ export async function handleMediaUpdate(request: Request, env: Env, id: number):
      FROM media WHERE id = ?`,
     [id]
   );
-  return json({ success: true, data: row });
+  // The alt text is rendered on the public site (it is the text a
+  // screen reader reads and the caption under the image), so changing
+  // it changes the site and needs a rebuild.
+  const deploy = await triggerDeployHook(env);
+  return json({
+    success: true,
+    data: { ...row, deploy_triggered: deploy.triggered, deploy_error: deploy.error },
+  });
 }
 
 /**
@@ -534,6 +553,234 @@ export async function publishScheduledPosts(env: Env): Promise<number> {
 
   await triggerDeployHook(env);
   return due.length;
+}
+
+/**
+ * The reconciliation safety net.
+ *
+ * The site is a static build: the public pages are produced by a
+ * Cloudflare Pages build, and a build only happens when something
+ * fires the deploy hook. Every write path that changes what the site
+ * shows has to fire it — and a path that forgets leaves the site
+ * serving stale content until something unrelated happens to trigger a
+ * build. That is exactly how the note published on 2026-11-19 stayed
+ * invisible.
+ *
+ * All the known paths fire the hook now. This function is the backstop
+ * for the ones that do not exist yet: it compares the DATABASE with the
+ * LIVE SITE and rebuilds when they disagree.
+ *
+ * How the comparison works:
+ *
+ *   - The database side: the newest `updated_at` among the published
+ *     posts, and the set of published post URLs.
+ *   - The site side: `search-index.json` — a file the build writes. It
+ *     carries `contentSyncedAt` (the moment the build read D1) and the
+ *     list of URLs the build produced.
+ *
+ * The site is behind when either
+ *   (a) a published post was changed after `contentSyncedAt`, or
+ *   (b) the URL sets differ (an article was added, archived or deleted
+ *       without the site being rebuilt).
+ *
+ * A cooldown keeps this from starting a build every five minutes: a
+ * build takes ~3 minutes, and the site cannot be compared again until
+ * the new deployment is live.
+ */
+export async function ensureSiteInSync(
+  env: Env
+): Promise<{ stale: boolean; reason: string; triggered: boolean }> {
+  const siteUrl = String((env as any).SITE_URL || 'https://blog.frank2025.com');
+  const COOLDOWN_MS = 10 * 60 * 1000;
+
+  // ── the database side ────────────────────────────────────────────────
+  const published = await queryAll<{ locale: string; collection: string; slug: string; updated_at: string }>(
+    env,
+    `SELECT locale, collection, slug, updated_at FROM posts WHERE status = 'published'`
+  );
+  if (published.length === 0) {
+    return { stale: false, reason: 'no published posts', triggered: false };
+  }
+
+  const dbUrls = new Set<string>();
+  let latestMs = 0;
+  for (const p of published) {
+    const dir = p.collection === 'notes' ? 'notes' : 'blog';
+    dbUrls.add(`/${p.locale}/${dir}/${p.slug}`);
+    const ms = Date.parse(`${String(p.updated_at).replace(' ', 'T')}Z`);
+    if (!Number.isNaN(ms) && ms > latestMs) latestMs = ms;
+  }
+
+  // ── the site side ────────────────────────────────────────────────────
+  let index: any = null;
+  try {
+    const res = await fetch(`${siteUrl}/search-index.json?cb=${Date.now()}`, {
+      headers: { 'User-Agent': 'frank-blog-cms-reconcile/1.0', Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      return { stale: false, reason: `site index HTTP ${res.status}`, triggered: false };
+    }
+    index = await res.json();
+  } catch (e: any) {
+    // The site is unreachable (or the Worker has no outbound access).
+    // Do NOT rebuild on a guess — a false positive would start a build
+    // every five minutes.
+    return { stale: false, reason: `site unreachable: ${e?.message || e}`, triggered: false };
+  }
+
+  const siteUrls = new Set<string>();
+  const entries = index?.entries ?? {};
+  for (const list of Object.values(entries) as any[]) {
+    for (const item of list as any[]) {
+      if (item?.url) siteUrls.add(item.url);
+    }
+  }
+
+  const syncedAtRaw = index?.contentSyncedAt ?? index?.generatedAt ?? null;
+  const syncedMs = syncedAtRaw ? Date.parse(syncedAtRaw) : NaN;
+
+  // ── the comparison ───────────────────────────────────────────────────
+  let reason = '';
+  if (!Number.isNaN(syncedMs) && latestMs > syncedMs) {
+    reason = `有已发布文章在站点构建之后被修改（最新 ${new Date(latestMs).toISOString()} > 构建于 ${new Date(syncedMs).toISOString()}）`;
+  } else {
+    const missing = [...dbUrls].filter((u) => !siteUrls.has(u));
+    const extra = [...siteUrls].filter((u) => !dbUrls.has(u));
+    if (missing.length > 0) {
+      reason = `站点缺少 ${missing.length} 篇已发布文章（例如 ${missing[0]}）`;
+    } else if (extra.length > 0) {
+      reason = `站点还残留 ${extra.length} 篇已删除/已归档的文章（例如 ${extra[0]}）`;
+    }
+  }
+
+  if (!reason) {
+    return { stale: false, reason: 'site is in sync', triggered: false };
+  }
+
+  // ── the cooldown ─────────────────────────────────────────────────────
+  const lastRow = await queryFirst<{ value: string }>(
+    env,
+    `SELECT value FROM settings WHERE key = 'last_reconcile_deploy_at'`
+  );
+  const lastMs = lastRow?.value ? Date.parse(lastRow.value) : NaN;
+  if (!Number.isNaN(lastMs) && Date.now() - lastMs < COOLDOWN_MS) {
+    return { stale: true, reason: `${reason}（冷却中，稍后重试）`, triggered: false };
+  }
+
+  // ── rebuild ──────────────────────────────────────────────────────────
+  const deploy = await triggerDeployHook(env);
+  const now = new Date().toISOString();
+  await execute(
+    env,
+    `INSERT INTO settings (key, value, updated_at) VALUES ('last_reconcile_deploy_at', ?, datetime('now'))
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+    [now]
+  );
+  await execute(
+    env,
+    `INSERT INTO admin_logs (action, resource_type, message) VALUES (?, 'site', ?)`,
+    [
+      deploy.triggered ? 'site_reconcile_deploy_ok' : 'site_reconcile_deploy_failed',
+      deploy.triggered ? `站点与数据库不一致，已自动重建：${reason}` : `站点与数据库不一致，重建失败：${reason}（${deploy.error ?? '未知错误'}）`,
+    ]
+  );
+
+  return { stale: true, reason, triggered: deploy.triggered };
+}
+
+/**
+ * A read-only report: is the live site in sync with the database?
+ *
+ * Shown in the admin so the state can be checked without waiting for
+ * the cron. It never triggers a rebuild — that is the cron's job.
+ */
+export async function getSiteStatus(env: Env): Promise<{
+  in_sync: boolean;
+  reason: string;
+  content_synced_at: string | null;
+  latest_update: string | null;
+  site_urls: number;
+  db_urls: number;
+}> {
+  const siteUrl = String((env as any).SITE_URL || 'https://blog.frank2025.com');
+
+  const published = await queryAll<{ locale: string; collection: string; slug: string; updated_at: string }>(
+    env,
+    `SELECT locale, collection, slug, updated_at FROM posts WHERE status = 'published'`
+  );
+  const dbUrls = new Set<string>();
+  let latestMs = 0;
+  let latestRaw: string | null = null;
+  for (const p of published) {
+    const dir = p.collection === 'notes' ? 'notes' : 'blog';
+    dbUrls.add(`/${p.locale}/${dir}/${p.slug}`);
+    const ms = Date.parse(`${String(p.updated_at).replace(' ', 'T')}Z`);
+    if (!Number.isNaN(ms) && ms > latestMs) {
+      latestMs = ms;
+      latestRaw = p.updated_at;
+    }
+  }
+
+  let index: any = null;
+  try {
+    const res = await fetch(`${siteUrl}/search-index.json?cb=${Date.now()}`, {
+      headers: { 'User-Agent': 'frank-blog-cms-reconcile/1.0', Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      return {
+        in_sync: false,
+        reason: `无法读取站点索引（HTTP ${res.status}）`,
+        content_synced_at: null,
+        latest_update: latestRaw,
+        site_urls: 0,
+        db_urls: dbUrls.size,
+      };
+    }
+    index = await res.json();
+  } catch (e: any) {
+    return {
+      in_sync: false,
+      reason: `无法访问站点：${e?.message || e}`,
+      content_synced_at: null,
+      latest_update: latestRaw,
+      site_urls: 0,
+      db_urls: dbUrls.size,
+    };
+  }
+
+  const siteUrls = new Set<string>();
+  for (const list of Object.values(index?.entries ?? {}) as any[]) {
+    for (const item of list as any[]) if (item?.url) siteUrls.add(item.url);
+  }
+
+  const syncedAtRaw = index?.contentSyncedAt ?? index?.generatedAt ?? null;
+  const syncedMs = syncedAtRaw ? Date.parse(syncedAtRaw) : NaN;
+
+  let reason = '站点与数据库一致';
+  let inSync = true;
+  if (!Number.isNaN(syncedMs) && latestMs > syncedMs) {
+    inSync = false;
+    reason = '有已发布文章在站点构建之后被修改，后台会自动重建';
+  } else {
+    const missing = [...dbUrls].filter((u) => !siteUrls.has(u));
+    const extra = [...siteUrls].filter((u) => !dbUrls.has(u));
+    if (missing.length > 0) {
+      inSync = false;
+      reason = `站点缺少 ${missing.length} 篇已发布文章，后台会自动重建`;
+    } else if (extra.length > 0) {
+      inSync = false;
+      reason = `站点还残留 ${extra.length} 篇已删除/已归档的文章，后台会自动重建`;
+    }
+  }
+
+  return {
+    in_sync: inSync,
+    reason,
+    content_synced_at: syncedAtRaw,
+    latest_update: latestRaw,
+    site_urls: siteUrls.size,
+    db_urls: dbUrls.size,
+  };
 }
 
 export { MAX_LIMIT, DEFAULT_LIMIT };

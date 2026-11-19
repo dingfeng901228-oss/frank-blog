@@ -97,8 +97,40 @@ for (const locale of LOCALES) {
   entries[locale] = list;
 }
 
+/**
+ * The moment the D1 → MDX sync read the content, written by
+ * scripts/sync-d1-to-mdx.mjs.
+ *
+ * Missing file → the sync was skipped (SKIP_D1_SYNC=1) or the build
+ * ran outside the normal pipeline. In that case the index falls back
+ * to the build time, which makes the reconciliation conservative (the
+ * site looks newer than it is), so a stale site is not caused by a
+ * missing timestamp.
+ */
+function readContentSyncTime() {
+  const stampFile = join(ROOT, '.d1-sync-time');
+  try {
+    if (existsSync(stampFile)) {
+      const raw = readFileSync(stampFile, 'utf8').trim();
+      if (raw) return raw;
+    }
+  } catch {
+    /* fall through to the build time */
+  }
+  return new Date().toISOString();
+}
+
 const index = {
   generatedAt: new Date().toISOString(),
+  // The moment the build READ the content out of D1.
+  //
+  // This is the timestamp the Worker's reconciliation cron compares
+  // with the database: if a post was written after this moment, the
+  // published site cannot contain it yet. `generatedAt` (this build's
+  // finish time) is not usable for that comparison — it is later than
+  // the content it contains, so an edit made during the build would be
+  // invisible.
+  contentSyncedAt: readContentSyncTime(),
   entries,
 };
 

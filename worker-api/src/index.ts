@@ -77,6 +77,8 @@ import {
   handleMediaUpdate,
   handleMediaUsage,
   publishScheduledPosts,
+  ensureSiteInSync,
+  getSiteStatus,
 } from './admin-ext';
 
 const SESSION_TTL_DAYS = 7;
@@ -220,8 +222,14 @@ export default {
   },
 
   /**
-   * Cron trigger — publishes every draft whose scheduled time has come.
-   * Every 5 minutes (see wrangler.toml).
+   * Cron trigger — runs every 5 minutes.
+   *
+   * Two jobs:
+   *   1. Publish every draft whose scheduled time has come.
+   *   2. The reconciliation safety net: if the live site no longer
+   *      matches the database, rebuild it. This is what stops a write
+   *      path that forgets the deploy hook from leaving the site
+   *      serving stale content.
    */
   async scheduled(_event: any, env: Env, _ctx: any): Promise<void> {
     try {
@@ -229,6 +237,16 @@ export default {
       if (n > 0) console.log(`[cron] published ${n} scheduled post(s)`);
     } catch (e: any) {
       console.error('[cron] scheduled publish failed:', e?.message || e);
+    }
+    try {
+      const sync = await ensureSiteInSync(env);
+      if (sync.triggered) {
+        console.log(`[cron] site was out of date — rebuild triggered: ${sync.reason}`);
+      } else if (sync.stale) {
+        console.log(`[cron] site out of date (no rebuild): ${sync.reason}`);
+      }
+    } catch (e: any) {
+      console.error('[cron] reconciliation failed:', e?.message || e);
     }
   },
 };
@@ -348,6 +366,28 @@ async function route(request: Request, env: Env): Promise<Response> {
 
     // /api/admin/activity/recent (Phase 6)
     if (path === '/api/admin/activity/recent' && method === 'GET') return listRecentActivityHandler(request, env);
+
+    // /api/admin/site/status — is the live site in sync with the
+    // database? (read-only; the cron does the rebuilding)
+    if (path === '/api/admin/site/status' && method === 'GET') {
+      const user = await getCurrentUser(request, env);
+      if (!user) {
+        return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+      }
+      return json({ success: true, data: await getSiteStatus(env) });
+    }
+
+    // /api/admin/site/reconcile — check and, if the site is behind,
+    // rebuild it right now. The cron does this every 5 minutes; this
+    // endpoint is the "check now" button.
+    if (path === '/api/admin/site/reconcile' && method === 'POST') {
+      const user = await getCurrentUser(request, env);
+      if (!user) {
+        return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+      }
+      const result = await ensureSiteInSync(env);
+      return json({ success: true, data: result });
+    }
 
     // /api/admin/posts/:id/redeploy — retry a failed deploy (item 15).
     m = path.match(/^\/api\/admin\/posts\/(\d+)\/redeploy$/);
@@ -746,7 +786,17 @@ async function createTagHandler(request: Request, env: Env): Promise<Response> {
     // would 404 on the public site. The slug therefore mirrors the name.
     const slug = body.slug && body.slug !== name ? validateSlug(body.slug) : name;
     const tag = await createTag(env, name, slug);
-    return json({ success: true, data: tag }, 201);
+    // A new tag only changes the site once an article carries it, but
+    // the tag pages are generated from the tag list, so the site is
+    // rebuilt here too.
+    const deploy = await triggerDeployHook(env);
+    return json(
+      {
+        success: true,
+        data: { ...tag, deploy_triggered: deploy.triggered, deploy_error: deploy.error },
+      },
+      201
+    );
   } catch (e: any) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || '创建失败' } }, 400);
   }
@@ -768,7 +818,14 @@ async function updateTagHandler(request: Request, env: Env, id: number): Promise
     // A rename has to follow through to the articles that carry it,
     // otherwise the tag page and the articles disagree.
     await renameTagInPosts(env, id, name);
-    return json({ success: true });
+    // The tag page on the public site is generated from the tag NAME,
+    // so a rename changes the site: /tag/<old> disappears and
+    // /tag/<new> appears. The site has to be rebuilt for that.
+    const deploy = await triggerDeployHook(env);
+    return json({
+      success: true,
+      data: { id, name, slug, deploy_triggered: deploy.triggered, deploy_error: deploy.error },
+    });
   } catch (e: any) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || '更新失败' } }, 400);
   }
@@ -812,9 +869,16 @@ async function deleteTagHandler(request: Request, env: Env, id: number): Promise
   }
   try {
     await deleteTag(env, id);
-    return new Response(null, { status: 204 });
+    // The public site has a page per tag, so deleting a tag changes the
+    // site. Without this rebuild the tag page kept showing the deleted
+    // tag until something else happened to trigger a build.
+    const deploy = await triggerDeployHook(env);
+    return json({
+      success: true,
+      data: { id, deleted: true, deploy_triggered: deploy.triggered, deploy_error: deploy.error },
+    });
   } catch (e: any) {
-    const msg = e?.message || 'Delete failed';
+    const msg = e?.message || '删除失败';
     const status = msg.includes('still use') ? 409 : 404;
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: msg } }, status);
   }
@@ -851,9 +915,16 @@ async function restoreRevisionHandler(request: Request, env: Env, revisionId: nu
   }
   try {
     await restoreRevision(env, revisionId);
-    return json({ success: true });
+    // Restoring a version puts old content back into the article, so
+    // the published page on the site changes. This path used to skip
+    // the rebuild, which left the front end showing the newer text.
+    const deploy = await triggerDeployHook(env);
+    return json({
+      success: true,
+      data: { deploy_triggered: deploy.triggered, deploy_error: deploy.error },
+    });
   } catch (e: any) {
-    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || 'Restore failed' } }, 404);
+    return json({ success: false, error: { code: 'INVALID_REQUEST', message: e?.message || '恢复失败' } }, 404);
   }
 }
 
@@ -1621,12 +1692,62 @@ async function updatePost(request: Request, env: Env, id: number): Promise<Respo
   return json({ success: true, data: { id, updated: true } });
 }
 
-async function deletePost(_request: Request, env: Env, id: number): Promise<Response> {
+async function deletePost(request: Request, env: Env, id: number): Promise<Response> {
   if (!Number.isFinite(id)) {
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
   }
+
+  // SECURITY — this handler never checked the session. The CSRF check is
+  // a double-submit check (header vs cookie), which a caller can forge,
+  // so ANYBODY could delete an article from the live site. Every other
+  // write path checks the session; this one did not.
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+
+  const post = await queryFirst<{ id: number; title: string }>(
+    env,
+    `SELECT id, title FROM posts WHERE id = ?`,
+    [id]
+  );
+  if (!post) {
+    return json({ success: false, error: { code: 'NOT_FOUND', message: '文章不存在' } }, 404);
+  }
+
   await execute(env, `DELETE FROM posts WHERE id = ?`, [id]);
-  return new Response(null, { status: 204 });
+
+  // The site is a static build: a deleted article stays on the public
+  // site until the next rebuild. This path used to skip the deploy
+  // hook, so a deleted article kept showing up on the front end.
+  const deploy = await triggerDeployHook(env);
+
+  try {
+    await execute(
+      env,
+      `INSERT INTO admin_logs (user_id, action, resource_type, resource_id, message) VALUES (?, ?, 'post', ?, ?)`,
+      [
+        user.id,
+        deploy.triggered ? 'delete_post_deploy_ok' : 'delete_post_deploy_failed',
+        id,
+        deploy.triggered
+          ? `删除文章：${post.title}`
+          : `删除文章：${post.title}（站点部署失败：${deploy.error ?? '未知错误'}）`,
+      ]
+    );
+  } catch {
+    /* the log write is best-effort */
+  }
+
+  return json({
+    success: true,
+    data: {
+      id,
+      deleted: true,
+      deploy_triggered: deploy.triggered,
+      deploy_error: deploy.error,
+    },
+  });
 }
 
 // ────────────────────────────────────────────────────
@@ -1956,9 +2077,16 @@ async function unpublishPost(request: Request, env: Env, id: number): Promise<Re
     return json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid post id' } }, 400);
   }
 
+  // SECURITY — this handler never checked the session either, so an
+  // unauthenticated caller could take any published article down.
+  const user = await getCurrentUser(request, env);
+  if (!user) {
+    return json({ success: false, error: { code: 'NOT_AUTHENTICATED', message: 'Not authenticated' } }, 401);
+  }
+
   const post = await queryFirst<{ id: number }>(env, `SELECT id FROM posts WHERE id = ?`, [id]);
   if (!post) {
-    return json({ success: false, error: { code: 'NOT_FOUND', message: 'Post not found' } }, 404);
+    return json({ success: false, error: { code: 'NOT_FOUND', message: '文章不存在' } }, 404);
   }
 
   await execute(
@@ -1971,8 +2099,13 @@ async function unpublishPost(request: Request, env: Env, id: number): Promise<Re
 
   await execute(
     env,
-    `INSERT INTO admin_logs (user_id, action, resource_type, resource_id) VALUES (?, ?, ?, ?)`,
-    [null, deploy.triggered ? 'unpublish_post' : 'unpublish_post_failed', 'post', id]
+    `INSERT INTO admin_logs (user_id, action, resource_type, resource_id, message) VALUES (?, ?, 'post', ?, ?)`,
+    [
+      user.id,
+      deploy.triggered ? 'unpublish_post' : 'unpublish_post_failed',
+      id,
+      deploy.triggered ? null : `取消发布失败：${deploy.error ?? '未知错误'}`,
+    ]
   );
 
   return json(

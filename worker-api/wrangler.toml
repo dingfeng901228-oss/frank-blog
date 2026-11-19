@@ -51,6 +51,10 @@ zone_name = "frank2025.com"
 
 [vars]
 ENVIRONMENT = "production"
+# The public site the reconciliation cron compares against.
+# ensureSiteInSync() fetches <SITE_URL>/search-index.json to find out
+# whether the deployed site still matches the database.
+SITE_URL = "https://blog.frank2025.com"
 
 # Item 9 — scheduled publishing.
 #

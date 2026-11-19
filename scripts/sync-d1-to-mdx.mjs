@@ -348,6 +348,24 @@ function sync() {
   console.log(`   ${totalWritten} ${isDryRun ? 'would be ' : ''}written`);
   console.log(`   ${totalKept} kept (unchanged)`);
   console.log(`   ${totalDeleted} ${isDryRun ? 'would be ' : ''}deleted`);
+
+  // Record WHEN this content snapshot was taken.
+  //
+  // The site is a static build, so "is the published site in sync with
+  // the database?" is a question about two timestamps: the newest
+  // content change in D1, and the moment the build read D1. The build
+  // script (build-search-index.mjs) copies this timestamp into
+  // out/search-index.json, and the Worker's cron compares it with D1.
+  // If a write lands after this snapshot, the site is behind and gets
+  // rebuilt — even if some code path forgot to fire the deploy hook.
+  if (!isDryRun) {
+    try {
+      writeFileSync(join(PROJECT_ROOT, '.d1-sync-time'), new Date().toISOString(), 'utf8');
+      console.log(`   🕒 Recorded the content snapshot time`);
+    } catch (e) {
+      console.error(`   ⚠️  Could not write .d1-sync-time: ${e.message}`);
+    }
+  }
 }
 
 // ────────────────────────────────────────────────────
